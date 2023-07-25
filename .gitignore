@@ -7,6 +7,9 @@ Plugins/BlockoutToolsPlugin
 *.o
 Plugins/**/*.obj
 
+#Rider Files
+.idea/*
+
 # Precompiled Headers
 *.gch
 *.pch
