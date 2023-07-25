@@ -21,6 +21,9 @@ private:
 	/** vehicle simulation component */
 	UPROPERTY(Category = Vehicle, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UChaosWheeledVehicleMovementComponent> VehicleMovementComponent;
+
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta= (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAA_VehicleDataAsset_CPP> VehicleData;
 	
 public:
 	/** Constructor*/
@@ -33,9 +36,12 @@ public:
 	static FName VehicleMovementComponentName;
 
 	/** Util to get the wheeled vehicle movement component */
-	class UChaosWheeledVehicleMovementComponent* GetVehicleMovementComponent() const;
+	UChaosWheeledVehicleMovementComponent* GetVehicleMovementComponent() const;
 
 	//~ Begin AActor Interface
 	virtual void DisplayDebug(class UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL, float& YPos) override;
+
+	UFUNCTION(BlueprintCallable)
+	void SetVehicleData(UAA_VehicleDataAsset_CPP* NewVehicleData);
 
 };

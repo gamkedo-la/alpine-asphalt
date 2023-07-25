@@ -2,6 +2,8 @@
 
 
 #include "AA_WheeledVehiclePawn_CPP.h"
+
+#include "AA_VehicleDataAsset_CPP.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
 
 FName AAA_WheeledVehiclePawn_CPP::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
@@ -34,4 +36,20 @@ void AAA_WheeledVehiclePawn_CPP::DisplayDebug(UCanvas* Canvas, const FDebugDispl
 	static FName NAME_Vehicle = FName(TEXT("Vehicle"));
 
 	Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);
+}
+
+void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVehicleData)
+{
+	//TODO: Don't set things like Automatic vs Manual Transmission
+
+	//Set Skeletal Mesh
+	Mesh->SetSkeletalMesh(NewVehicleData->VehicleMesh);
+	Mesh->SetAnimInstanceClass(dynamic_cast<UClass*>(NewVehicleData->AnimationInstance));
+
+	//Set Vehicle Movement
+	VehicleMovementComponent->WheelSetups = NewVehicleData->WheelSetups;
+	VehicleMovementComponent->EnableSuspension(NewVehicleData->bSuspensionEnabled);
+	VehicleMovementComponent->EnableWheelFriction(NewVehicleData->bWheelFrictionEnabled);
+	VehicleMovementComponent->bLegacyWheelFrictionPosition = NewVehicleData->bLegacyWheelFrictionPosition;
+	VehicleMovementComponent->WheelTraceCollisionResponses = NewVehicleData->WheelTraceCollisionResponses;
 }
