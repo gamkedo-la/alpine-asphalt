@@ -60,13 +60,13 @@ void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVeh
 	UE_LOG(Vehicle, Log, TEXT("Setting Vehicle Data"))
 	if(NewVehicleData == nullptr)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("New VehicleData was nullptr"))
+		UE_LOG(Vehicle,Warning,TEXT("New VehicleData was nullptr"))
 		return;
 	}
 	//TODO: Add support for changing wheel count?
 	if(VehicleMovementComponent->WheelSetups.Num() != NewVehicleData->WheelSetups.Num())
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Changing Wheel Count Not Currently Supported"))
+		UE_LOG(Vehicle,Warning,TEXT("Changing Wheel Count Not Currently Supported"))
 		return;
 	}
 	
