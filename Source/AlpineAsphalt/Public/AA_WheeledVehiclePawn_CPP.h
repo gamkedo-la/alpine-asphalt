@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "AA_WheeledVehiclePawn_CPP.generated.h"
 
+//Define Log for Vehicle
+DECLARE_LOG_CATEGORY_EXTERN(Vehicle, Log, All);
 /**
  * 
  */
@@ -37,6 +39,10 @@ public:
 
 	/** Util to get the wheeled vehicle movement component */
 	UChaosWheeledVehicleMovementComponent* GetVehicleMovementComponent() const;
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty( FPropertyChangedEvent & PropertyChangedEvent ) override;
+#endif
 
 	//~ Begin AActor Interface
 	virtual void DisplayDebug(class UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL, float& YPos) override;

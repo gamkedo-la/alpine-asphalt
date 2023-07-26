@@ -5,9 +5,13 @@
 
 #include "AA_VehicleDataAsset_CPP.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
+#include "DerivedDataCache/Public/DerivedDataCacheUsageStats.h"
 
 FName AAA_WheeledVehiclePawn_CPP::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
 FName AAA_WheeledVehiclePawn_CPP::VehicleMeshComponentName(TEXT("VehicleMesh"));
+
+//Define Log for Vehicle
+DEFINE_LOG_CATEGORY(Vehicle);
 
 AAA_WheeledVehiclePawn_CPP::AAA_WheeledVehiclePawn_CPP(const class FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
 {
@@ -30,8 +34,21 @@ UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn_CPP::GetVehicleMov
 	return VehicleMovementComponent;
 }
 
+#if WITH_EDITOR
+void AAA_WheeledVehiclePawn_CPP::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	//If property changed is VehicleData
+	if(PropertyChangedEvent.Property->GetName() == "VehicleData")
+	{
+		SetVehicleData(VehicleData);
+	}
+}
+#endif
+
 void AAA_WheeledVehiclePawn_CPP::DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL,
-	float& YPos)
+                                              float& YPos)
 {
 	static FName NAME_Vehicle = FName(TEXT("Vehicle"));
 
@@ -40,6 +57,19 @@ void AAA_WheeledVehiclePawn_CPP::DisplayDebug(UCanvas* Canvas, const FDebugDispl
 
 void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVehicleData)
 {
+	UE_LOG(Vehicle, Log, TEXT("Setting Vehicle Data"))
+	if(NewVehicleData == nullptr)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("New VehicleData was nullptr"))
+		return;
+	}
+	//TODO: Add support for changing wheel count?
+	if(VehicleMovementComponent->WheelSetups.Num() != NewVehicleData->WheelSetups.Num())
+	{
+		UE_LOG(LogTemp,Warning,TEXT("Changing Wheel Count Not Currently Supported"))
+		return;
+	}
+	
 	//TODO: Don't set things like Automatic vs Manual Transmission
 
 	//Set Skeletal Mesh
@@ -52,4 +82,15 @@ void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVeh
 	VehicleMovementComponent->EnableWheelFriction(NewVehicleData->bWheelFrictionEnabled);
 	VehicleMovementComponent->bLegacyWheelFrictionPosition = NewVehicleData->bLegacyWheelFrictionPosition;
 	VehicleMovementComponent->WheelTraceCollisionResponses = NewVehicleData->WheelTraceCollisionResponses;
+	VehicleMovementComponent-> bMechanicalSimEnabled = NewVehicleData->bMechanicalSimEnabled;
+	VehicleMovementComponent->EngineSetup = NewVehicleData->EngineSetup;
+	VehicleMovementComponent->DifferentialSetup = NewVehicleData->DifferentialSetup;
+	VehicleMovementComponent->TransmissionSetup = NewVehicleData->TransmissionSetup;
+	VehicleMovementComponent->SteeringSetup = NewVehicleData->SteeringSetup;
+
+	//Restart the vehicle
+	VehicleMovementComponent->ResetVehicleState();
+
+	//store the vehicle data
+	VehicleData = NewVehicleData;
 }
