@@ -25,6 +25,8 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	static FName VehicleAudioComponentName;
+	UPROPERTY(EditAnywhere)
+	USoundBase *EngineSound;
 
 		
 };
