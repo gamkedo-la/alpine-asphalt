@@ -19,14 +19,18 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UAudioComponent>EngineAudioComponent;
+
+	void UpdateEnginePitch() const;
+
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	static FName VehicleAudioComponentName;
+	
 	UPROPERTY(EditAnywhere)
 	USoundBase *EngineSound;
-
 		
 };

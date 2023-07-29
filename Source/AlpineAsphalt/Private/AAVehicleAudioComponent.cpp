@@ -2,6 +2,9 @@
 
 
 #include "AAVehicleAudioComponent.h"
+
+#include "AA_WheeledVehiclePawn_CPP.h"
+#include "ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AudioComponent.h"
 
 FName UAAVehicleAudioComponent::VehicleAudioComponentName(TEXT("VehicleAudioComponentName"));
@@ -14,14 +17,18 @@ UAAVehicleAudioComponent::UAAVehicleAudioComponent()
 	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>(VehicleAudioComponentName);
 	if (EngineSound)
 	{
-		EngineAudioComponent -> Sound = EngineSound;
+		EngineAudioComponent -> SetSound(EngineSound);
 	}
 	else
 	{
 		// default to MSEngine Sound
-		static ConstructorHelpers::FObjectFinder<USoundBase> DefaultEngineSoundFile(TEXT("/AlpineAsphalt/Content/Audio/Vehicles/MS_Engine"));
-		EngineAudioComponent -> Sound = DefaultEngineSoundFile.Object;
+		//TO:DO Currently not working, Need to read more documentation to determine why I am not setting the default
+		// engine sound correctly
+		static ConstructorHelpers::FObjectFinder<USoundBase> DefaultEngineSoundFile(TEXT("'/Game/Audio/Vehicles/MS_Engine'"));
+		EngineAudioComponent -> SetSound(DefaultEngineSoundFile.Object);
 	}
+	EngineAudioComponent->SetActive(true);
+	EngineAudioComponent->SetVolumeMultiplier(1.5);
 	// ...
 }
 
@@ -30,6 +37,10 @@ UAAVehicleAudioComponent::UAAVehicleAudioComponent()
 void UAAVehicleAudioComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	if(EngineAudioComponent != nullptr)
+	{
+		EngineAudioComponent->Play();
+	}
 
 	// ...
 	
@@ -40,7 +51,28 @@ void UAAVehicleAudioComponent::BeginPlay()
 void UAAVehicleAudioComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	UpdateEnginePitch();
 	// ...
+}
+
+void UAAVehicleAudioComponent::UpdateEnginePitch() const
+{
+	AAA_WheeledVehiclePawn_CPP* parent = (AAA_WheeledVehiclePawn_CPP*) GetOwner();
+	UChaosWheeledVehicleMovementComponent* VehicleMovementComponent = parent->GetVehicleMovementComponent();
+	if (VehicleMovementComponent)
+	{
+		float const EngineRotationSpeed = VehicleMovementComponent->GetEngineRotationSpeed();
+		float EnginePitch = 0.5f;
+		if (EngineRotationSpeed > 2000.0f && EngineRotationSpeed <= 3000.0f)
+		{
+			EnginePitch = 1.0f;
+		}
+		else if (EngineRotationSpeed > 3000.0f)
+		{
+			EnginePitch = 1.5f;	
+		}
+		EngineAudioComponent->SetPitchMultiplier(EnginePitch);
+	}
+
 }
 
