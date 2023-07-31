@@ -57,9 +57,8 @@ void UAAVehicleAudioComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UAAVehicleAudioComponent::UpdateEnginePitch() const
 {
-	AAA_WheeledVehiclePawn_CPP* parent = (AAA_WheeledVehiclePawn_CPP*) GetOwner();
-	UChaosWheeledVehicleMovementComponent* VehicleMovementComponent = parent->GetVehicleMovementComponent();
-	if (VehicleMovementComponent)
+	AAA_WheeledVehiclePawn_CPP* const parent = (AAA_WheeledVehiclePawn_CPP*) GetOwner();
+	if (UChaosWheeledVehicleMovementComponent* VehicleMovementComponent = parent->GetVehicleMovementComponent())
 	{
 		float const EngineRotationSpeed = VehicleMovementComponent->GetEngineRotationSpeed();
 		float EnginePitch = 0.5f;
