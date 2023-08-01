@@ -2,10 +2,9 @@
 
 
 #include "AAVehicleAudioComponent.h"
-
-#include "AA_WheeledVehiclePawn_CPP.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AudioComponent.h"
+#include "AA_WheeledVehiclePawn_CPP.h"
 
 FName UAAVehicleAudioComponent::VehicleAudioComponentName(TEXT("VehicleAudioComponentName"));
 // Sets default values for this component's properties
@@ -15,21 +14,8 @@ UAAVehicleAudioComponent::UAAVehicleAudioComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>(VehicleAudioComponentName);
-	if (EngineSound)
-	{
-		EngineAudioComponent -> SetSound(EngineSound);
-	}
-	else
-	{
-		// default to MSEngine Sound
-		//TO:DO Currently not working, Need to read more documentation to determine why I am not setting the default
-		// engine sound correctly
-		static ConstructorHelpers::FObjectFinder<USoundBase> DefaultEngineSoundFile(TEXT("'/Game/Audio/Vehicles/MS_Engine'"));
-		EngineAudioComponent -> SetSound(DefaultEngineSoundFile.Object);
-	}
 	EngineAudioComponent->SetActive(true);
 	EngineAudioComponent->SetVolumeMultiplier(1.5);
-	// ...
 }
 
 
@@ -61,14 +47,14 @@ void UAAVehicleAudioComponent::UpdateEnginePitch() const
 	if (UChaosWheeledVehicleMovementComponent* VehicleMovementComponent = parent->GetVehicleMovementComponent())
 	{
 		float const EngineRotationSpeed = VehicleMovementComponent->GetEngineRotationSpeed();
-		float EnginePitch = 0.5f;
+		float EnginePitch = MinEnginePitch;
 		if (EngineRotationSpeed > 2000.0f && EngineRotationSpeed <= 3000.0f)
 		{
-			EnginePitch = 1.0f;
+			EnginePitch = MidEnginePitch;
 		}
 		else if (EngineRotationSpeed > 3000.0f)
 		{
-			EnginePitch = 1.5f;	
+			EnginePitch = MaxEnginePitch;	
 		}
 		EngineAudioComponent->SetPitchMultiplier(EnginePitch);
 	}
