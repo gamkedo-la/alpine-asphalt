@@ -29,13 +29,13 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	static FName VehicleAudioComponentName;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, Category="Engine Pitch")
 	float MinEnginePitch = 0.5f;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, Category="Engine Pitch")
 	float MidEnginePitch = 1.0f;
 
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, Category="Engine Pitch")
 	float MaxEnginePitch = 1.5f;
 		
 };
