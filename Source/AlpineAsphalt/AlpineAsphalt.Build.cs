@@ -8,7 +8,7 @@ public class AlpineAsphalt : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "EnhancedInput", "ChaosVehicles" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

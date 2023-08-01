@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "AA_WheeledVehiclePawn_CPP.generated.h"
 
+struct FInputActionValue;
 //Define Log for Vehicle
 DECLARE_LOG_CATEGORY_EXTERN(Vehicle, Log, All);
 /**
@@ -39,6 +40,33 @@ public:
 
 	/** Util to get the wheeled vehicle movement component */
 	UChaosWheeledVehicleMovementComponent* GetVehicleMovementComponent() const;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetHandbrake(bool bEnabled);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetBrake(const float BrakeValue);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ResetVehicle();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShiftUp();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShiftDown();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetSteering(float SteeringInput);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetThrottle(float Throttle);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ToggleCamera();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void CameraLook(FVector2D Input);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty( FPropertyChangedEvent & PropertyChangedEvent ) override;
