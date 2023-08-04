@@ -27,7 +27,7 @@ private:
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta= (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAA_VehicleDataAsset_CPP> VehicleData;
-
+	
 public:
 	/** Constructor*/
 	AAA_WheeledVehiclePawn_CPP(const class FObjectInitializer& ObjectInitializer);
@@ -77,10 +77,5 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetVehicleData(UAA_VehicleDataAsset_CPP* NewVehicleData);
-
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enhanced Input")
-	class UInputMappingContext* InputMapping;
-
 
 };

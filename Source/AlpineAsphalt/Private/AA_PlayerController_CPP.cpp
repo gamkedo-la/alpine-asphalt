@@ -6,29 +6,25 @@
 #include "EnhancedInputComponent.h"
 #include "AA_WheeledVehiclePawn_CPP.h"
 
-
 void AAA_PlayerController_CPP::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	
 	VehiclePawn = Cast<AAA_WheeledVehiclePawn_CPP>(InPawn);
-	VehiclePawn->AutoReceiveInput = EAutoReceiveInput::Player0;
-	VehiclePawn->AutoPossessPlayer = EAutoReceiveInput::Player0;
-	UE_LOG(LogTemp, Error, TEXT("Possessed?"));
+
 	if(!VehiclePawn)
 	{
 		UE_LOG(LogTemp,Error,TEXT("%hs: Pawn was not an AA_WheeledVehiclePawn_CPP"),__FUNCSIG__);
 	}
-	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
-	Subsystem->ClearAllMappings();
-	Subsystem->AddMappingContext(VehiclePawn->InputMapping, 0);
 }
 
 void AAA_PlayerController_CPP::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	UE_LOG(LogTemp, Error, TEXT("Setup Input Comp..."));
-
+	
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	Subsystem->ClearAllMappings();
+	Subsystem->AddMappingContext(InputMapping, 0);
 	EInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
 	
 	//Brakes
@@ -76,7 +72,6 @@ void AAA_PlayerController_CPP::SetBrake(const FInputActionValue& Value)
 
 void AAA_PlayerController_CPP::SetThrottle(const FInputActionValue& Value) 
 {
-	UE_LOG(LogTemp, Error, TEXT("Throttle called"));
 	VehiclePawn->SetThrottle(Value.Get<float>());
 }
 
