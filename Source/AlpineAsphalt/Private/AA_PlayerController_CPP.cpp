@@ -82,7 +82,7 @@ void AAA_PlayerController_CPP::SetHandbrake(const FInputActionValue& Value)
 
 void AAA_PlayerController_CPP::SetSteering(const FInputActionValue& Value) 
 {
-	VehiclePawn->SetBrake(Value.Get<float>());
+	VehiclePawn->SetSteering(Value.Get<float>());
 }
 
 void AAA_PlayerController_CPP::CameraLook(const FInputActionValue& Value) 
