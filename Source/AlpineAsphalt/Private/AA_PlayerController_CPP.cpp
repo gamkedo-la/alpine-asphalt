@@ -21,7 +21,6 @@ void AAA_PlayerController_CPP::OnPossess(APawn* InPawn)
 void AAA_PlayerController_CPP::SetupInputComponent()
 {
 	Super::SetupInputComponent();
-	UE_LOG(LogTemp,Log,TEXT("Hello, Tom!"))
 	
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	Subsystem->ClearAllMappings();
