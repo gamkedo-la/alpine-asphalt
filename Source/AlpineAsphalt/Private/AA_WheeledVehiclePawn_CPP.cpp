@@ -74,7 +74,10 @@ void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVeh
 
 	//Set Skeletal Mesh
 	Mesh->SetSkeletalMesh(NewVehicleData->VehicleMesh);
-	Mesh->SetAnimInstanceClass(dynamic_cast<UClass*>(NewVehicleData->AnimationInstance));
+
+	//I feel like this is needed, but it only works without it?
+	//TODO: figure out why this doesn't work
+	//Mesh->SetAnimInstanceClass(dynamic_cast<UClass*>(NewVehicleData->AnimationInstance));
 
 	//Set Vehicle Movement
 	VehicleMovementComponent->WheelSetups = NewVehicleData->WheelSetups;
