@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AA_Rewindable_CPP.h"
+#include "SnapshotData.h"
 #include "AA_WheeledVehiclePawn_CPP.generated.h"
 
 struct FInputActionValue;
@@ -12,7 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(Vehicle, Log, All);
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_WheeledVehiclePawn_CPP : public APawn
+class ALPINEASPHALT_API AAA_WheeledVehiclePawn_CPP : public APawn, public IAA_Rewindable_CPP
 {
 	GENERATED_BODY()
 
@@ -31,6 +33,8 @@ private:
 public:
 	/** Constructor*/
 	AAA_WheeledVehiclePawn_CPP(const class FObjectInitializer& ObjectInitializer);
+
+	virtual void BeginPlay() override;
 
 	/** Name of the MeshComponent. Use this name if you want to prevent creation of the component (with ObjectInitializer.DoNotCreateDefaultSubobject). */
 	static FName VehicleMeshComponentName;
@@ -78,4 +82,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetVehicleData(UAA_VehicleDataAsset_CPP* NewVehicleData);
 
+	/** Rewind Functions **/
+	virtual void SetRewindTime(float Time) override;
+	virtual void PauseRecordingSnapshots() override;
+	virtual void ResumeRecordingSnapshots() override;
+	void RecordSnapshot();
+	/** Rewind Properties **/
+	FTimerHandle RecordingSnapshotTimerHandle;
+	TArray<FWheeledSnaphotData> SnapshotData;
+
+	//Cached property of Rewind Subsystem
+	int MaxSnapshots = 0;
+	//Cached Time that should match RewindSubsystem
+	float RewindTime = 0;
+	//Cached property of Rewind Subsystem
+	float RewindResolution = 0.f;
 };

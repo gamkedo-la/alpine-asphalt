@@ -2,9 +2,14 @@
 
 
 #include "AA_PlayerController_CPP.h"
+
+#include "AA_RewindSubsystem_CPP.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "AA_WheeledVehiclePawn_CPP.h"
+#include "Kismet/GameplayStatics.h"
+
+DEFINE_LOG_CATEGORY(PlayerControllerLog);
 
 void AAA_PlayerController_CPP::OnPossess(APawn* InPawn)
 {
@@ -14,7 +19,7 @@ void AAA_PlayerController_CPP::OnPossess(APawn* InPawn)
 
 	if(!VehiclePawn)
 	{
-		UE_LOG(LogTemp,Error,TEXT("%hs: Pawn was not an AA_WheeledVehiclePawn_CPP"),__FUNCSIG__);
+		UE_LOG(PlayerControllerLog,Error,TEXT("%hs: Pawn was not an AA_WheeledVehiclePawn_CPP"),__FUNCSIG__);
 	}
 }
 
@@ -24,7 +29,7 @@ void AAA_PlayerController_CPP::SetupInputComponent()
 	
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
 	Subsystem->ClearAllMappings();
-	Subsystem->AddMappingContext(InputMapping, 0);
+	Subsystem->AddMappingContext(DefaultVehicleInputMapping, 0);
 	EInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
 	
 	//Brakes
@@ -62,6 +67,26 @@ void AAA_PlayerController_CPP::SetupInputComponent()
 
 	//Toggle Camera
 	EInputComponent->BindAction(InputToggleCamera,ETriggerEvent::Triggered, this, &AAA_PlayerController_CPP::ToggleCamera);
+
+	//Enter Rewind Mode
+	EInputComponent->BindAction(InputEnterRewind,ETriggerEvent::Triggered, this, &AAA_PlayerController_CPP::EnterRewindMode);
+
+	//Confirm Rewind
+	EInputComponent->BindAction(InputConfirmRewind,ETriggerEvent::Triggered, this, &AAA_PlayerController_CPP::ConfirmRewind);
+
+	//Cancel Rewind
+	EInputComponent->BindAction(InputCancelRewind,ETriggerEvent::Triggered, this, &AAA_PlayerController_CPP::CancelRewind);
+
+	//Rewind Time
+	EInputComponent->BindAction(InputRewindTime,ETriggerEvent::Triggered, this, &AAA_PlayerController_CPP::RewindTime);
+	EInputComponent->BindAction(InputRewindTime,ETriggerEvent::Ongoing, this, &AAA_PlayerController_CPP::RewindTime);
+	EInputComponent->BindAction(InputRewindTime,ETriggerEvent::Completed, this, &AAA_PlayerController_CPP::RewindTime);
+
+	//Fast Forward Time
+	EInputComponent->BindAction(InputFastForwardTime,ETriggerEvent::Triggered, this, &AAA_PlayerController_CPP::FastForwardTime);
+	EInputComponent->BindAction(InputFastForwardTime,ETriggerEvent::Ongoing, this, &AAA_PlayerController_CPP::FastForwardTime);
+	EInputComponent->BindAction(InputFastForwardTime,ETriggerEvent::Completed, this, &AAA_PlayerController_CPP::FastForwardTime);
+
 	
 }
 
@@ -108,4 +133,83 @@ void AAA_PlayerController_CPP::ShiftDown(const FInputActionValue& Value)
 void AAA_PlayerController_CPP::ToggleCamera(const FInputActionValue& Value) 
 {
 	VehiclePawn->ToggleCamera();
+}
+
+void AAA_PlayerController_CPP::EnterRewindMode(const FInputActionValue& Value)
+{
+	UE_LOG(PlayerControllerLog,Log,TEXT("EnterRewindMode Pressed"));
+	
+	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	{
+		//don't do anything if already active
+		if(RewindSystem->IsRewindModeActive()){return;}
+
+		//set active
+		RewindSystem->EnterRewindMode();
+		//Setup Input
+		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+		Subsystem->ClearAllMappings();
+		Subsystem->AddMappingContext(RewindInputMapping, 0);
+	}else
+	{
+		UE_LOG(PlayerControllerLog,Error,TEXT("Rewind Subsystem Unavailable"))
+	}
+}
+
+void AAA_PlayerController_CPP::ConfirmRewind(const FInputActionValue& Value)
+{
+	UE_LOG(PlayerControllerLog,Log,TEXT("ConfirmRewind Pressed"));
+
+	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	{
+		RewindSystem->ConfirmRewind();
+	}else
+	{
+		UE_LOG(PlayerControllerLog,Error,TEXT("Rewind Subsystem Unavailable"))
+	}
+
+	//Setup Input
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	Subsystem->ClearAllMappings();
+	Subsystem->AddMappingContext(DefaultVehicleInputMapping, 0);
+}
+
+void AAA_PlayerController_CPP::CancelRewind(const FInputActionValue& Value)
+{
+	UE_LOG(PlayerControllerLog,Verbose,TEXT("CancelRewind Pressed"));
+	
+	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	{
+		RewindSystem->CancelRewindMode();
+	}else
+	{
+		UE_LOG(PlayerControllerLog,Error,TEXT("Rewind Subsystem Unavailable"))
+	}
+
+	//Setup Input
+	UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	Subsystem->ClearAllMappings();
+	Subsystem->AddMappingContext(DefaultVehicleInputMapping, 0);
+}
+
+void AAA_PlayerController_CPP::RewindTime(const FInputActionValue& Value)
+{
+	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	{
+		RewindSystem->Rewind(Value.Get<float>()*RewindSpeed);
+	}else
+	{
+		UE_LOG(PlayerControllerLog,Error,TEXT("Rewind Subsystem Unavailable"))
+	}
+}
+
+void AAA_PlayerController_CPP::FastForwardTime(const FInputActionValue& Value)
+{
+	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	{
+		RewindSystem->FastForward(Value.Get<float>()*RewindSpeed);
+	}else
+	{
+		UE_LOG(PlayerControllerLog,Error,TEXT("Rewind Subsystem Unavailable"))
+	}
 }

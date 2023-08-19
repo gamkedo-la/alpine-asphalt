@@ -3,6 +3,7 @@
 
 #include "AA_WheeledVehiclePawn_CPP.h"
 
+#include "AA_RewindSubsystem_CPP.h"
 #include "AA_VehicleDataAsset_CPP.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "DerivedDataCache/Public/DerivedDataCacheUsageStats.h"
@@ -27,6 +28,23 @@ AAA_WheeledVehiclePawn_CPP::AAA_WheeledVehiclePawn_CPP(const class FObjectInitia
 	VehicleMovementComponent = CreateDefaultSubobject<UChaosWheeledVehicleMovementComponent>(VehicleMovementComponentName);
 	VehicleMovementComponent->SetIsReplicated(true); // Enable replication by default
 	VehicleMovementComponent->UpdatedComponent = Mesh;
+}
+
+void AAA_WheeledVehiclePawn_CPP::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	{
+		GetWorldTimerManager().SetTimer(RecordingSnapshotTimerHandle, this, &AAA_WheeledVehiclePawn_CPP::RecordSnapshot,RewindSystem->RecordingResolution,true);
+		MaxSnapshots = FMath::FloorToInt(RewindSystem->MaxRecordingLength / RewindSystem->RecordingResolution);
+		RewindResolution = RewindSystem->RecordingResolution;
+		RewindSystem->RegisterRewindable(this);
+	}else
+	{
+		UE_LOG(Vehicle,Error,TEXT("Rewind Subsystem Unavailable"))
+	}
+	
 }
 
 UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn_CPP::GetVehicleMovementComponent() const
@@ -96,4 +114,52 @@ void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVeh
 
 	//store the vehicle data
 	VehicleData = NewVehicleData;
+}
+
+void AAA_WheeledVehiclePawn_CPP::SetRewindTime(float Time)
+{
+	IAA_Rewindable_CPP::SetRewindTime(Time);
+	RewindTime = Time;
+
+	int index = FMath::FloorToInt(RewindTime/RewindResolution);
+	index = SnapshotData.Num() - (index + 1); 
+	if(index < SnapshotData.Num())
+	{
+		UE_LOG(Vehicle,Verbose,TEXT("Setting Snapshot %d of %d"),index, SnapshotData.Num())
+		const FWheeledSnaphotData Snapshot = SnapshotData[index]; 
+		VehicleMovementComponent->SetSnapshot(Snapshot);
+	}else
+	{
+		UE_LOG(Vehicle,Error,TEXT("Snapshot Index out of bounds while rewinding."))
+	}
+}
+
+void AAA_WheeledVehiclePawn_CPP::PauseRecordingSnapshots()
+{
+	RecordSnapshot();
+	GetWorldTimerManager().PauseTimer(RecordingSnapshotTimerHandle);
+}
+
+void AAA_WheeledVehiclePawn_CPP::ResumeRecordingSnapshots()
+{
+	int index = FMath::FloorToInt(RewindTime/RewindResolution);
+	index = SnapshotData.Num() - (index + 1);
+	if(index < SnapshotData.Num())
+	{
+		//reverse through list
+		for (int i = SnapshotData.Num()-1; i > index; i--)
+		{
+			SnapshotData.RemoveAt(i);
+		}
+	}
+	GetWorldTimerManager().UnPauseTimer(RecordingSnapshotTimerHandle);
+}
+
+void AAA_WheeledVehiclePawn_CPP::RecordSnapshot()
+{
+	if(SnapshotData.Num() > MaxSnapshots)
+	{
+		SnapshotData.RemoveAt(0);
+	}
+	SnapshotData.Add(VehicleMovementComponent->GetSnapshot());
 }

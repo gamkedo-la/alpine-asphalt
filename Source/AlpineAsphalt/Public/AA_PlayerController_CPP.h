@@ -8,6 +8,8 @@
 #include "AA_PlayerController_CPP.generated.h"
 
 class AAA_WheeledVehiclePawn_CPP;
+
+DECLARE_LOG_CATEGORY_EXTERN(PlayerControllerLog, Log, All);
 /**
  * 
  */
@@ -18,9 +20,10 @@ class ALPINEASPHALT_API AAA_PlayerController_CPP : public APlayerController
 
 public:
 
+	/** Driving Controls **/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	class UInputMappingContext* InputMapping;
-	
+	class UInputMappingContext* DefaultVehicleInputMapping;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* InputBrake;
 
@@ -48,6 +51,28 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* InputToggleCamera;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InputEnterRewind;
+
+	/** Rewind Controls **/
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputMappingContext* RewindInputMapping;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InputRewindTime;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InputFastForwardTime;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InputConfirmRewind;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InputCancelRewind;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	float RewindSpeed = .1f;
+	
 	virtual void OnPossess(APawn* InPawn) override;
 
 	virtual void SetupInputComponent() override;
@@ -59,6 +84,7 @@ private:
 	UPROPERTY()
 	AAA_WheeledVehiclePawn_CPP* VehiclePawn;
 
+	/** Driver Control Functions**/
 	void SetBrake(const FInputActionValue& Value);
 	void SetThrottle(const FInputActionValue& Value);
 	void SetHandbrake(const FInputActionValue& Value);
@@ -68,5 +94,12 @@ private:
 	void ShiftUp(const FInputActionValue& Value);
 	void ShiftDown(const FInputActionValue& Value);
 	void ToggleCamera(const FInputActionValue& Value);
+	void EnterRewindMode(const FInputActionValue& Value);
+
+	/** Rewind Mode Controls**/
+	void ConfirmRewind(const FInputActionValue& Value);
+	void CancelRewind(const FInputActionValue& Value);
+	void RewindTime(const FInputActionValue& Value);
+	void FastForwardTime(const FInputActionValue& Value);
 	
 };
