@@ -15,7 +15,7 @@ void UAA_RewindSubsystem_CPP::Tick(const float DeltaTime)
 	{
 		MaxRewindValue += DeltaTime;
 		MaxRewindValue = FMath::Clamp(MaxRewindValue,0.f,MaxRecordingLength);
-		UE_LOG(RewindSubsystem,Log,TEXT("MaxRewindTime: %f"), MaxRewindValue)
+		UE_LOG(RewindSubsystem,Verbose,TEXT("MaxRewindTime: %f"), MaxRewindValue)
 	}
 }
 
@@ -33,7 +33,7 @@ void UAA_RewindSubsystem_CPP::Rewind(float AmountToRewind)
 {
 	CurrentRewindValue += AmountToRewind;
 	CurrentRewindValue = FMath::Clamp(CurrentRewindValue,0.f,MaxRewindValue);
-	UE_LOG(RewindSubsystem,Log,TEXT("CurrentRewindValue: %f"), CurrentRewindValue)
+	UE_LOG(RewindSubsystem,Verbose,TEXT("CurrentRewindValue: %f"), CurrentRewindValue)
 
 	for (const auto Rewindable : RewindableActors)
 	{
@@ -47,7 +47,7 @@ void UAA_RewindSubsystem_CPP::FastForward(float AmountToFastForward)
 {
 	CurrentRewindValue -= AmountToFastForward;
 	CurrentRewindValue = FMath::Clamp(CurrentRewindValue,0.f,MaxRewindValue);
-	UE_LOG(RewindSubsystem,Log,TEXT("CurrentRewindValue: %f"), CurrentRewindValue)
+	UE_LOG(RewindSubsystem,Verbose,TEXT("CurrentRewindValue: %f"), CurrentRewindValue)
 
 	for (const auto Rewindable : RewindableActors)
 	{
