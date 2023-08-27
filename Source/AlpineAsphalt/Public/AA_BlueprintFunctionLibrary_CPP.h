@@ -19,6 +19,6 @@ public:
 	static void GenerateRoadSpline(class AActor* LandscapeSpline);
 
 	UFUNCTION(BlueprintCallable,Category=RaceSpline)
-	static void GenerateRaceSpline(TArray<class AAA_RoadSpline_CPP*> RoadSplines);
+	static void GenerateRaceSpline(TArray<class AActor*> RoadSplines);
 	
 };

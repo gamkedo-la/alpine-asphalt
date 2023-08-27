@@ -2,12 +2,15 @@
 
 
 #include "AA_BlueprintFunctionLibrary_CPP.h"
+
+#include "AA_RaceSpline_CPP.h"
 #include "AA_RoadSpline_CPP.h"
 #include "HairStrandsInterface.h"
 #include "LandscapeSplineActor.h"
 #include "LandscapeSplineControlPoint.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
+#include "Curve/CurveUtil.h"
 #include "Engine/StaticMeshSocket.h"
 
 /**
@@ -25,7 +28,8 @@ void UAA_BlueprintFunctionLibrary_CPP::GenerateRoadSpline(AActor* LandscapeSplin
 	UWorld* World = LandscapeSplineActor->GetWorld();
 
 	TArray<TObjectPtr<ULandscapeSplineSegment>> Segments = LandscapeSplineActor->GetSplinesComponent()->GetSegments();
-	
+
+	//for every segment
 	for (const TObjectPtr<ULandscapeSplineSegment> Segment : Segments)
 	{
 		//Create a new spline actor
@@ -36,7 +40,7 @@ void UAA_BlueprintFunctionLibrary_CPP::GenerateRoadSpline(AActor* LandscapeSplin
 		RoadSpline->SetFolderPath("RoadSplines");
 #endif
 		
-		for(int i = 0; i < 2; i++) //There are always two connections, Start and End
+		for(int i = 0; i < 2; i++) //There are always two connections, Start and End, add a point for each
 			{
 			FLandscapeSplineSegmentConnection Connection = Segment->Connections[i];
 			//Get control point location, rotation, and forward vector (Tangent Line)
@@ -128,7 +132,84 @@ void UAA_BlueprintFunctionLibrary_CPP::GenerateRoadSpline(AActor* LandscapeSplin
 	}
 }
 
-void UAA_BlueprintFunctionLibrary_CPP::GenerateRaceSpline(TArray<AAA_RoadSpline_CPP*> RoadSplines)
+void UAA_BlueprintFunctionLibrary_CPP::GenerateRaceSpline(const TArray<AActor*> RoadSplineActors)
 {
+	TArray<AAA_RoadSpline_CPP*> RoadSplines;
+	for (const auto RoadSpline : RoadSplineActors)
+	{
+		RoadSplines.Add(Cast<AAA_RoadSpline_CPP>(RoadSpline));
+	}
+	if(RoadSplines.Num() <  1)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("GenerateRaceSpline Failed: Selection was empty"))
+		return;
+	}
 	
+	//Create a new spline actor
+	AAA_RaceSpline_CPP* RaceSpline = RoadSplines[0]->GetWorld()->SpawnActor<AAA_RaceSpline_CPP>();
+	RaceSpline->Spline->ClearSplinePoints();
+
+#if WITH_EDITOR
+	RaceSpline->SetFolderPath("RaceSplines");
+#endif
+
+	//Init Variables
+	FVector Location;
+	FVector ArriveTangent = FVector::Zero();
+	FVector LeaveTangent;
+	FRotator Rotation;
+	FSplinePoint NewPoint;
+	int PreviousStart;
+	int CurrentStart;
+	int NextStart;
+	int SplinePointCount = 0;
+
+	//Init calculation of which spline point to start from and which is connected to next spline
+	//WARNING: Makes assumption that spline points are less than 1 unit away
+	FIntVector A = FIntVector(RoadSplines[0]->Spline->GetLocationAtSplinePoint(0,ESplineCoordinateSpace::World));
+	FIntVector B = FIntVector(RoadSplines[1]->Spline->GetLocationAtSplinePoint(0,ESplineCoordinateSpace::World));
+	FIntVector C = FIntVector(RoadSplines[1]->Spline->GetLocationAtSplinePoint(1,ESplineCoordinateSpace::World));
+	NextStart = A == B || A == C;
+	CurrentStart = NextStart;
+
+	//Add Spline Point Loop///////////////////////////////////////////////////////////////////////////////////////////
+	for(int i = 0; i < RoadSplines.Num(); i++)
+	{
+		PreviousStart = CurrentStart;
+		CurrentStart = NextStart;
+
+		//Determine which Spline Point is the connected next
+		if(i != RoadSplines.Num()-1)
+		{
+			A = FIntVector(RoadSplines[i]->Spline->GetLocationAtSplinePoint(!CurrentStart,ESplineCoordinateSpace::World));
+			B = FIntVector(RoadSplines[i+1]->Spline->GetLocationAtSplinePoint(1,ESplineCoordinateSpace::World));
+			NextStart = A==B;
+		}
+
+		//Get Location 
+		RoadSplines[i]->Spline->GetLocationAndTangentAtSplinePoint(CurrentStart,Location,LeaveTangent,ESplineCoordinateSpace::World);
+		Rotation = RoadSplines[i]->Spline->GetRotationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World);
+		
+		//Flip Tangents if needed
+		if(CurrentStart){LeaveTangent *= -1;}
+		if(PreviousStart){ArriveTangent *= -1;}
+		
+		//Add New Point
+		NewPoint = FSplinePoint(static_cast<float>(SplinePointCount),Location,ArriveTangent,LeaveTangent,Rotation);
+		
+		RaceSpline->Spline->AddPoint(NewPoint);
+		++SplinePointCount;
+		ArriveTangent = RoadSplines[i]->Spline->GetTangentAtSplinePoint(!CurrentStart,ESplineCoordinateSpace::World);
+	}
+	
+	//Add Last Point//////////////////////////////////////////////////////////////////////////////////////////////////
+	int LastIndex = RoadSplines.Num()-1;
+	RoadSplines[LastIndex]->Spline->GetLocationAndTangentAtSplinePoint(!CurrentStart,Location,LeaveTangent,ESplineCoordinateSpace::World);
+	Rotation = RoadSplines[LastIndex]->Spline->GetRotationAtSplinePoint(!CurrentStart,ESplineCoordinateSpace::World);
+	
+	if(CurrentStart){ArriveTangent *= -1;}
+
+	//Add New Point
+	NewPoint = FSplinePoint(static_cast<float>(SplinePointCount),Location,ArriveTangent,LeaveTangent,Rotation);
+	RaceSpline->Spline->AddPoint(NewPoint);
 }
