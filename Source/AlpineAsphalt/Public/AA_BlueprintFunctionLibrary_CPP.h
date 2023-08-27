@@ -17,5 +17,8 @@ class ALPINEASPHALT_API UAA_BlueprintFunctionLibrary_CPP : public UBlueprintFunc
 public:
 	UFUNCTION(BlueprintCallable,Category=LandscapeSpline)
 	static void GenerateRoadSpline(class AActor* LandscapeSpline);
+
+	UFUNCTION(BlueprintCallable,Category=RaceSpline)
+	static void GenerateRaceSpline(TArray<class AAA_RoadSpline_CPP*> RoadSplines);
 	
 };

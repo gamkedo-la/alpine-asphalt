@@ -3,11 +3,18 @@
 
 #include "AA_BlueprintFunctionLibrary_CPP.h"
 #include "AA_RoadSpline_CPP.h"
+#include "HairStrandsInterface.h"
 #include "LandscapeSplineActor.h"
+#include "LandscapeSplineControlPoint.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
-#include "Engine/Internal/Kismet/BlueprintTypeConversions.h"
+#include "Engine/StaticMeshSocket.h"
 
+/**
+ * @brief
+ * Generates AA_RoadSplines_CPP for the given Landscape Spline
+ * @param LandscapeSpline 
+ */
 void UAA_BlueprintFunctionLibrary_CPP::GenerateRoadSpline(AActor* LandscapeSpline)
 {
 	//Cast Actor to Landscape Spline Actor
@@ -16,48 +23,112 @@ void UAA_BlueprintFunctionLibrary_CPP::GenerateRoadSpline(AActor* LandscapeSplin
 	
 	//Cache World to spawn objects later
 	UWorld* World = LandscapeSplineActor->GetWorld();
-	
-	//Add SplineMeshComponents to Maps
-	TMap<FIntVector, USplineMeshComponent*> StartMap;
-	TMap<FIntVector, USplineMeshComponent*> FinishMap; 
-	for (auto Component : LandscapeSplineActor->GetComponents())
-	{
-		if(Component->IsA<USplineMeshComponent>())
-		{
-			USplineMeshComponent* SplineComponent = Cast<USplineMeshComponent>(Component);
-			FVector Startf = SplineComponent->SplineParams.StartPos + SplineComponent->GetComponentLocation();
-			FVector Endf = SplineComponent->SplineParams.StartPos + SplineComponent->GetComponentLocation();
-			FIntVector Start = FIntVector(FMath::CeilToInt(Startf.X),FMath::CeilToInt(Startf.Y),FMath::CeilToInt(Startf.Z));
-			FIntVector End = FIntVector(FMath::CeilToInt(Endf.X),FMath::CeilToInt(Endf.Y),FMath::CeilToInt(Endf.Z));
-			StartMap.Add(Start,SplineComponent);
-			FinishMap.Add(End,SplineComponent);
 
-			UE_LOG(LogTemp,Warning,TEXT("Adding StartMap at %s"), *Start.ToString())
-			UE_LOG(LogTemp,Warning,TEXT("Adding EndMap at %s"),  *End.ToString())
+	TArray<TObjectPtr<ULandscapeSplineSegment>> Segments = LandscapeSplineActor->GetSplinesComponent()->GetSegments();
+	
+	for (const TObjectPtr<ULandscapeSplineSegment> Segment : Segments)
+	{
+		//Create a new spline actor
+		AAA_RoadSpline_CPP* RoadSpline = World->SpawnActor<AAA_RoadSpline_CPP>();
+		RoadSpline->Spline->ClearSplinePoints();
+	
+#if WITH_EDITOR
+		RoadSpline->SetFolderPath("RoadSplines");
+#endif
+		
+		for(int i = 0; i < 2; i++) //There are always two connections, Start and End
+			{
+			FLandscapeSplineSegmentConnection Connection = Segment->Connections[i];
+			//Get control point location, rotation, and forward vector (Tangent Line)
+			FVector Location = Connection.ControlPoint->Location + LandscapeSplineActor->GetActorLocation();
+			FRotator Rotation = Connection.ControlPoint->Rotation + LandscapeSplineActor->GetActorRotation();
+			FVector ForwardVector = Connection.ControlPoint->Rotation.Vector();
+			
+			//If attached to a socket, add it's location and rotation
+			if(Connection.SocketName != "" && Connection.ControlPoint->Mesh)
+			{
+				if(const UStaticMeshSocket* Socket = Connection.ControlPoint->Mesh->FindSocket(Connection.SocketName))
+				{
+					Location += Rotation.RotateVector(Socket->RelativeLocation*Connection.ControlPoint->MeshScale);
+					Rotation += Socket->RelativeRotation;
+					ForwardVector = Socket->RelativeRotation.RotateVector(ForwardVector);
+					ForwardVector.Normalize(); // needs to be normalized after rotation
+				}
+			}
+			//The ending Vector needs to be flipped directions or else it goes 180 degrees the wrong way
+			if(i == 1)
+			{
+				ForwardVector *= -1;
+			}
+
+			//Add the point with tangent line (From the Forward Vector of the Control Point)
+			RoadSpline->Spline->AddSplinePoint(Location, ESplineCoordinateSpace::World,true);
+			RoadSpline->Spline->SetTangentAtSplinePoint(RoadSpline->Spline->GetNumberOfSplinePoints()-1,
+				ForwardVector*Segment->Connections[i].TangentLen,
+				ESplineCoordinateSpace::World);
+			}
+	}
+
+	 
+	//Add Intersection connections
+	for (const auto ControlPoint : LandscapeSplineActor->GetSplinesComponent()->GetControlPoints())
+	{
+		if(!ControlPoint->Mesh){continue;} //only an intersection if it has a mesh
+		float TangentSize = ControlPoint->Mesh->GetBoundingBox().GetExtent().GetMax()*2;
+		TangentSize *= ControlPoint->MeshScale.GetMax();
+		TArray<TObjectPtr<UStaticMeshSocket>> Sockets = ControlPoint->Mesh->Sockets;
+		//connect sockets together
+		for(int i = 0; i < Sockets.Num(); i++)
+		{
+			for(int j = i + 1; j < Sockets.Num(); j++)
+			{
+				//Create a new spline actor
+				AAA_RoadSpline_CPP* RoadSpline = World->SpawnActor<AAA_RoadSpline_CPP>();
+				RoadSpline->Spline->ClearSplinePoints();
+
+#if WITH_EDITOR
+				RoadSpline->SetFolderPath("RoadSplines");
+#endif
+				//Spawn point at i///////////////////////////////////////////////////////
+				
+				//Get control point location, rotation, and forward vector (Tangent Line)
+				FVector Location = ControlPoint->Location + LandscapeSplineActor->GetActorLocation();
+				FRotator Rotation = ControlPoint->Rotation + LandscapeSplineActor->GetActorRotation();
+				FVector ForwardVector = ControlPoint->Rotation.Vector();
+				Location += Rotation.RotateVector(Sockets[i]->RelativeLocation*ControlPoint->MeshScale);
+				Rotation += Sockets[i]->RelativeRotation;
+				ForwardVector = Sockets[i]->RelativeRotation.RotateVector(ForwardVector);
+				ForwardVector.Normalize(); // needs to be normalized after rotation
+				ForwardVector *= -1; //Flip Forward for End point
+				
+				//Add the point with tangent line
+				RoadSpline->Spline->AddSplinePoint(Location, ESplineCoordinateSpace::World,true);
+				RoadSpline->Spline->SetTangentAtSplinePoint(RoadSpline->Spline->GetNumberOfSplinePoints()-1,
+					ForwardVector*TangentSize,
+					ESplineCoordinateSpace::World);
+
+				//Spawn point at j///////////////////////////////////////////////////////
+
+				//Get control point location, rotation, and forward vector (Tangent Line)
+				Location = ControlPoint->Location + LandscapeSplineActor->GetActorLocation();
+				Rotation = ControlPoint->Rotation + LandscapeSplineActor->GetActorRotation();
+				ForwardVector = ControlPoint->Rotation.Vector();
+				Location += Rotation.RotateVector(Sockets[j]->RelativeLocation*ControlPoint->MeshScale);
+				Rotation += Sockets[j]->RelativeRotation;
+				ForwardVector = Sockets[j]->RelativeRotation.RotateVector(ForwardVector);
+				ForwardVector.Normalize(); // needs to be normalized after rotation
+				
+				//Add the point with tangent line
+				RoadSpline->Spline->AddSplinePoint(Location, ESplineCoordinateSpace::World,true);
+				RoadSpline->Spline->SetTangentAtSplinePoint(RoadSpline->Spline->GetNumberOfSplinePoints()-1,
+					ForwardVector*TangentSize,
+					ESplineCoordinateSpace::World);
+			}
 		}
 	}
+}
 
+void UAA_BlueprintFunctionLibrary_CPP::GenerateRaceSpline(TArray<AAA_RoadSpline_CPP*> RoadSplines)
+{
 	
-	AAA_RoadSpline_CPP* RoadSpline = World->SpawnActor<AAA_RoadSpline_CPP>();
-	RoadSpline->RoadSpline->ClearSplinePoints();
-	RoadSpline->SetFolderPath("RoadSplines");
-
-	auto It= StartMap.CreateIterator();
-	
-	RoadSpline->RoadSpline->AddSplinePoint(It.Value()->SplineParams.StartPos + It.Value()->GetComponentLocation(),ESplineCoordinateSpace::World,true);
-	RoadSpline->RoadSpline->SetTangentAtSplinePoint(0,It.Value()->SplineParams.StartTangent,ESplineCoordinateSpace::World);
-	USplineMeshComponent** NextSpline = &It.Value();
-	while(NextSpline)
-	{
-		UE_LOG(LogTemp,Warning,TEXT("Adding Point at %s"), *((*NextSpline)->SplineParams.EndPos + (*NextSpline)->GetComponentLocation()).ToString())
-		RoadSpline->RoadSpline->AddSplinePoint((*NextSpline)->SplineParams.EndPos + (*NextSpline)->GetComponentLocation(),ESplineCoordinateSpace::World,true);
-		RoadSpline->RoadSpline->SetTangentAtSplinePoint(RoadSpline->RoadSpline->GetNumberOfSplinePoints()-1,(*NextSpline)->SplineParams.EndTangent,ESplineCoordinateSpace::World);
-		FVector Nextf = (*NextSpline)->SplineParams.EndPos + (*NextSpline)->GetComponentLocation();
-		FIntVector Next = FIntVector(FMath::CeilToInt(Nextf.X),FMath::CeilToInt(Nextf.Y),FMath::CeilToInt(Nextf.Z));
-		UE_LOG(LogTemp,Warning,TEXT("Looking for Next at %s"),  *Next.ToString())
-		NextSpline = (StartMap.Find(Next));
-		if(NextSpline && NextSpline == &It.Value()){ break; }
-	}
-	
-	UE_LOG(LogTemp,Warning,TEXT("Done"))
 }
