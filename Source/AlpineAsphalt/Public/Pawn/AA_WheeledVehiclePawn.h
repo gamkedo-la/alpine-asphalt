@@ -3,9 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AA_Rewindable_CPP.h"
+#include "Interface/AA_RewindableInterface.h"
 #include "SnapshotData.h"
-#include "AA_WheeledVehiclePawn_CPP.generated.h"
+#include "AA_WheeledVehiclePawn.generated.h"
 
 struct FInputActionValue;
 //Define Log for Vehicle
@@ -14,7 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(Vehicle, Log, All);
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_WheeledVehiclePawn_CPP : public APawn, public IAA_Rewindable_CPP
+class ALPINEASPHALT_API AAA_WheeledVehiclePawn : public APawn, public IAA_RewindableInterface
 {
 	GENERATED_BODY()
 
@@ -28,11 +28,11 @@ private:
 	TObjectPtr<class UChaosWheeledVehicleMovementComponent> VehicleMovementComponent;
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta= (AllowPrivateAccess = "true"))
-	TObjectPtr<class UAA_VehicleDataAsset_CPP> VehicleData;
+	TObjectPtr<class UAA_VehicleDataAsset> VehicleData;
 	
 public:
 	/** Constructor*/
-	AAA_WheeledVehiclePawn_CPP(const class FObjectInitializer& ObjectInitializer);
+	AAA_WheeledVehiclePawn(const class FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 
@@ -80,7 +80,7 @@ public:
 	virtual void DisplayDebug(class UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL, float& YPos) override;
 
 	UFUNCTION(BlueprintCallable)
-	void SetVehicleData(UAA_VehicleDataAsset_CPP* NewVehicleData);
+	void SetVehicleData(UAA_VehicleDataAsset* NewVehicleData);
 
 	/** Rewind Functions **/
 	virtual void SetRewindTime(float Time) override;

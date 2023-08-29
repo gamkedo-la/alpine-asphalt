@@ -1,32 +1,32 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AA_RacingLine_CPP.h"
+#include "Actors/AA_RacingLineActor.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/SplineComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
-AAA_RacingLine_CPP::AAA_RacingLine_CPP()
+AAA_RacingLineActor::AAA_RacingLineActor()
 {
 	RacingLineSpline = CreateDefaultSubobject<USplineComponent>("RacingLineSpline");
 	InstancedArrowMeshes = CreateDefaultSubobject<UInstancedStaticMeshComponent>("InstancedArrowMeshes");
 }
 
 // Called when the game starts or when spawned
-void AAA_RacingLine_CPP::BeginPlay()
+void AAA_RacingLineActor::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
 // Called every frame
-void AAA_RacingLine_CPP::Tick(float DeltaTime)
+void AAA_RacingLineActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-void AAA_RacingLine_CPP::SetArrowMeshes()
+void AAA_RacingLineActor::SetArrowMeshes()
 {
 	ensure(RacingLineSpline);
 	ensure(InstancedArrowMeshes);

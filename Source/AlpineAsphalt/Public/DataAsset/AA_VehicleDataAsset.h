@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
-#include "AA_VehicleDataAsset_CPP.generated.h"
+#include "AA_VehicleDataAsset.generated.h"
 
 /**
  * Data used to instantiate a Wheeled Vehicle Pawn
  */
 UCLASS(BlueprintType)
-class ALPINEASPHALT_API UAA_VehicleDataAsset_CPP : public UPrimaryDataAsset
+class ALPINEASPHALT_API UAA_VehicleDataAsset : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 
@@ -20,7 +20,7 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty( FPropertyChangedEvent & PropertyChangedEvent ) override;
 
-	DECLARE_EVENT(UAA_VehicleDataAsset_CPP , FOnChanged);
+	DECLARE_EVENT(UAA_VehicleDataAsset , FOnChanged);
 	FOnChanged OnValueChanged;
 #endif
 	

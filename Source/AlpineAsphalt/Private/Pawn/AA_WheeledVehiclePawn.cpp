@@ -1,20 +1,20 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AA_WheeledVehiclePawn_CPP.h"
+#include "Pawn/AA_WheeledVehiclePawn.h"
 
-#include "AA_RewindSubsystem_CPP.h"
-#include "AA_VehicleDataAsset_CPP.h"
+#include "Subsystems/AA_RewindSubsystem.h"
+#include "DataAsset/AA_VehicleDataAsset.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "DerivedDataCache/Public/DerivedDataCacheUsageStats.h"
 
-FName AAA_WheeledVehiclePawn_CPP::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
-FName AAA_WheeledVehiclePawn_CPP::VehicleMeshComponentName(TEXT("VehicleMesh"));
+FName AAA_WheeledVehiclePawn::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
+FName AAA_WheeledVehiclePawn::VehicleMeshComponentName(TEXT("VehicleMesh"));
 
 //Define Log for Vehicle
 DEFINE_LOG_CATEGORY(Vehicle);
 
-AAA_WheeledVehiclePawn_CPP::AAA_WheeledVehiclePawn_CPP(const class FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
+AAA_WheeledVehiclePawn::AAA_WheeledVehiclePawn(const class FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
 {
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(VehicleMeshComponentName);
 	Mesh->SetCollisionProfileName(UCollisionProfile::Vehicle_ProfileName);
@@ -30,13 +30,13 @@ AAA_WheeledVehiclePawn_CPP::AAA_WheeledVehiclePawn_CPP(const class FObjectInitia
 	VehicleMovementComponent->UpdatedComponent = Mesh;
 }
 
-void AAA_WheeledVehiclePawn_CPP::BeginPlay()
+void AAA_WheeledVehiclePawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	if(UAA_RewindSubsystem* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
-		GetWorldTimerManager().SetTimer(RecordingSnapshotTimerHandle, this, &AAA_WheeledVehiclePawn_CPP::RecordSnapshot,RewindSystem->RecordingResolution,true);
+		GetWorldTimerManager().SetTimer(RecordingSnapshotTimerHandle, this, &AAA_WheeledVehiclePawn::RecordSnapshot,RewindSystem->RecordingResolution,true);
 		MaxSnapshots = FMath::FloorToInt(RewindSystem->MaxRecordingLength / RewindSystem->RecordingResolution);
 		RewindResolution = RewindSystem->RecordingResolution;
 		RewindSystem->RegisterRewindable(this);
@@ -47,13 +47,13 @@ void AAA_WheeledVehiclePawn_CPP::BeginPlay()
 	
 }
 
-UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn_CPP::GetVehicleMovementComponent() const
+UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovementComponent() const
 {
 	return VehicleMovementComponent;
 }
 
 #if WITH_EDITOR
-void AAA_WheeledVehiclePawn_CPP::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
@@ -65,7 +65,7 @@ void AAA_WheeledVehiclePawn_CPP::PostEditChangeProperty(FPropertyChangedEvent& P
 }
 #endif
 
-void AAA_WheeledVehiclePawn_CPP::DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL,
+void AAA_WheeledVehiclePawn::DisplayDebug(UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL,
                                               float& YPos)
 {
 	static FName NAME_Vehicle = FName(TEXT("Vehicle"));
@@ -73,7 +73,7 @@ void AAA_WheeledVehiclePawn_CPP::DisplayDebug(UCanvas* Canvas, const FDebugDispl
 	Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);
 }
 
-void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVehicleData)
+void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData)
 {
 	UE_LOG(Vehicle, Log, TEXT("Setting Vehicle Data"))
 	if(NewVehicleData == nullptr)
@@ -116,9 +116,9 @@ void AAA_WheeledVehiclePawn_CPP::SetVehicleData(UAA_VehicleDataAsset_CPP* NewVeh
 	VehicleData = NewVehicleData;
 }
 
-void AAA_WheeledVehiclePawn_CPP::SetRewindTime(float Time)
+void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
 {
-	IAA_Rewindable_CPP::SetRewindTime(Time);
+	IAA_RewindableInterface::SetRewindTime(Time);
 	RewindTime = Time;
 
 	int index = FMath::FloorToInt(RewindTime/RewindResolution);
@@ -134,13 +134,13 @@ void AAA_WheeledVehiclePawn_CPP::SetRewindTime(float Time)
 	}
 }
 
-void AAA_WheeledVehiclePawn_CPP::PauseRecordingSnapshots()
+void AAA_WheeledVehiclePawn::PauseRecordingSnapshots()
 {
 	RecordSnapshot();
 	GetWorldTimerManager().PauseTimer(RecordingSnapshotTimerHandle);
 }
 
-void AAA_WheeledVehiclePawn_CPP::ResumeRecordingSnapshots()
+void AAA_WheeledVehiclePawn::ResumeRecordingSnapshots()
 {
 	int index = FMath::FloorToInt(RewindTime/RewindResolution);
 	index = SnapshotData.Num() - (index + 1);
@@ -155,7 +155,7 @@ void AAA_WheeledVehiclePawn_CPP::ResumeRecordingSnapshots()
 	GetWorldTimerManager().UnPauseTimer(RecordingSnapshotTimerHandle);
 }
 
-void AAA_WheeledVehiclePawn_CPP::RecordSnapshot()
+void AAA_WheeledVehiclePawn::RecordSnapshot()
 {
 	if(SnapshotData.Num() > MaxSnapshots)
 	{

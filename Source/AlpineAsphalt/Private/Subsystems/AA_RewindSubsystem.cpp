@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AA_RewindSubsystem_CPP.h"
-#include "AA_Rewindable_CPP.h"
+#include "Subsystems/AA_RewindSubsystem.h"
+#include "Interface/AA_RewindableInterface.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(RewindSubsystem);
 
-void UAA_RewindSubsystem_CPP::Tick(const float DeltaTime)
+void UAA_RewindSubsystem::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -19,17 +19,17 @@ void UAA_RewindSubsystem_CPP::Tick(const float DeltaTime)
 	}
 }
 
-TStatId UAA_RewindSubsystem_CPP::GetStatId() const
+TStatId UAA_RewindSubsystem::GetStatId() const
 {
 	return UObject::GetStatID();
 }
 
-void UAA_RewindSubsystem_CPP::RegisterRewindable(IAA_Rewindable_CPP* Rewindable)
+void UAA_RewindSubsystem::RegisterRewindable(IAA_RewindableInterface* Rewindable)
 {
 	RewindableActors.Add(Rewindable);
 }
 
-void UAA_RewindSubsystem_CPP::Rewind(float AmountToRewind)
+void UAA_RewindSubsystem::Rewind(float AmountToRewind)
 {
 	CurrentRewindValue += AmountToRewind;
 	CurrentRewindValue = FMath::Clamp(CurrentRewindValue,0.f,MaxRewindValue);
@@ -43,7 +43,7 @@ void UAA_RewindSubsystem_CPP::Rewind(float AmountToRewind)
 
 }
 
-void UAA_RewindSubsystem_CPP::FastForward(float AmountToFastForward)
+void UAA_RewindSubsystem::FastForward(float AmountToFastForward)
 {
 	CurrentRewindValue -= AmountToFastForward;
 	CurrentRewindValue = FMath::Clamp(CurrentRewindValue,0.f,MaxRewindValue);
@@ -57,7 +57,7 @@ void UAA_RewindSubsystem_CPP::FastForward(float AmountToFastForward)
 
 }
 
-void UAA_RewindSubsystem_CPP::EnterRewindMode()
+void UAA_RewindSubsystem::EnterRewindMode()
 {
 	for (const auto Actor : RewindableActors)
 	{
@@ -71,7 +71,7 @@ void UAA_RewindSubsystem_CPP::EnterRewindMode()
 	ActivatedDelegate.Broadcast();
 }
 
-void UAA_RewindSubsystem_CPP::CancelRewindMode()
+void UAA_RewindSubsystem::CancelRewindMode()
 {
 	for (const auto Rewindable : RewindableActors)
 	{
@@ -89,7 +89,7 @@ void UAA_RewindSubsystem_CPP::CancelRewindMode()
 	DeactivatedDelegate.Broadcast();
 }
 
-void UAA_RewindSubsystem_CPP::ConfirmRewind()
+void UAA_RewindSubsystem::ConfirmRewind()
 {
 	for (const auto Rewindable : RewindableActors)
 	{
@@ -108,7 +108,7 @@ void UAA_RewindSubsystem_CPP::ConfirmRewind()
 	DeactivatedDelegate.Broadcast();
 }
 
-bool UAA_RewindSubsystem_CPP::IsRewindModeActive()
+bool UAA_RewindSubsystem::IsRewindModeActive()
 {
 	return RewindModeActive;
 }

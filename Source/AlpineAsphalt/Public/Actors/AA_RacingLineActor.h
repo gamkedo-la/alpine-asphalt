@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "AA_RacingLine_CPP.generated.h"
+#include "AA_RacingLineActor.generated.h"
 
 UCLASS()
-class ALPINEASPHALT_API AAA_RacingLine_CPP : public AActor
+class ALPINEASPHALT_API AAA_RacingLineActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AAA_RacingLine_CPP();
+	AAA_RacingLineActor();
 
 protected:
 	// Called when the game starts or when spawned

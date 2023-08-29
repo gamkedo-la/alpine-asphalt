@@ -5,9 +5,9 @@
 #include "CoreMinimal.h"
 #include "InputAction.h"
 #include "GameFramework/PlayerController.h"
-#include "AA_PlayerController_CPP.generated.h"
+#include "AA_PlayerController.generated.h"
 
-class AAA_WheeledVehiclePawn_CPP;
+class AAA_WheeledVehiclePawn;
 
 DECLARE_LOG_CATEGORY_EXTERN(PlayerControllerLog, Log, All);
 /**
@@ -82,7 +82,7 @@ private:
 	UEnhancedInputComponent* EInputComponent;
 
 	UPROPERTY()
-	AAA_WheeledVehiclePawn_CPP* VehiclePawn;
+	AAA_WheeledVehiclePawn* VehiclePawn;
 
 	/** Driver Control Functions**/
 	void SetBrake(const FInputActionValue& Value);

@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "AAVehicleAudioComponent.generated.h"
+#include "AA_VehicleAudioComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAAVehicleAudioComponent : public UActorComponent
+class ALPINEASPHALT_API UAA_VehicleAudioComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UAAVehicleAudioComponent();
+	UAA_VehicleAudioComponent();
 
 protected:
 	// Called when the game starts

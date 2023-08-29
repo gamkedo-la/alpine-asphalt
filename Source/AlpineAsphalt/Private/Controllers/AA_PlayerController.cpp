@@ -1,13 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AA_PlayerController_CPP.h"
-
-#include "AA_RewindSubsystem_CPP.h"
+#include "Controllers/AA_PlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
-#include "AA_WheeledVehiclePawn_CPP.h"
-#include "Kismet/GameplayStatics.h"
+#include "Pawn/AA_WheeledVehiclePawn.h"
+#include "Subsystems/AA_RewindSubsystem.h"
 
 DEFINE_LOG_CATEGORY(PlayerControllerLog);
 
@@ -15,7 +13,7 @@ void AAA_PlayerController_CPP::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	
-	VehiclePawn = Cast<AAA_WheeledVehiclePawn_CPP>(InPawn);
+	VehiclePawn = Cast<AAA_WheeledVehiclePawn>(InPawn);
 
 	if(!VehiclePawn)
 	{
@@ -139,7 +137,7 @@ void AAA_PlayerController_CPP::EnterRewindMode(const FInputActionValue& Value)
 {
 	UE_LOG(PlayerControllerLog,Log,TEXT("EnterRewindMode Pressed"));
 	
-	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	if(UAA_RewindSubsystem* RewindSystem = GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
 		//don't do anything if already active
 		if(RewindSystem->IsRewindModeActive()){return;}
@@ -160,7 +158,7 @@ void AAA_PlayerController_CPP::ConfirmRewind(const FInputActionValue& Value)
 {
 	UE_LOG(PlayerControllerLog,Log,TEXT("ConfirmRewind Pressed"));
 
-	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	if(UAA_RewindSubsystem* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
 		RewindSystem->ConfirmRewind();
 	}else
@@ -178,7 +176,7 @@ void AAA_PlayerController_CPP::CancelRewind(const FInputActionValue& Value)
 {
 	UE_LOG(PlayerControllerLog,Verbose,TEXT("CancelRewind Pressed"));
 	
-	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	if(UAA_RewindSubsystem* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
 		RewindSystem->CancelRewindMode();
 	}else
@@ -194,7 +192,7 @@ void AAA_PlayerController_CPP::CancelRewind(const FInputActionValue& Value)
 
 void AAA_PlayerController_CPP::RewindTime(const FInputActionValue& Value)
 {
-	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	if(UAA_RewindSubsystem* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
 		RewindSystem->Rewind(Value.Get<float>()*RewindSpeed);
 	}else
@@ -205,7 +203,7 @@ void AAA_PlayerController_CPP::RewindTime(const FInputActionValue& Value)
 
 void AAA_PlayerController_CPP::FastForwardTime(const FInputActionValue& Value)
 {
-	if(UAA_RewindSubsystem_CPP* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem_CPP>())
+	if(UAA_RewindSubsystem* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
 		RewindSystem->FastForward(Value.Get<float>()*RewindSpeed);
 	}else

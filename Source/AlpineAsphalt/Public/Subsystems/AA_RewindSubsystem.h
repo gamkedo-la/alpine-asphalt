@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
-#include "AA_RewindSubsystem_CPP.generated.h"
+#include "AA_RewindSubsystem.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(RewindSubsystem, Log, All);
 
@@ -17,7 +17,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCurrentRewindPercentageValueChanged
  * 
  */
 UCLASS(BlueprintType)
-class ALPINEASPHALT_API UAA_RewindSubsystem_CPP : public UTickableWorldSubsystem
+class ALPINEASPHALT_API UAA_RewindSubsystem : public UTickableWorldSubsystem
 {
 	GENERATED_BODY()
 
@@ -30,7 +30,7 @@ private:
 
 	float MaxRewindValue = 0.f;
 
-	TArray<class IAA_Rewindable_CPP*> RewindableActors;
+	TArray<class IAA_RewindableInterface*> RewindableActors;
 
 public:
 	//How Often to record snapshot
@@ -40,7 +40,7 @@ public:
 	
 	virtual void Tick(float DeltaTime) override;
 	virtual TStatId GetStatId() const override;
-	void RegisterRewindable(IAA_Rewindable_CPP* Rewindable);
+	void RegisterRewindable(IAA_RewindableInterface* Rewindable);
 	void Rewind(float AmountToRewind);
 	void FastForward(float AmountToFastForward);
 	void EnterRewindMode();

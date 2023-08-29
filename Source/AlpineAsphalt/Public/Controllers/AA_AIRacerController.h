@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-#include "AA_AIRacerController_CPP.generated.h"
+#include "AA_AIRacerController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_AIRacerController_CPP : public AAIController
+class ALPINEASPHALT_API AAA_AIRacerController : public AAIController
 {
 	GENERATED_BODY()
 	

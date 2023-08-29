@@ -4,18 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "AA_RoadSpline_CPP.generated.h"
+#include "AA_RoadSplineActor.generated.h"
 
 class USplineMeshComponent;
 
 UCLASS()
-class ALPINEASPHALT_API AAA_RoadSpline_CPP : public AActor
+class ALPINEASPHALT_API AAA_RoadSplineActor : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AAA_RoadSpline_CPP();
+	AAA_RoadSplineActor();
 	
 	UPROPERTY(BlueprintReadOnly,EditAnywhere)
 	class USplineComponent* Spline;
