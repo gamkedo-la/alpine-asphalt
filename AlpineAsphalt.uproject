@@ -13,6 +13,11 @@
 				"ChaosVehicles",
 				"AIModule"
 			]
+		},
+		{
+			"Name": "AlpineAsphaltEditor",
+			"Type": "Editor",
+			"LoadingPhase":  "PostEngineInit"
 		}
 	],
 	"Plugins": [

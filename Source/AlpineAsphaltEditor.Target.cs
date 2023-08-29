@@ -11,6 +11,6 @@ public class AlpineAsphaltEditorTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_2;
 		
-		ExtraModuleNames.AddRange( new string[] { "AlpineAsphalt" } );
+		ExtraModuleNames.AddRange( new string[] { "AlpineAsphalt", "AlpineAsphaltEditor" } );
 	}
 }
