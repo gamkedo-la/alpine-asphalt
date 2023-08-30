@@ -150,16 +150,6 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 		return;
 	}
 	
-	//Create a new spline actor
-	FVector SpawnLocation = FVector(RoadSplines[0]->GetActorLocation());
-	FRotator SpawnRotation = FRotator(RoadSplines[0]->GetActorRotation());
-	AAA_RaceSplineActor* RaceSpline = Cast<AAA_RaceSplineActor>(RoadSplines[0]->GetWorld()->SpawnActor(RaceSplineBP,&SpawnLocation,&SpawnRotation));
-
-	RaceSpline->Spline->ClearSplinePoints();
-
-#if WITH_EDITOR
-	RaceSpline->SetFolderPath("RaceSplines");
-#endif
 
 	//Init Variables
 	FVector Location;
@@ -180,6 +170,15 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 	NextStart = A == B || A == C;
 	CurrentStart = NextStart;
 
+	//Create a new spline actor
+	FVector SpawnLocation = FVector(RoadSplines[0]->Spline->GetLocationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World));
+	FRotator SpawnRotation = FRotator(RoadSplines[0]->Spline->GetRotationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World));
+	AAA_RaceSplineActor* RaceSpline = Cast<AAA_RaceSplineActor>(RoadSplines[0]->GetWorld()->SpawnActor(RaceSplineBP,&SpawnLocation,&SpawnRotation));
+	RaceSpline->Spline->ClearSplinePoints();
+#if WITH_EDITOR
+	RaceSpline->SetFolderPath("RaceSplines");
+#endif
+	FTransform WorldToActorSpaceTransform = RaceSpline->ActorToWorld().Inverse(); 
 	//Add Spline Point Loop///////////////////////////////////////////////////////////////////////////////////////////
 	for(int i = 0; i < RoadSplines.Num(); i++)
 	{
@@ -194,7 +193,7 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 			NextStart = A==B;
 		}
 
-		//Get Location 
+		//Get Location, Tangent, & Rotation
 		RoadSplines[i]->Spline->GetLocationAndTangentAtSplinePoint(CurrentStart,Location,LeaveTangent,ESplineCoordinateSpace::World);
 		Rotation = RoadSplines[i]->Spline->GetRotationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World);
 		
@@ -205,10 +204,10 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 		//Add New Point
 		NewPoint = FSplinePoint(
 			static_cast<float>(SplinePointCount),
-			RaceSpline->ActorToWorld().Inverse().TransformPosition(Location),
-			RaceSpline->ActorToWorld().Inverse().TransformVector(ArriveTangent),
-			RaceSpline->ActorToWorld().Inverse().TransformVector(LeaveTangent),
-			RaceSpline->ActorToWorld().Inverse().TransformRotation(Rotation.Quaternion()).Rotator());
+			WorldToActorSpaceTransform.TransformPosition(Location),
+			WorldToActorSpaceTransform.TransformVector(ArriveTangent),
+			WorldToActorSpaceTransform.TransformVector(LeaveTangent),
+			WorldToActorSpaceTransform.TransformRotation(Rotation.Quaternion()).Rotator());
 		
 		RaceSpline->Spline->AddPoint(NewPoint);
 		++SplinePointCount;
@@ -224,10 +223,10 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 
 	//Add New Point
 	NewPoint = FSplinePoint(
-	static_cast<float>(SplinePointCount),
-	RaceSpline->ActorToWorld().Inverse().TransformPosition(Location),
-	RaceSpline->ActorToWorld().Inverse().TransformVector(ArriveTangent),
-	RaceSpline->ActorToWorld().Inverse().TransformVector(LeaveTangent),
-	RaceSpline->ActorToWorld().Inverse().TransformRotation(Rotation.Quaternion()).Rotator());
+		static_cast<float>(SplinePointCount),
+		WorldToActorSpaceTransform.TransformPosition(Location),
+		WorldToActorSpaceTransform.TransformVector(ArriveTangent),
+		WorldToActorSpaceTransform.TransformVector(LeaveTangent),
+		WorldToActorSpaceTransform.TransformRotation(Rotation.Quaternion()).Rotator());
 	RaceSpline->Spline->AddPoint(NewPoint);
 }
