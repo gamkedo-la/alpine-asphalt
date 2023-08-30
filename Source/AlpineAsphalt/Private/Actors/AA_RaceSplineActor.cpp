@@ -2,6 +2,8 @@
 
 
 #include "Actors/AA_RaceSplineActor.h"
+
+#include "Components/AA_CheckpointComponent.h"
 #include "Components/SplineComponent.h"
 
 // Sets default values
@@ -11,6 +13,7 @@ AAA_RaceSplineActor::AAA_RaceSplineActor()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	Spline = CreateDefaultSubobject<USplineComponent>("RacingLineSpline");
+	CheckpointComponent = CreateDefaultSubobject<UAA_CheckpointComponent>("CheckpointComponent");
 	SetRootComponent(Spline);
 }
 

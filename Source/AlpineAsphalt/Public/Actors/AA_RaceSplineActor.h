@@ -23,6 +23,9 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(BlueprintReadOnly,EditAnywhere)
+	UPROPERTY(BlueprintReadOnly,VisibleAnywhere)
 	class USplineComponent* Spline;
+
+	UPROPERTY(BlueprintReadOnly,VisibleAnywhere)
+	class UAA_CheckpointComponent* CheckpointComponent;
 };

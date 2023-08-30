@@ -9,7 +9,7 @@ public class AlpineAsphaltEditor : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "AlpineAsphalt", 
-			"CoreUObject", "Engine", "EnhancedInput", "ChaosVehicles", "Landscape" });
+			"CoreUObject", "Engine", "EnhancedInput", "ChaosVehicles", "Landscape","ComponentVisualizers","UnrealEd", "InputCore" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
