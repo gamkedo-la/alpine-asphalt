@@ -61,8 +61,7 @@ void AA_CheckpointVisualizer::EndEditing()
 bool AA_CheckpointVisualizer::GetWidgetLocation(const FEditorViewportClient* ViewportClient, FVector& OutLocation) const
 {
 	if(EditedComponent && SelectedTargetIndex != INDEX_NONE){
-		const FVector Temp = EditedComponent->GetSpline()->GetLocationAtDistanceAlongSpline(EditedComponent->CheckpointPositionData[SelectedTargetIndex].Position,ESplineCoordinateSpace::World);
-		OutLocation = Temp;
+		OutLocation = EditedComponent->GetSpline()->GetLocationAtDistanceAlongSpline(EditedComponent->CheckpointPositionData[SelectedTargetIndex].Position,ESplineCoordinateSpace::World);
 		return true;
 	}
 	return false;
@@ -80,6 +79,12 @@ bool AA_CheckpointVisualizer::GetCustomInputCoordinateSystem(const FEditorViewpo
 bool AA_CheckpointVisualizer::HandleInputDelta(FEditorViewportClient* ViewportClient, FViewport* Viewport,
                                                FVector& DeltaTranslate, FRotator& DeltaRotate, FVector& DeltaScale)
 {
+	if(EditedComponent && SelectedTargetIndex != INDEX_NONE){
+		FVector Location = EditedComponent->GetSpline()->GetLocationAtDistanceAlongSpline(EditedComponent->CheckpointPositionData[SelectedTargetIndex].Position,ESplineCoordinateSpace::World);
+		Location += DeltaTranslate;
+		(EditedComponent->CheckpointPositionData[SelectedTargetIndex].Position = EditedComponent->GetSpline()->GetDistanceAlongSplineAtSplineInputKey(EditedComponent->GetSpline()->FindInputKeyClosestToWorldLocation(Location)));
+		return true;
+	}
 	return true;
 	//return FComponentVisualizer::HandleInputDelta(ViewportClient, Viewport, DeltaTranslate, DeltaRotate, DeltaScale);
 }
