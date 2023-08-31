@@ -22,7 +22,7 @@ void AA_CheckpointVisualizer::DrawVisualization(const UActorComponent* Component
 			FVector Location = Spline->GetLocationAtDistanceAlongSpline(CheckpointComponent->CheckpointPositionData[i].Position,
 				ESplineCoordinateSpace::World);
 			FTransform Transform = FTransform(Location);
-			FLinearColor Color = SelectedTargetIndex == i ? FLinearColor::Yellow : FLinearColor::White;
+			FLinearColor Color = SelectedCheckpointIndex == i ? FLinearColor::Yellow : FLinearColor::White;
 			DrawWireSphere(PDI,Transform, Color,500,16,0,25);
 			PDI->SetHitProxy(NULL);
 		}
@@ -41,11 +41,11 @@ bool AA_CheckpointVisualizer::VisProxyHandleClick(FEditorViewportClient* InViewp
 		if(VisProxy->IsA(HitCheckpointProxy::StaticGetType()))
 		{
 			HitCheckpointProxy* Proxy = static_cast<HitCheckpointProxy*>(VisProxy);
-			SelectedTargetIndex = Proxy->TargetIndex;
+			SelectedCheckpointIndex = Proxy->TargetIndex;
 			EditedComponent = Cast<UAA_CheckpointComponent>(VisProxy->Component.Get()->GetOwner()->GetComponentByClass(UAA_CheckpointComponent::StaticClass()));
 		}else
 		{
-			SelectedTargetIndex = INDEX_NONE;
+			SelectedCheckpointIndex = INDEX_NONE;
 		}
 	}
 	return bEditing;
@@ -53,15 +53,22 @@ bool AA_CheckpointVisualizer::VisProxyHandleClick(FEditorViewportClient* InViewp
 
 void AA_CheckpointVisualizer::EndEditing()
 {
-	SelectedTargetIndex = INDEX_NONE;
+	SelectedCheckpointIndex = INDEX_NONE;
 	EditedComponent = nullptr;
 }
 
 
 bool AA_CheckpointVisualizer::GetWidgetLocation(const FEditorViewportClient* ViewportClient, FVector& OutLocation) const
 {
-	if(EditedComponent && SelectedTargetIndex != INDEX_NONE){
-		OutLocation = EditedComponent->GetSpline()->GetLocationAtDistanceAlongSpline(EditedComponent->CheckpointPositionData[SelectedTargetIndex].Position,ESplineCoordinateSpace::World);
+	if(	EditedComponent
+		&& SelectedCheckpointIndex > INDEX_NONE
+		&& SelectedCheckpointIndex < EditedComponent->CheckpointPositionData.Num())
+	{
+		OutLocation = EditedComponent->
+						GetSpline()->
+						GetLocationAtDistanceAlongSpline(
+							EditedComponent->
+							CheckpointPositionData[SelectedCheckpointIndex].Position,ESplineCoordinateSpace::World);
 		return true;
 	}
 	return false;
@@ -79,10 +86,10 @@ bool AA_CheckpointVisualizer::GetCustomInputCoordinateSystem(const FEditorViewpo
 bool AA_CheckpointVisualizer::HandleInputDelta(FEditorViewportClient* ViewportClient, FViewport* Viewport,
                                                FVector& DeltaTranslate, FRotator& DeltaRotate, FVector& DeltaScale)
 {
-	if(EditedComponent && SelectedTargetIndex != INDEX_NONE){
-		FVector Location = EditedComponent->GetSpline()->GetLocationAtDistanceAlongSpline(EditedComponent->CheckpointPositionData[SelectedTargetIndex].Position,ESplineCoordinateSpace::World);
+	if(EditedComponent && SelectedCheckpointIndex != INDEX_NONE){
+		FVector Location = EditedComponent->GetSpline()->GetLocationAtDistanceAlongSpline(EditedComponent->CheckpointPositionData[SelectedCheckpointIndex].Position,ESplineCoordinateSpace::World);
 		Location += DeltaTranslate;
-		(EditedComponent->CheckpointPositionData[SelectedTargetIndex].Position = EditedComponent->GetSpline()->GetDistanceAlongSplineAtSplineInputKey(EditedComponent->GetSpline()->FindInputKeyClosestToWorldLocation(Location)));
+		(EditedComponent->CheckpointPositionData[SelectedCheckpointIndex].Position = EditedComponent->GetSpline()->GetDistanceAlongSplineAtSplineInputKey(EditedComponent->GetSpline()->FindInputKeyClosestToWorldLocation(Location)));
 		return true;
 	}
 	return true;
@@ -92,7 +99,14 @@ bool AA_CheckpointVisualizer::HandleInputDelta(FEditorViewportClient* ViewportCl
 bool AA_CheckpointVisualizer::HandleInputKey(FEditorViewportClient* ViewportClient, FViewport* Viewport, FKey Key,
 	EInputEvent Event)
 {
-	return FComponentVisualizer::HandleInputKey(ViewportClient, Viewport, Key, Event);
+	bool bHandled = false;
+	if(Key == EKeys::Delete && EditedComponent)
+	{
+		DeleteCheckpoint(SelectedCheckpointIndex);
+		SelectedCheckpointIndex = INDEX_NONE;
+		bHandled = true;
+	}
+	return bHandled;
 }
 
 TSharedPtr<SWidget> AA_CheckpointVisualizer::GenerateContextMenu() const
@@ -108,5 +122,13 @@ bool AA_CheckpointVisualizer::IsVisualizingArchetype() const
 UActorComponent* AA_CheckpointVisualizer::GetEditedComponent() const
 {
 	return Cast<UActorComponent>(EditedComponent);
+}
+
+void AA_CheckpointVisualizer::DeleteCheckpoint(const int IndexToDelete) const
+{
+	if(IndexToDelete > INDEX_NONE && IndexToDelete < EditedComponent->CheckpointPositionData.Num())
+	{
+		EditedComponent->CheckpointPositionData.RemoveAt(IndexToDelete);
+	}
 }
 

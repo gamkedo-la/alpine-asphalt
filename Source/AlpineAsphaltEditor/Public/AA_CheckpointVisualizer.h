@@ -32,7 +32,9 @@ public:
 	virtual TSharedPtr<SWidget> GenerateContextMenu() const override;
 	virtual bool IsVisualizingArchetype() const override;
 	virtual UActorComponent* GetEditedComponent() const override;
+
+	void DeleteCheckpoint(int SelectedCheckpointIndex) const;
 private:
-	int32 SelectedTargetIndex = INDEX_NONE;
+	int32 SelectedCheckpointIndex = INDEX_NONE;
 	UAA_CheckpointComponent* EditedComponent = nullptr;
 };
