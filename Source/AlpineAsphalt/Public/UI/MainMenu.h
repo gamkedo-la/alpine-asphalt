@@ -18,9 +18,16 @@ class ALPINEASPHALT_API UMainMenu : public UUserWidget
 protected:
 	virtual bool Initialize() override;
 
+	UFUNCTION()
 	void Play();
+
+	UFUNCTION()
 	void ShowSettings();
+
+	UFUNCTION()
 	void ShowCredits();
+
+	UFUNCTION()
 	void Quit();
 
 	/** Widgets **/
