@@ -2,6 +2,9 @@
 
 
 #include "Components/AA_CheckpointComponent.h"
+
+#include "Actors/AA_Checkpoint.h"
+#include "Actors/AA_RaceActor.h"
 #include "Components/SplineComponent.h"
 
 // Sets default values for this component's properties
@@ -47,20 +50,46 @@ void UAA_CheckpointComponent::TickComponent(float DeltaTime, ELevelTick TickType
 void UAA_CheckpointComponent::GenerateCheckpoints()
 {
 	SplineComponent = GetOwner()->GetComponentByClass<USplineComponent>();
-
+	const auto RaceActor = Cast<AAA_RaceActor>(GetOwner());
 	ensure(SplineComponent);
 
 	const int NumberCheckpoints = FMath::CeilToInt(SplineComponent->GetSplineLength() / CheckpointGenerationDistance);
 
 	for(int i = 0; i <= NumberCheckpoints; i++)
 	{
-		CheckpointPositionData.Add(FCheckpointStruct(i*CheckpointGenerationDistance));
+		const FVector Position = SplineComponent->GetLocationAtDistanceAlongSpline(i*CheckpointGenerationDistance,ESplineCoordinateSpace::World);
+		const FRotator Rotation  = SplineComponent->GetRotationAtDistanceAlongSpline(i*CheckpointGenerationDistance,ESplineCoordinateSpace::World);
+		const float Width = RaceActor->GetWidthAtDistance(i*CheckpointGenerationDistance);
+		CheckpointPositionData.Add(FCheckpointStruct(Position,Rotation,Width,DEFAULT_CHECKPOINT_HEIGHT));
 	}
 }
 
 USplineComponent* UAA_CheckpointComponent::GetSpline() const
 {
 	return GetOwner()->GetComponentByClass<USplineComponent>();
+}
+
+void UAA_CheckpointComponent::SpawnCheckpoints()
+{
+	if(!DefaultCheckpoint)
+	{
+		UE_LOG(LogTemp,Error,TEXT("UAA_CheckpointComponent: NO DEFAULT CHECKPOINT CLASS SET"))
+		return;
+	}
+	if(!SpawnedCheckpoints.IsEmpty())
+	{
+		UE_LOG(LogTemp,Error,TEXT("UAA_CheckpointComponent: Spawned Checkpoints Already Exist"))
+		return;
+	}
+	for(int i = 0; i < CheckpointPositionData.Num(); i++)
+	{
+		AAA_Checkpoint* NewCheckpoint = GetWorld()->SpawnActor<AAA_Checkpoint>(DefaultCheckpoint,
+			CheckpointPositionData[i].Position,
+			CheckpointPositionData[i].Rotation);
+		NewCheckpoint->SetWidth(CheckpointPositionData[i].Width);
+		NewCheckpoint->SetHeight(CheckpointPositionData[i].Height);
+		SpawnedCheckpoints.Add(NewCheckpoint);
+	}
 }
 
 

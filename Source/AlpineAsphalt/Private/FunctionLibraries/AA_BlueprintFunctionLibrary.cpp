@@ -2,7 +2,7 @@
 
 
 #include "FunctionLibraries/AA_BlueprintFunctionLibrary.h"
-#include "Actors/AA_RaceSplineActor.h"
+#include "..\..\Public\Actors\AA_RaceActor.h"
 #include "LandscapeSplineActor.h"
 #include "LandscapeSplineControlPoint.h"
 #include "Actors/AA_RoadSplineActor.h"
@@ -72,6 +72,7 @@ void UAA_BlueprintFunctionLibrary::GenerateRoadSpline(AActor* LandscapeSpline, T
 			RoadSpline->Spline->SetTangentAtSplinePoint(RoadSpline->Spline->GetNumberOfSplinePoints()-1,
 				ForwardVector*Segment->Connections[i].TangentLen,
 				ESplineCoordinateSpace::World);
+			RoadSpline->RoadWidth.Add(Connection.ControlPoint->Width);
 			}
 	}
 
@@ -115,6 +116,7 @@ void UAA_BlueprintFunctionLibrary::GenerateRoadSpline(AActor* LandscapeSpline, T
 				RoadSpline->Spline->SetTangentAtSplinePoint(RoadSpline->Spline->GetNumberOfSplinePoints()-1,
 					ForwardVector*TangentSize,
 					ESplineCoordinateSpace::World);
+				RoadSpline->RoadWidth.Add(ControlPoint->Width);
 
 				//Spawn point at j///////////////////////////////////////////////////////
 
@@ -132,12 +134,13 @@ void UAA_BlueprintFunctionLibrary::GenerateRoadSpline(AActor* LandscapeSpline, T
 				RoadSpline->Spline->SetTangentAtSplinePoint(RoadSpline->Spline->GetNumberOfSplinePoints()-1,
 					ForwardVector*TangentSize,
 					ESplineCoordinateSpace::World);
+				RoadSpline->RoadWidth.Add(ControlPoint->Width);
 			}
 		}
 	}
 }
 
-void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> RoadSplineActors, TSubclassOf<AAA_RaceSplineActor> RaceSplineBP)
+void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> RoadSplineActors, TSubclassOf<AAA_RaceActor> RaceSplineBP)
 {
 	TArray<AAA_RoadSplineActor*> RoadSplines;
 	for (const auto RoadSpline : RoadSplineActors)
@@ -173,7 +176,7 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 	//Create a new spline actor
 	FVector SpawnLocation = FVector(RoadSplines[0]->Spline->GetLocationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World));
 	FRotator SpawnRotation = FRotator(RoadSplines[0]->Spline->GetRotationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World));
-	AAA_RaceSplineActor* RaceSpline = Cast<AAA_RaceSplineActor>(RoadSplines[0]->GetWorld()->SpawnActor(RaceSplineBP,&SpawnLocation,&SpawnRotation));
+	AAA_RaceActor* RaceSpline = Cast<AAA_RaceActor>(RoadSplines[0]->GetWorld()->SpawnActor(RaceSplineBP,&SpawnLocation,&SpawnRotation));
 	RaceSpline->Spline->ClearSplinePoints();
 #if WITH_EDITOR
 	RaceSpline->SetFolderPath("RaceSplines");
@@ -210,6 +213,7 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 			WorldToActorSpaceTransform.TransformRotation(Rotation.Quaternion()).Rotator());
 		
 		RaceSpline->Spline->AddPoint(NewPoint);
+		RaceSpline->RoadWidth.Add(RoadSplines[i]->RoadWidth[CurrentStart]);
 		++SplinePointCount;
 		ArriveTangent = RoadSplines[i]->Spline->GetTangentAtSplinePoint(!CurrentStart,ESplineCoordinateSpace::World);
 	}
@@ -229,4 +233,5 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 		WorldToActorSpaceTransform.TransformVector(LeaveTangent),
 		WorldToActorSpaceTransform.TransformRotation(Rotation.Quaternion()).Rotator());
 	RaceSpline->Spline->AddPoint(NewPoint);
+	RaceSpline->RoadWidth.Add(RoadSplines[LastIndex]->RoadWidth[!CurrentStart]);
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "InputAction.h"
 #include "GameFramework/PlayerController.h"
+#include "Interface/AA_InteractableInterface.h"
 #include "AA_PlayerController.generated.h"
 
 class AAA_WheeledVehiclePawn;
@@ -14,7 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN(PlayerControllerLog, Log, All);
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_PlayerController_CPP : public APlayerController
+class ALPINEASPHALT_API AAA_PlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
@@ -52,6 +53,9 @@ public:
 	UInputAction* InputToggleCamera;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	UInputAction* InputInteract;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	UInputAction* InputEnterRewind;
 
 	/** Rewind Controls **/
@@ -77,12 +81,18 @@ public:
 
 	virtual void SetupInputComponent() override;
 
+	void AddInteractables(IAA_InteractableInterface* Interactable);
+	void RemoveInteractable(IAA_InteractableInterface* Interactable);
+
 private:
 	UPROPERTY()
 	UEnhancedInputComponent* EInputComponent;
 
 	UPROPERTY()
 	AAA_WheeledVehiclePawn* VehiclePawn;
+
+	UPROPERTY()
+	TArray<IAA_InteractableInterface*> Interactables;
 
 	/** Driver Control Functions**/
 	void SetBrake(const FInputActionValue& Value);
@@ -94,6 +104,7 @@ private:
 	void ShiftUp(const FInputActionValue& Value);
 	void ShiftDown(const FInputActionValue& Value);
 	void ToggleCamera(const FInputActionValue& Value);
+	void Interact(const FInputActionValue& Value);
 	void EnterRewindMode(const FInputActionValue& Value);
 
 	/** Rewind Mode Controls**/

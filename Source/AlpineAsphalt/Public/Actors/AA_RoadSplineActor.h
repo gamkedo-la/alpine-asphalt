@@ -20,4 +20,7 @@ public:
 	UPROPERTY(BlueprintReadOnly,EditAnywhere)
 	class USplineComponent* Spline;
 
+	UPROPERTY(BlueprintReadOnly,EditAnywhere)
+	TArray<float> RoadWidth; 
+
 };
