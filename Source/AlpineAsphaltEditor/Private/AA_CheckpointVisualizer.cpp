@@ -2,6 +2,7 @@
 
 #include "Components/AA_CheckpointComponent.h"
 #include "Components/SplineComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 IMPLEMENT_HIT_PROXY(HitCheckpointVisProxy, HComponentVisProxy)
 IMPLEMENT_HIT_PROXY(HitCheckpointProxy, HitCheckpointVisProxy)
@@ -19,11 +20,13 @@ void AA_CheckpointVisualizer::DrawVisualization(const UActorComponent* Component
 		for(int i = 0; i < CheckpointComponent->CheckpointPositionData.Num(); i++)
 		{
 			PDI->SetHitProxy(new HitCheckpointProxy(Component,i));
-			FVector Location = Spline->GetLocationAtDistanceAlongSpline(CheckpointComponent->CheckpointPositionData[i].Position,
-				ESplineCoordinateSpace::World);
-			FTransform Transform = FTransform(Location);
-			FLinearColor Color = SelectedCheckpointIndex == i ? FLinearColor::Yellow : FLinearColor::White;
-			DrawWireSphere(PDI,Transform, Color,500,16,0,25);
+			FTransform Transform = FTransform(CheckpointComponent->CheckpointPositionData[i].Rotation,CheckpointComponent->CheckpointPositionData[i].Position);
+			FColor Color = SelectedCheckpointIndex == i ? FColor::Yellow : FColor::White;
+			auto XAxis = UKismetMathLibrary::GetRightVector(CheckpointComponent->CheckpointPositionData[i].Rotation);
+			auto YAxis = UKismetMathLibrary::GetUpVector(CheckpointComponent->CheckpointPositionData[i].Rotation);
+			float Width = CheckpointComponent->CheckpointPositionData[i].Width;
+			float Height = CheckpointComponent->CheckpointPositionData[i].Height;
+			DrawRectangle(PDI,CheckpointComponent->CheckpointPositionData[i].Position, XAxis,YAxis,Color,Width,Height,0,25);
 			PDI->SetHitProxy(NULL);
 		}
 	}
@@ -64,11 +67,7 @@ bool AA_CheckpointVisualizer::GetWidgetLocation(const FEditorViewportClient* Vie
 		&& SelectedCheckpointIndex > INDEX_NONE
 		&& SelectedCheckpointIndex < EditedComponent->CheckpointPositionData.Num())
 	{
-		OutLocation = EditedComponent->
-						GetSpline()->
-						GetLocationAtDistanceAlongSpline(
-							EditedComponent->
-							CheckpointPositionData[SelectedCheckpointIndex].Position,ESplineCoordinateSpace::World);
+		OutLocation = EditedComponent->CheckpointPositionData[SelectedCheckpointIndex].Position;
 		return true;
 	}
 	return false;
@@ -87,13 +86,30 @@ bool AA_CheckpointVisualizer::HandleInputDelta(FEditorViewportClient* ViewportCl
                                                FVector& DeltaTranslate, FRotator& DeltaRotate, FVector& DeltaScale)
 {
 	if(EditedComponent && SelectedCheckpointIndex != INDEX_NONE){
-		FVector Location = EditedComponent->GetSpline()->GetLocationAtDistanceAlongSpline(EditedComponent->CheckpointPositionData[SelectedCheckpointIndex].Position,ESplineCoordinateSpace::World);
-		Location += DeltaTranslate;
-		(EditedComponent->CheckpointPositionData[SelectedCheckpointIndex].Position = EditedComponent->GetSpline()->GetDistanceAlongSplineAtSplineInputKey(EditedComponent->GetSpline()->FindInputKeyClosestToWorldLocation(Location)));
+		const auto Spline = EditedComponent->GetSpline();
+		FCheckpointStruct* CheckpointStruct = &EditedComponent->CheckpointPositionData[SelectedCheckpointIndex];
+
+		//process translation
+		if(!DeltaTranslate.IsNearlyZero())
+		{
+			FVector Location = CheckpointStruct->Position;
+			Location += DeltaTranslate;
+			const auto InputKey = Spline->FindInputKeyClosestToWorldLocation(Location);
+			
+			Location = Spline->GetLocationAtSplineInputKey(InputKey,ESplineCoordinateSpace::World);
+			const FRotator Rotation = Spline->GetRotationAtSplineInputKey(InputKey,ESplineCoordinateSpace::World);
+			
+			CheckpointStruct->Position = Location;
+			CheckpointStruct->Rotation = Rotation;
+		}
+
+		if(!DeltaRotate.IsNearlyZero())
+		{
+			CheckpointStruct->Rotation += DeltaRotate;
+		}
 		return true;
 	}
-	return true;
-	//return FComponentVisualizer::HandleInputDelta(ViewportClient, Viewport, DeltaTranslate, DeltaRotate, DeltaScale);
+	return false;
 }
 
 bool AA_CheckpointVisualizer::HandleInputKey(FEditorViewportClient* ViewportClient, FViewport* Viewport, FKey Key,
