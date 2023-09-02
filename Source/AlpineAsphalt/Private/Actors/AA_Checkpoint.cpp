@@ -13,15 +13,27 @@ AAA_Checkpoint::AAA_Checkpoint()
 void AAA_Checkpoint::SetHeight(const float Height) const
 {
 	FVector Extent = Collision->Bounds.BoxExtent;
-	Extent.Z = Height;
+	Extent.Z = Height/2;
 	Collision->SetBoxExtent(Extent);
 }
 
 void AAA_Checkpoint::SetWidth(const float Width) const
 {
 	FVector Extent = Collision->Bounds.BoxExtent;
-	Extent.Y = Width;
+	Extent.Y = Width/2;
 	Collision->SetBoxExtent(Extent);
+}
+
+void AAA_Checkpoint::SetDepth(float Depth) const
+{
+	FVector Extent = Collision->Bounds.BoxExtent;
+	Extent.X = Depth/2;
+	Collision->SetBoxExtent(Extent);
+}
+
+void AAA_Checkpoint::SetSize(FVector Size) const
+{
+	Collision->SetBoxExtent(Size/2);
 }
 
 void AAA_Checkpoint::SetIndex(const int NewIndex)

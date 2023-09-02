@@ -88,6 +88,7 @@ void UAA_CheckpointComponent::SpawnCheckpoints()
 			CheckpointPositionData[i].Rotation);
 		NewCheckpoint->SetWidth(CheckpointPositionData[i].Width);
 		NewCheckpoint->SetHeight(CheckpointPositionData[i].Height);
+		NewCheckpoint->SetDepth(CheckpointPositionData[i].Depth);
 		SpawnedCheckpoints.Add(NewCheckpoint);
 	}
 }

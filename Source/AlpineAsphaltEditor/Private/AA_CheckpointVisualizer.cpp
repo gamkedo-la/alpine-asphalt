@@ -107,6 +107,8 @@ bool AA_CheckpointVisualizer::HandleInputDelta(FEditorViewportClient* ViewportCl
 		{
 			CheckpointStruct->Rotation += DeltaRotate;
 		}
+		CheckpointStruct->Height += DeltaScale.Z;
+		CheckpointStruct->Width += DeltaScale.Y;
 		return true;
 	}
 	return false;

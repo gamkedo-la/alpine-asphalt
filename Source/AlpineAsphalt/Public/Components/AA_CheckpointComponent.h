@@ -11,6 +11,7 @@ class AAA_Checkpoint;
 class USplineComponent;
 
 #define DEFAULT_CHECKPOINT_HEIGHT 500
+#define DEFAULT_CHECKPOINT_DEPTH 20
 
 USTRUCT(BlueprintType)
 struct FCheckpointStruct
@@ -29,6 +30,7 @@ struct FCheckpointStruct
 	FCheckpointStruct(const FVector& Position, const FRotator& Rotation, const float Width, const float Height)
 	{
 		this->Position = Position;
+		this->Rotation = Rotation;
 		this->Width = Width;
 		this->Height = Height;
 	}
@@ -37,7 +39,7 @@ struct FCheckpointStruct
 	UPROPERTY(BlueprintReadWrite,EditAnywhere)
 	FVector Position;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
 	FRotator Rotation;
 
 	//Width of Checkpoint
@@ -47,6 +49,10 @@ struct FCheckpointStruct
 	//Height of Checkpoint
 	UPROPERTY(BlueprintReadWrite,EditAnywhere)
 	float Height;
+
+	//Height of Checkpoint
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	float Depth = DEFAULT_CHECKPOINT_DEPTH;
 	
 };
 

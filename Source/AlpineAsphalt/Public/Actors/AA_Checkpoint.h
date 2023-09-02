@@ -17,6 +17,8 @@ public:
 
 	void SetHeight(float Height) const;
 	void SetWidth(float Width) const;
+	void SetDepth(float Depth) const;
+	void SetSize(FVector Size)const;
 	void SetIndex(int Index);
 
 	UPROPERTY(BlueprintAssignable)
