@@ -29,6 +29,12 @@ public:
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	UAnimBlueprint* AnimationInstance;
+	
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	TArray<UTexture2D*> PaintStyles;
+
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	TArray<UTexture2D*> Decals;
 
 	UPROPERTY(EditAnywhere, Category = WheelSetup)
 	bool bSuspensionEnabled = true;

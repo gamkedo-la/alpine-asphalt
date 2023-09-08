@@ -6,7 +6,6 @@
 #include "Subsystems/AA_RewindSubsystem.h"
 #include "DataAsset/AA_VehicleDataAsset.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
-#include "DerivedDataCache/Public/DerivedDataCacheUsageStats.h"
 
 FName AAA_WheeledVehiclePawn::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
 FName AAA_WheeledVehiclePawn::VehicleMeshComponentName(TEXT("VehicleMesh"));
@@ -28,6 +27,8 @@ AAA_WheeledVehiclePawn::AAA_WheeledVehiclePawn(const class FObjectInitializer& O
 	VehicleMovementComponent = CreateDefaultSubobject<UChaosWheeledVehicleMovementComponent>(VehicleMovementComponentName);
 	VehicleMovementComponent->SetIsReplicated(true); // Enable replication by default
 	VehicleMovementComponent->UpdatedComponent = Mesh;
+	
+	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
 }
 
 void AAA_WheeledVehiclePawn::BeginPlay()
@@ -53,6 +54,52 @@ UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovemen
 }
 
 #if WITH_EDITOR
+void AAA_WheeledVehiclePawn::SetVehiclePaint(int PaintIndex)
+{
+	ensure(VehicleData);
+	ensure(PaintMaterial);
+	if(VehicleData->PaintStyles.Num() > PaintIndex)
+	{
+		PaintMaterial->SetTextureParameterValue(FName("PaintTexture"),VehicleData->PaintStyles[PaintIndex]);
+		PaintTextureIndex = PaintIndex;
+	}
+}
+
+void AAA_WheeledVehiclePawn::SetVehicleDecal(int DecalIndex)
+{
+	ensure(VehicleData);
+	ensure(PaintMaterial);
+	if(VehicleData->Decals.Num() > DecalIndex)
+	{
+		PaintMaterial->SetTextureParameterValue(FName("DecalTexture"),VehicleData->Decals[DecalIndex]);
+		DecalTextureIndex = DecalIndex;
+	}
+}
+
+void AAA_WheeledVehiclePawn::SetColorOne(FColor ColorToSet)
+{
+	PaintMaterial->SetVectorParameterValue(FName("ColorOne"),ColorToSet);
+	ColorOne = ColorToSet;
+}
+
+void AAA_WheeledVehiclePawn::SetColorTwo(FColor ColorToSet)
+{
+	PaintMaterial->SetVectorParameterValue(FName("ColorTwo"),ColorToSet);
+	ColorTwo = ColorToSet;
+}
+
+void AAA_WheeledVehiclePawn::SetColorThree(FColor ColorToSet)
+{
+	PaintMaterial->SetVectorParameterValue(FName("ColorThree"),ColorToSet);
+	ColorThree = ColorToSet;
+}
+
+void AAA_WheeledVehiclePawn::SetColorFour(FColor ColorToSet)
+{
+	PaintMaterial->SetVectorParameterValue(FName("ColorFour"),ColorToSet);
+	ColorFour = ColorToSet;
+}
+
 void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -62,6 +109,31 @@ void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& Prope
 	{
 		SetVehicleData(VehicleData);
 	}
+	if(PropertyChangedEvent.Property->GetName() == "PaintTextureIndex")
+	{
+		SetVehiclePaint(PaintTextureIndex);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "DecalTextureIndex")
+	{
+		SetVehicleDecal(DecalTextureIndex);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorOne")
+	{
+		SetColorOne(ColorOne);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorTwo")
+	{
+		SetColorTwo(ColorTwo);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorThree")
+	{
+		SetColorThree(ColorThree);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorFour")
+	{
+		SetColorFour(ColorFour);
+	}
+
 }
 #endif
 
@@ -88,11 +160,24 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 		return;
 	}
 	
-	//TODO: Don't set things like Automatic vs Manual Transmission
-
+	
+	//store the vehicle data
+	VehicleData = NewVehicleData;
+	
 	//Set Skeletal Mesh
 	Mesh->SetSkeletalMesh(NewVehicleData->VehicleMesh);
 
+	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
+	if(PaintMaterial)
+	{
+		SetVehiclePaint(0);
+		SetVehicleDecal(0);
+		SetColorOne(FColor::Blue);
+		SetColorTwo(FColor::White);
+		SetColorThree(FColor::Black);
+		SetColorFour(FColor::Green);
+	}
+	
 	//I feel like this is needed, but it only works without it?
 	//TODO: figure out why this doesn't work
 	//Mesh->SetAnimInstanceClass(dynamic_cast<UClass*>(NewVehicleData->AnimationInstance));
@@ -106,14 +191,14 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 	VehicleMovementComponent-> bMechanicalSimEnabled = NewVehicleData->bMechanicalSimEnabled;
 	VehicleMovementComponent->EngineSetup = NewVehicleData->EngineSetup;
 	VehicleMovementComponent->DifferentialSetup = NewVehicleData->DifferentialSetup;
+	//TODO: Don't set things like Automatic vs Manual Transmission
 	VehicleMovementComponent->TransmissionSetup = NewVehicleData->TransmissionSetup;
 	VehicleMovementComponent->SteeringSetup = NewVehicleData->SteeringSetup;
 
 	//Restart the vehicle
 	VehicleMovementComponent->ResetVehicleState();
 
-	//store the vehicle data
-	VehicleData = NewVehicleData;
+
 }
 
 void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
