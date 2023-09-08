@@ -72,6 +72,22 @@ public:
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void CameraLook(FVector2D Input);
 
+	///Cosmetic Functions
+	UFUNCTION(BlueprintCallable)
+	void SetVehiclePaint(int PaintIndex);
+	UFUNCTION(BlueprintCallable)
+	void SetVehicleDecal(int DecalIndex);
+	UFUNCTION(BlueprintCallable)
+	void SetColorOne(FColor ColorToSet);
+	UFUNCTION(BlueprintCallable)
+	void SetColorTwo(FColor ColorToSet);
+	UFUNCTION(BlueprintCallable)
+	void SetColorThree(FColor ColorToSet);
+	UFUNCTION(BlueprintCallable)
+	void SetColorFour(FColor ColorToSet);
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* PaintMaterial;
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty( FPropertyChangedEvent & PropertyChangedEvent ) override;
 #endif
