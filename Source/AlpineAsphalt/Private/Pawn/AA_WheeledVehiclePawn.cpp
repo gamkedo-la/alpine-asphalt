@@ -61,6 +61,7 @@ void AAA_WheeledVehiclePawn::SetVehiclePaint(int PaintIndex)
 	if(VehicleData->PaintStyles.Num() > PaintIndex)
 	{
 		PaintMaterial->SetTextureParameterValue(FName("PaintTexture"),VehicleData->PaintStyles[PaintIndex]);
+		PaintTextureIndex = PaintIndex;
 	}
 }
 
@@ -71,27 +72,32 @@ void AAA_WheeledVehiclePawn::SetVehicleDecal(int DecalIndex)
 	if(VehicleData->Decals.Num() > DecalIndex)
 	{
 		PaintMaterial->SetTextureParameterValue(FName("DecalTexture"),VehicleData->Decals[DecalIndex]);
+		DecalTextureIndex = DecalIndex;
 	}
 }
 
 void AAA_WheeledVehiclePawn::SetColorOne(FColor ColorToSet)
 {
 	PaintMaterial->SetVectorParameterValue(FName("ColorOne"),ColorToSet);
+	ColorOne = ColorToSet;
 }
 
 void AAA_WheeledVehiclePawn::SetColorTwo(FColor ColorToSet)
 {
 	PaintMaterial->SetVectorParameterValue(FName("ColorTwo"),ColorToSet);
+	ColorTwo = ColorToSet;
 }
 
 void AAA_WheeledVehiclePawn::SetColorThree(FColor ColorToSet)
 {
 	PaintMaterial->SetVectorParameterValue(FName("ColorThree"),ColorToSet);
+	ColorThree = ColorToSet;
 }
 
 void AAA_WheeledVehiclePawn::SetColorFour(FColor ColorToSet)
 {
 	PaintMaterial->SetVectorParameterValue(FName("ColorFour"),ColorToSet);
+	ColorFour = ColorToSet;
 }
 
 void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -103,6 +109,31 @@ void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& Prope
 	{
 		SetVehicleData(VehicleData);
 	}
+	if(PropertyChangedEvent.Property->GetName() == "PaintTextureIndex")
+	{
+		SetVehiclePaint(PaintTextureIndex);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "DecalTextureIndex")
+	{
+		SetVehicleDecal(DecalTextureIndex);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorOne")
+	{
+		SetColorOne(ColorOne);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorTwo")
+	{
+		SetColorTwo(ColorTwo);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorThree")
+	{
+		SetColorThree(ColorThree);
+	}
+	if(PropertyChangedEvent.Property->GetName() == "ColorFour")
+	{
+		SetColorFour(ColorFour);
+	}
+
 }
 #endif
 
