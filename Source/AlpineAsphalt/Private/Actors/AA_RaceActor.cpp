@@ -2,11 +2,14 @@
 
 
 #include "Actors/AA_RaceActor.h"
+
+#include "Actors/AA_Checkpoint.h"
 #include "Components/AA_CheckpointComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
 #include "Controllers/AA_PlayerController.h"
 #include "GameFramework/GameSession.h"
+#include "Kismet/GameplayStatics.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
@@ -14,7 +17,7 @@
 AAA_RaceActor::AAA_RaceActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	
 	Spline = CreateDefaultSubobject<USplineComponent>("RacingLineSpline");
 	CheckpointComponent = CreateDefaultSubobject<UAA_CheckpointComponent>("CheckpointComponent");
@@ -31,6 +34,36 @@ AAA_RaceActor::AAA_RaceActor()
 void AAA_RaceActor::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void AAA_RaceActor::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+}
+
+void AAA_RaceActor::CheckpointHit(int IndexCheckpointHit)
+{
+	if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
+	{
+		LastCheckpointHitIndex = IndexCheckpointHit;
+		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
+		if(LastCheckpointHitIndex == CheckpointComponent->SpawnedCheckpoints.Num()-1)
+		{
+			UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+			UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(TimerHandle,this,&AAA_RaceActor::OnFinishDelayFinish,FinishDelay,false);
+		}
+	}else
+	{
+		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
+	}
+}
+
+void AAA_RaceActor::OnFinishDelayFinish()
+{
+	UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
+
 }
 
 float AAA_RaceActor::GetWidthAtDistance(float Distance)
@@ -117,12 +150,25 @@ void AAA_RaceActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Ot
 
 void AAA_RaceActor::Interact(AAA_PlayerController* Interactor)
 {
+	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(Interactor->GetPawn());
 	//Set Actor at start
-	Interactor->GetPawn()->SetActorLocation(Spline->GetComponentLocation());
+	auto Rotation = Spline->GetRotationAtTime(0.f,ESplineCoordinateSpace::World);
+	auto Location = Spline->GetLocationAtTime(0.f,ESplineCoordinateSpace::World);
+	
+	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
+	PlayerVehicle->ResetVehicle();
+	
 	//Load the Race Decorations
 	LoadRace();
 	//Spawn CheckPoints
 	CheckpointComponent->SpawnCheckpoints();
+	for (auto Checkpoint : CheckpointComponent->SpawnedCheckpoints)
+	{
+		Checkpoint->CheckpointHit.AddDynamic(this, &AAA_RaceActor::CheckpointHit);
+	}
+	LastCheckpointHitIndex = -1;
+	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
+
 }
 
 
