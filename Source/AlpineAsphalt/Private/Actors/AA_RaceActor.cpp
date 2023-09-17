@@ -3,6 +3,7 @@
 
 #include "Actors/AA_RaceActor.h"
 
+#include "GeometryTypes.h"
 #include "Actors/AA_Checkpoint.h"
 #include "Components/AA_CheckpointComponent.h"
 #include "Components/SphereComponent.h"
@@ -49,10 +50,12 @@ void AAA_RaceActor::CheckpointHit(int IndexCheckpointHit)
 		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
 		if(LastCheckpointHitIndex == CheckpointComponent->SpawnedCheckpoints.Num()-1)
 		{
-			UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+			FinishTime = UGameplayStatics::GetTimeSeconds(this);
 			UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
 			FTimerHandle TimerHandle;
-			GetWorldTimerManager().SetTimer(TimerHandle,this,&AAA_RaceActor::OnFinishDelayFinish,FinishDelay,false);
+			GetWorldTimerManager().SetTimer(TimerHandle,this,&AAA_RaceActor::GoToEndRaceState,FinishDelay,false);
+			UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+			UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
 		}
 	}else
 	{
@@ -60,10 +63,40 @@ void AAA_RaceActor::CheckpointHit(int IndexCheckpointHit)
 	}
 }
 
+void AAA_RaceActor::GoToEndRaceState()
+{
+	//Play Replay
+	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
+
+	//Lock actual car
+	Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0))->SetLockLocation(true);
+	
+	//Show UI Screen
+	//UGameplayStatics::GetPlayerController(GetWorld(),0)->GetHUD();
+	
+	//Wait for Confirmation
+}
+
+void AAA_RaceActor::ReturnToOpenWorldState()
+{
+	//Get Player
+	const auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+	if(PlayerVehicle)
+	{
+		PlayerVehicle->SetLockLocation(false);
+
+		//Put Player back to race start 
+		auto Rotation = Spline->GetRotationAtTime(0.f,ESplineCoordinateSpace::World);
+		auto Location = Spline->GetLocationAtTime(0.f,ESplineCoordinateSpace::World);
+		PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
+		PlayerVehicle->ResetVehicle();
+	}
+	UnloadRace();
+}
+
 void AAA_RaceActor::OnFinishDelayFinish()
 {
-	UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
-
+	GoToEndRaceState();
 }
 
 float AAA_RaceActor::GetWidthAtDistance(float Distance)
@@ -99,9 +132,9 @@ void AAA_RaceActor::LoadRace()
 				DataLayerSubsystem->SetDataLayerInstanceRuntimeState(DataLayer,EDataLayerRuntimeState::Unloaded);
 			}
 		}
+		//Spawn Checkpoints
+		CheckpointComponent->SpawnCheckpoints();
 	}
-	//Spawn Checkpoints
-	
 }
 
 void AAA_RaceActor::UnloadRace()
@@ -119,7 +152,10 @@ void AAA_RaceActor::UnloadRace()
 				DataLayerSubsystem->SetDataLayerInstanceRuntimeState(DataLayer,EDataLayerRuntimeState::Unloaded);
 			}
 		}
+		//Destroy Checkpoints
+		CheckpointComponent->DestroyCheckpoints();
 	}
+	
 }
 
 void AAA_RaceActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -161,14 +197,15 @@ void AAA_RaceActor::Interact(AAA_PlayerController* Interactor)
 	//Load the Race Decorations
 	LoadRace();
 	//Spawn CheckPoints
-	CheckpointComponent->SpawnCheckpoints();
 	for (auto Checkpoint : CheckpointComponent->SpawnedCheckpoints)
 	{
 		Checkpoint->CheckpointHit.AddDynamic(this, &AAA_RaceActor::CheckpointHit);
 	}
 	LastCheckpointHitIndex = -1;
+	
 	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
 
+	StartTime = UGameplayStatics::GetTimeSeconds(this);
 }
 
 

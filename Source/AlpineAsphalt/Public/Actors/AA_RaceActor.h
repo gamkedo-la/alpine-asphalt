@@ -47,9 +47,21 @@ public:
 	UPROPERTY()
 	float FinishDelay = 1.f;
 	
+	UPROPERTY()
+	double StartTime;
+
+	UPROPERTY()
+	double FinishTime;
+	
 	UFUNCTION()
 	void CheckpointHit(int IndexCheckpointHit);
 
+	UFUNCTION()
+	void GoToEndRaceState();
+
+	UFUNCTION(CallInEditor)
+	void ReturnToOpenWorldState();
+	
 	UFUNCTION()
 	void OnFinishDelayFinish();
 	

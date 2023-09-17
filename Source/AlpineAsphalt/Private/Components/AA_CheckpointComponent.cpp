@@ -94,4 +94,12 @@ void UAA_CheckpointComponent::SpawnCheckpoints()
 	}
 }
 
+void UAA_CheckpointComponent::DestroyCheckpoints()
+{
+	for (auto Checkpoint : SpawnedCheckpoints)
+	{
+		Checkpoint->Destroy();
+	}
+}
+
 

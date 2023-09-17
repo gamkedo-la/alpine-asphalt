@@ -78,13 +78,16 @@ public:
 
 	UFUNCTION(CallInEditor,BlueprintCallable, Category=Checkpoints)
 	void GenerateCheckpoints();
-
+	
 	UFUNCTION()
 	USplineComponent* GetSpline() const;
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnCheckpoints();
-
+	
+	UFUNCTION(CallInEditor,BlueprintCallable, Category=Checkpoints)
+	void DestroyCheckpoints();
+	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TSubclassOf<AAA_Checkpoint> DefaultCheckpoint;
 
