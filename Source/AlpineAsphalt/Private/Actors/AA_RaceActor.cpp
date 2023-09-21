@@ -68,6 +68,7 @@ void AAA_RaceActor::GoToEndRaceState()
 	//Play Replay
 	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
 
+
 	//Lock actual car
 	Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0))->SetLockLocation(true);
 	
@@ -202,7 +203,8 @@ void AAA_RaceActor::Interact(AAA_PlayerController* Interactor)
 		Checkpoint->CheckpointHit.AddDynamic(this, &AAA_RaceActor::CheckpointHit);
 	}
 	LastCheckpointHitIndex = -1;
-	
+
+	GetWorld()->Exec(GetWorld(),TEXT("demo.minrecordhz 60"));
 	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
 
 	StartTime = UGameplayStatics::GetTimeSeconds(this);
