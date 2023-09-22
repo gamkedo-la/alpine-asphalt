@@ -4,5 +4,5 @@
 
 void UAA_GameInstance::EndActivity() const
 {
-	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->EndActivity();
+	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->DestroyActivity();
 }

@@ -17,12 +17,14 @@ public:
 	UAA_ActivityManagerSubsystem();
 	
 	void LaunchActivity(IAA_ActivityInterface* Activity);
+
+	void LoadScreenMinimumCompleted(bool LoadingActivity);
 	
 	UFUNCTION()
 	bool CanLaunchActivity() const;
 
 	UFUNCTION(Exec)
-	void EndActivity();
+	void DestroyActivity();
 
 	FLoadActivityCompleted OnLoadActivityCompleted;
 	FDestroyActivityCompleted OnDestroyActivityCompleted;
@@ -32,11 +34,16 @@ protected:
 	void StartActivity();
 
 	UFUNCTION()
-	void EndActivityFinished();
+	void DestroyActivityFinished();
 
 private:
 	
 	UPROPERTY()
 	TScriptInterface<IAA_ActivityInterface> CurrentActivity;
-	
+
+	UPROPERTY()
+	float MinimumLoadScreenTime = 1.f;
+
+	bool LoadScreenFinished = false;
+	bool ActivityLoaded = false;
 };
