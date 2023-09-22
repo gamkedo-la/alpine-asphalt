@@ -1,5 +1,9 @@
 ﻿#include "Subsystems/AA_ActivityManagerSubsystem.h"
+
+#include "Controllers/AA_PlayerController.h"
 #include "Interface/AA_ActivityInterface.h"
+#include "Kismet/GameplayStatics.h"
+#include "UI/AA_VehicleUI.h"
 
 DEFINE_LOG_CATEGORY(ActivityManagerSubsystem);
 
@@ -25,8 +29,10 @@ void UAA_ActivityManagerSubsystem::LaunchActivity(IAA_ActivityInterface* Activit
 	CurrentActivity.SetInterface(Activity);
 	CurrentActivity.SetObject(Cast<UObject>(Activity));
 	
-	//TODO: Show Load Screen
+	//Show Load Screen
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->ShowLoadingScreen();
 	CurrentActivity->LoadActivity();
+	StartActivity();
 }
 
 bool UAA_ActivityManagerSubsystem::CanLaunchActivity() const
@@ -36,12 +42,14 @@ bool UAA_ActivityManagerSubsystem::CanLaunchActivity() const
 
 void UAA_ActivityManagerSubsystem::EndActivity()
 {
-	//TODO: Show Loading Screen
-	
+	//Show Loading Screen
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->ShowLoadingScreen();
 	//AsyncTask(ENamedThreads::AnyHiPriThreadHiPriTask, [CurrentActivity]()
 	//{
 		CurrentActivity->DestroyActivity();
 	//});
+	CurrentActivity.SetInterface(nullptr);
+	CurrentActivity.SetObject(nullptr);
 }
 
 void UAA_ActivityManagerSubsystem::StartActivity()
@@ -51,11 +59,13 @@ void UAA_ActivityManagerSubsystem::StartActivity()
 		UE_LOG(ActivityManagerSubsystem,Error,TEXT("Can't Start CurrentActivity: CurrentActivity was nullptr"))
 		return;
 	}
-	//TODO: End Loading Screen
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideLoadingScreen();
+	CurrentActivity->StartActivity();
 }
 
 void UAA_ActivityManagerSubsystem::EndActivityFinished()
 {
-	//TODO: End Loading Screen
+	//TEnd Loading Screen
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideLoadingScreen();
 
 }

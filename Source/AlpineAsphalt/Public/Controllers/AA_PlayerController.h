@@ -8,6 +8,7 @@
 #include "Interface/AA_InteractableInterface.h"
 #include "AA_PlayerController.generated.h"
 
+class UAA_VehicleUI;
 class AAA_WheeledVehiclePawn;
 
 DECLARE_LOG_CATEGORY_EXTERN(PlayerControllerLog, Log, All);
@@ -76,6 +77,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	float RewindSpeed = .1f;
+
+	UPROPERTY(BlueprintReadOnly)
+	UAA_VehicleUI* VehicleUI;
+
+	UPROPERTY(EditDefaultsOnly, Category = UI)
+	TSubclassOf<UAA_VehicleUI> VehicleUIClass;
 	
 	virtual void OnPossess(APawn* InPawn) override;
 

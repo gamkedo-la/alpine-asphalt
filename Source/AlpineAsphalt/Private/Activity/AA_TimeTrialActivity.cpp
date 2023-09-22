@@ -3,9 +3,11 @@
 #include "Actors/AA_Checkpoint.h"
 #include "Actors/AA_TrackInfoActor.h"
 #include "Components/AA_CheckpointComponent.h"
+#include "Controllers/AA_PlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_ActivityManagerSubsystem.h"
+#include "UI/AA_VehicleUI.h"
 
 void UAA_TimeTrialActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 {
@@ -45,16 +47,29 @@ void UAA_TimeTrialActivity::LoadActivity()
 
 }
 
+void UAA_TimeTrialActivity::CountdownEnded()
+{
+	//TODO: Start Race
+
+	//Start Timer
+	StartTime = UGameplayStatics::GetTimeSeconds(this);
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartTimer();
+
+}
+
 void UAA_TimeTrialActivity::StartActivity()
 {
 	//Start Replay
 	GetWorld()->Exec(GetWorld(),TEXT("demo.minrecordhz 60"));
 	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
 	
-	//TODO: Start Countdown
-	
-	//Start Race
-	StartTime = UGameplayStatics::GetTimeSeconds(this);
+	//Start Countdown
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
+	FTimerHandle TimerHandle;
+	//TODO don't hardcode countdown time
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::CountdownEnded,3.f,false);
+
+
 
 	//Wait for end of race
 }
@@ -78,6 +93,8 @@ void UAA_TimeTrialActivity::RaceEnded()
 {
 	//Show Score Screen
 	UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
+
+	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->EndActivity();
 
 	//Play Replay
 	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));

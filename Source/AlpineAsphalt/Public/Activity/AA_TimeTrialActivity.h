@@ -20,6 +20,7 @@ public:
 	UFUNCTION()
 	virtual void LoadActivity() override;
 
+	void CountdownEnded();
 	//starts the activity
 	UFUNCTION()
 	virtual void StartActivity() override;

@@ -4,8 +4,10 @@
 #include "Controllers/AA_PlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_RewindSubsystem.h"
+#include "UI/AA_VehicleUI.h"
 
 DEFINE_LOG_CATEGORY(PlayerControllerLog);
 
@@ -19,6 +21,9 @@ void AAA_PlayerController::OnPossess(APawn* InPawn)
 	{
 		UE_LOG(PlayerControllerLog,Error,TEXT("%hs: Pawn was not an AA_WheeledVehiclePawn_CPP"),__FUNCSIG__);
 	}
+	
+	VehicleUI = CreateWidget<UAA_VehicleUI>(GetGameInstance(),VehicleUIClass);
+	VehicleUI->AddToViewport(0);
 }
 
 void AAA_PlayerController::SetupInputComponent()

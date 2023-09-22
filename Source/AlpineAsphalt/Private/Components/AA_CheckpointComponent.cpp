@@ -100,6 +100,7 @@ void UAA_CheckpointComponent::DestroyCheckpoints()
 	{
 		Checkpoint->Destroy();
 	}
+	SpawnedCheckpoints.Empty();
 }
 
 
