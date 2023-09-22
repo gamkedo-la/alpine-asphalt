@@ -4,7 +4,7 @@
 #include "Components/AA_CheckpointComponent.h"
 
 #include "Actors/AA_Checkpoint.h"
-#include "Actors/AA_RaceActor.h"
+#include "..\..\Public\Actors\AA_TrackInfoActor.h"
 #include "Components/SplineComponent.h"
 
 // Sets default values for this component's properties
@@ -50,7 +50,7 @@ void UAA_CheckpointComponent::TickComponent(float DeltaTime, ELevelTick TickType
 void UAA_CheckpointComponent::GenerateCheckpoints()
 {
 	SplineComponent = GetOwner()->GetComponentByClass<USplineComponent>();
-	const auto RaceActor = Cast<AAA_RaceActor>(GetOwner());
+	const auto RaceActor = Cast<AAA_TrackInfoActor>(GetOwner());
 	ensure(SplineComponent);
 
 	const int NumberCheckpoints = FMath::CeilToInt(SplineComponent->GetSplineLength() / CheckpointGenerationDistance);

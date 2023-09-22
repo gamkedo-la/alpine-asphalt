@@ -2,7 +2,7 @@
 
 
 #include "FunctionLibraries/AA_BlueprintFunctionLibrary.h"
-#include "..\..\Public\Actors\AA_RaceActor.h"
+#include "..\..\Public\Actors\AA_TrackInfoActor.h"
 #include "LandscapeSplineActor.h"
 #include "LandscapeSplineControlPoint.h"
 #include "Actors/AA_RoadSplineActor.h"
@@ -140,7 +140,7 @@ void UAA_BlueprintFunctionLibrary::GenerateRoadSpline(AActor* LandscapeSpline, T
 	}
 }
 
-void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> RoadSplineActors, TSubclassOf<AAA_RaceActor> RaceSplineBP)
+void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> RoadSplineActors, TSubclassOf<AAA_TrackInfoActor> RaceSplineBP)
 {
 	TArray<AAA_RoadSplineActor*> RoadSplines;
 	for (const auto RoadSpline : RoadSplineActors)
@@ -176,7 +176,7 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 	//Create a new spline actor
 	FVector SpawnLocation = FVector(RoadSplines[0]->Spline->GetLocationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World));
 	FRotator SpawnRotation = FRotator(RoadSplines[0]->Spline->GetRotationAtSplinePoint(CurrentStart,ESplineCoordinateSpace::World));
-	AAA_RaceActor* RaceSpline = Cast<AAA_RaceActor>(RoadSplines[0]->GetWorld()->SpawnActor(RaceSplineBP,&SpawnLocation,&SpawnRotation));
+	AAA_TrackInfoActor* RaceSpline = Cast<AAA_TrackInfoActor>(RoadSplines[0]->GetWorld()->SpawnActor(RaceSplineBP,&SpawnLocation,&SpawnRotation));
 	RaceSpline->Spline->ClearSplinePoints();
 #if WITH_EDITOR
 	RaceSpline->SetFolderPath("RaceSplines");

@@ -6,6 +6,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AA_BlueprintFunctionLibrary.generated.h"
 
+class AAA_TrackInfoActor;
+class AAA_RoadSplineActor;
 /**
  * 
  */
@@ -19,6 +21,6 @@ public:
 	static void GenerateRoadSpline(class AActor* LandscapeSpline,TSubclassOf<AAA_RoadSplineActor> RoadSplineBP);
 
 	UFUNCTION(BlueprintCallable,Category=RaceSpline)
-	static void GenerateRaceSpline(TArray<class AActor*> RoadSplines, TSubclassOf<AAA_RaceActor> RaceSplineBP);
+	static void GenerateRaceSpline(TArray<class AActor*> RoadSplines, TSubclassOf<AAA_TrackInfoActor> RaceSplineBP);
 	
 };
