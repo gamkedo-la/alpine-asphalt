@@ -201,11 +201,6 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 
 }
 
-void AAA_WheeledVehiclePawn::SetLockedPreRace(bool NewLockedState)
-{
-	VehicleLockedPreRaceStart = NewLockedState;
-}
-
 void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
 {
 	IAA_RewindableInterface::SetRewindTime(Time);

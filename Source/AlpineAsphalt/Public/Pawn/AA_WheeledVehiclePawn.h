@@ -111,12 +111,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetVehicleData(UAA_VehicleDataAsset* NewVehicleData);
-
-	UFUNCTION(BlueprintCallable)
-	void SetLockedPreRace(bool NewLockedState);
 	
-	UPROPERTY()
-	bool VehicleLockedPreRaceStart = false;
 	/** Rewind Functions **/
 	virtual void SetRewindTime(float Time) override;
 	virtual void PauseRecordingSnapshots() override;

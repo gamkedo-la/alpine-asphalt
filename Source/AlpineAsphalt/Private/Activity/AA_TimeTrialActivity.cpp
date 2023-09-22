@@ -1,5 +1,6 @@
 ﻿#include "Activity/AA_TimeTrialActivity.h"
 
+#include "ChaosWheeledVehicleMovementComponent.h"
 #include "Actors/AA_Checkpoint.h"
 #include "Actors/AA_TrackInfoActor.h"
 #include "Components/AA_CheckpointComponent.h"
@@ -42,6 +43,8 @@ void UAA_TimeTrialActivity::LoadActivity()
 	PlayerVehicle->ResetVehicle();
 
 	//TODO: Lock Car in Place
+	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
+	
 	
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnLoadActivityCompleted.Broadcast();
 
@@ -49,7 +52,11 @@ void UAA_TimeTrialActivity::LoadActivity()
 
 void UAA_TimeTrialActivity::CountdownEnded()
 {
-	//TODO: Start Race
+	//Start Race
+
+	//Release Player Vehicle
+	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+	PlayerVehicle->GetVehicleMovementComponent()->SetParked(false);
 
 	//Start Timer
 	StartTime = UGameplayStatics::GetTimeSeconds(this);
