@@ -75,9 +75,7 @@ void UAA_TimeTrialActivity::StartActivity()
 	FTimerHandle TimerHandle;
 	//TODO don't hardcode countdown time
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::CountdownEnded,3.f,false);
-
-
-
+	
 	//Wait for end of race
 }
 
@@ -92,7 +90,10 @@ void UAA_TimeTrialActivity::DestroyActivity()
 	auto Location = Track->GetActorLocation();
 	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
 	PlayerVehicle->ResetVehicle();
-	
+
+	//Hide Timer (May be redundant, but we might leave before the race is over)
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
+
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
 }
 
@@ -101,7 +102,9 @@ void UAA_TimeTrialActivity::RaceEnded()
 	//Show Score Screen
 	UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
 
-	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->EndActivity();
+	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->DestroyActivity();
+
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
 
 	//Play Replay
 	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
