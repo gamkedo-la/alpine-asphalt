@@ -2,12 +2,15 @@
 
 
 #include "FunctionLibraries/AA_BlueprintFunctionLibrary.h"
-#include "..\..\Public\Actors\AA_TrackInfoActor.h"
+
+#include "ChaosVehicleWheel.h"
+#include "Actors/AA_TrackInfoActor.h"
 #include "LandscapeSplineActor.h"
 #include "LandscapeSplineControlPoint.h"
 #include "Actors/AA_RoadSplineActor.h"
 #include "Components/SplineComponent.h"
 #include "Engine/StaticMeshSocket.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 /**
  * @brief
@@ -234,4 +237,14 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 		WorldToActorSpaceTransform.TransformRotation(Rotation.Quaternion()).Rotator());
 	RaceSpline->Spline->AddPoint(NewPoint);
 	RaceSpline->RoadWidth.Add(RoadSplines[LastIndex]->RoadWidth[!CurrentStart]);
+}
+
+UPhysicalMaterial* UAA_BlueprintFunctionLibrary::GetWheelContactMaterial(UChaosVehicleWheel* Wheel)
+{
+	if(Wheel)
+	{
+		return Wheel->GetContactSurfaceMaterial();
+	}
+	return nullptr;
+	
 }

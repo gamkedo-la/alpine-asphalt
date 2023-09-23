@@ -6,6 +6,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "AA_BlueprintFunctionLibrary.generated.h"
 
+class UChaosVehicleWheel;
 class AAA_TrackInfoActor;
 class AAA_RoadSplineActor;
 /**
@@ -22,5 +23,7 @@ public:
 
 	UFUNCTION(BlueprintCallable,Category=RaceSpline)
 	static void GenerateRaceSpline(TArray<class AActor*> RoadSplines, TSubclassOf<AAA_TrackInfoActor> RaceSplineBP);
-	
+
+	UFUNCTION(BlueprintCallable, Category=ChaosWheel)
+	static UPhysicalMaterial* GetWheelContactMaterial(UChaosVehicleWheel* Wheel);
 };
