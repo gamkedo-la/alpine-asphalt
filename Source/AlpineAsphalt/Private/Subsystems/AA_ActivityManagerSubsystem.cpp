@@ -1,7 +1,7 @@
 ﻿#include "Subsystems/AA_ActivityManagerSubsystem.h"
 
 #include "Controllers/AA_PlayerController.h"
-#include "Interface/AA_ActivityInterface.h"
+#include "Activity/AA_BaseActivity.h"
 #include "Kismet/GameplayStatics.h"
 #include "UI/AA_VehicleUI.h"
 
@@ -13,7 +13,7 @@ UAA_ActivityManagerSubsystem::UAA_ActivityManagerSubsystem()
 	OnDestroyActivityCompleted.AddDynamic(this,&UAA_ActivityManagerSubsystem::DestroyActivityFinished);
 }
 
-void UAA_ActivityManagerSubsystem::LaunchActivity(IAA_ActivityInterface* Activity)
+void UAA_ActivityManagerSubsystem::LaunchActivity(UAA_BaseActivity* Activity)
 {
 	if(!Activity)
 	{
@@ -26,8 +26,7 @@ void UAA_ActivityManagerSubsystem::LaunchActivity(IAA_ActivityInterface* Activit
 		return;
 	}
 	//Store activity
-	CurrentActivity.SetInterface(Activity);
-	CurrentActivity.SetObject(Cast<UObject>(Activity));
+	CurrentActivity = Activity;
 	
 	//Show Load Screen
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->ShowLoadingScreen();
@@ -106,9 +105,5 @@ void UAA_ActivityManagerSubsystem::DestroyActivityFinished()
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideLoadingScreen();
 	
 	//Set current activity back to nullptr
-	CurrentActivity.SetInterface(nullptr);
-	CurrentActivity.SetObject(nullptr);
-	
-
-
+	CurrentActivity = nullptr;
 }

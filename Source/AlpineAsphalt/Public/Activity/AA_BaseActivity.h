@@ -1,20 +1,17 @@
 ﻿#pragma once
 
-#include "AA_ActivityInterface.generated.h"
+#include "AA_BaseActivity.generated.h"
 
 
+class AAA_TrackInfoActor;
 
-UINTERFACE(Blueprintable)
-class ALPINEASPHALT_API UAA_ActivityInterface : public UInterface
-{
-	GENERATED_BODY()	
-};
-
-class IAA_ActivityInterface
+UCLASS(Abstract)
+class ALPINEASPHALT_API UAA_BaseActivity : public UObject
 {
 	GENERATED_BODY()
-	
+
 public:
+	virtual void Initialize(AAA_TrackInfoActor*);
 	//loads the activity and all needed actors
 	virtual void LoadActivity();
 
@@ -23,5 +20,4 @@ public:
 
 	//destroys the activity
 	virtual void DestroyActivity();
-
 };

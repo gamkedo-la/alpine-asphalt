@@ -115,9 +115,15 @@ void AAA_TrackInfoActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActo
 
 void AAA_TrackInfoActor::Interact(AAA_PlayerController* Interactor)
 {
-	auto TimeTrial = NewObject<UAA_TimeTrialActivity>();
-	TimeTrial->Initialize(this);
-	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->LaunchActivity(TimeTrial);
+	if(!ActivityType)
+	{
+		UE_LOG(LogTemp,Error,TEXT("No Activity Set on Object %s: Cannot start Activity"), *this->GetName());
+		return;
+	}
+	//Launch Activity
+	auto NewActivity = NewObject<UAA_BaseActivity>(this,ActivityType);
+	NewActivity->Initialize(this);
+	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->LaunchActivity(NewActivity);
 }
 
 

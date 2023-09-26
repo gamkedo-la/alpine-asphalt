@@ -5,9 +5,11 @@
 #include "Actors/AA_TrackInfoActor.h"
 #include "Components/AA_CheckpointComponent.h"
 #include "Controllers/AA_PlayerController.h"
+#include "Engine/Internal/Kismet/BlueprintTypeConversions.h"
 #include "Kismet/GameplayStatics.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_ActivityManagerSubsystem.h"
+#include "UI/AA_TimeTrialScoreScreenUI.h"
 #include "UI/AA_VehicleUI.h"
 
 void UAA_TimeTrialActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
@@ -101,11 +103,33 @@ void UAA_TimeTrialActivity::RaceEnded()
 {
 	//Show Score Screen
 	UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
+	float PlayerTime = FinishTime-StartTime;
+	//GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->DestroyActivity();
+	auto ScoreScreen = NewObject<UAA_TimeTrialScoreScreenUI>(this,ScoreScreenClass);
+	ScoreScreen->AddToViewport();
 
-	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->DestroyActivity();
+	TArray<FDriverName*> DriverNames;
+	DriverTable->GetAllRows("", DriverNames);
+	float Time =Track->FirstPlaceFinishTime;
+	bool PlayerAdded = false;
+	for(int i = 0; i < 10; i++)
+	{
+		Time += FMath::RandRange(.1f,1.f);
+		if(!PlayerAdded &&Time > PlayerTime)
+		{
+			ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
+			PlayerAdded = true;
+		}
+		ScoreScreen->AddDriverScore(DriverNames[i]->DriverName,Time);
+	}
+	if(!PlayerAdded)
+	{
+		ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
+	}
 
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
-
+	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
+	PC->VehicleUI->HideTimer();
+	
 	//Play Replay
 	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
 

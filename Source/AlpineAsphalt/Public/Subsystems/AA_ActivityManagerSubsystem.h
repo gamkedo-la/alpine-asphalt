@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Interface/AA_ActivityInterface.h"
 #include "AA_ActivityManagerSubsystem.generated.h"
 
+class UAA_BaseActivity;
 DECLARE_LOG_CATEGORY_EXTERN(ActivityManagerSubsystem, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLoadActivityCompleted);
@@ -16,14 +16,14 @@ class UAA_ActivityManagerSubsystem : public UWorldSubsystem
 public:
 	UAA_ActivityManagerSubsystem();
 	
-	void LaunchActivity(IAA_ActivityInterface* Activity);
+	void LaunchActivity(UAA_BaseActivity* Activity);
 
 	void LoadScreenMinimumCompleted(bool LoadingActivity);
 	
 	UFUNCTION()
 	bool CanLaunchActivity() const;
 
-	UFUNCTION(Exec)
+	UFUNCTION(BlueprintCallable,Exec)
 	void DestroyActivity();
 
 	FLoadActivityCompleted OnLoadActivityCompleted;
@@ -39,7 +39,7 @@ protected:
 private:
 	
 	UPROPERTY()
-	TScriptInterface<IAA_ActivityInterface> CurrentActivity;
+	UAA_BaseActivity* CurrentActivity;
 
 	UPROPERTY()
 	float MinimumLoadScreenTime = 1.f;

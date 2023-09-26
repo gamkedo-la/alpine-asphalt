@@ -7,6 +7,8 @@
 #include "Interface/AA_InteractableInterface.h"
 #include "AA_TrackInfoActor.generated.h"
 
+class UAA_BaseActivity;
+
 UCLASS()
 class ALPINEASPHALT_API AAA_TrackInfoActor : public AActor, public IAA_InteractableInterface
 {
@@ -28,7 +30,16 @@ public:
 	UPROPERTY(BlueprintReadOnly,VisibleAnywhere, Category=Race)
 	class USphereComponent* InteractableCollision;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Race, Meta = (MakeEditWidget = true))
+	UPROPERTY(BlueprintReadOnly,EditInstanceOnly,Category=Race)
+	TSubclassOf<UAA_BaseActivity> ActivityType;
+		
+	UPROPERTY(BlueprintReadOnly,EditInstanceOnly,Category=Race)
+	FString TrackName;
+	
+	UPROPERTY(BlueprintReadOnly,EditInstanceOnly,Category=Race)
+	float FirstPlaceFinishTime;
+	
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Race, Meta = (MakeEditWidget = true))
 	TArray<FTransform> StartLocations;
 	
 	UPROPERTY(BlueprintReadWrite, EditInstanceOnly, Category=Race)
