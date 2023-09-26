@@ -47,9 +47,25 @@ void UAA_TimeTrialActivity::LoadActivity()
 	//TODO: Lock Car in Place
 	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
 	
-	
-	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnLoadActivityCompleted.Broadcast();
+	GetWorld()->Exec(GetWorld(),TEXT("demo.MinRecordHz 60"));
+	GetWorld()->Exec(GetWorld(),TEXT("demo.RecordHz 120"));
 
+
+	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnLoadActivityCompleted.Broadcast();
+}
+
+void UAA_TimeTrialActivity::StartActivity()
+{
+	//Start Replay
+	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
+	
+	//Start Countdown
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
+	FTimerHandle TimerHandle;
+	//TODO don't hardcode countdown time
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::CountdownEnded,3.f,false);
+	
+	//Wait for end of race
 }
 
 void UAA_TimeTrialActivity::CountdownEnded()
@@ -64,85 +80,6 @@ void UAA_TimeTrialActivity::CountdownEnded()
 	StartTime = UGameplayStatics::GetTimeSeconds(this);
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartTimer();
 
-}
-
-void UAA_TimeTrialActivity::StartActivity()
-{
-	//Start Replay
-	GetWorld()->Exec(GetWorld(),TEXT("demo.minrecordhz 60"));
-	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
-	
-	//Start Countdown
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
-	FTimerHandle TimerHandle;
-	//TODO don't hardcode countdown time
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::CountdownEnded,3.f,false);
-	
-	//Wait for end of race
-}
-
-void UAA_TimeTrialActivity::DestroyActivity()
-{
-	//Unload the race
-	Track->UnloadRace();
-
-	//Put Player back where race started
-	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
-	auto Rotation = Track->GetActorRotation();
-	auto Location = Track->GetActorLocation();
-	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
-	PlayerVehicle->ResetVehicle();
-
-	//Hide Timer (May be redundant, but we might leave before the race is over)
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
-
-	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
-}
-
-void UAA_TimeTrialActivity::RaceEnded()
-{
-	//Show Score Screen
-	UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
-	float PlayerTime = FinishTime-StartTime;
-	//GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->DestroyActivity();
-	auto ScoreScreen = NewObject<UAA_TimeTrialScoreScreenUI>(this,ScoreScreenClass);
-	ScoreScreen->AddToViewport();
-
-	TArray<FDriverName*> DriverNames;
-	DriverTable->GetAllRows("", DriverNames);
-	float Time =Track->FirstPlaceFinishTime;
-	bool PlayerAdded = false;
-	for(int i = 0; i < 10; i++)
-	{
-		Time += FMath::RandRange(.1f,1.f);
-		if(!PlayerAdded &&Time > PlayerTime)
-		{
-			ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
-			PlayerAdded = true;
-		}
-		ScoreScreen->AddDriverScore(DriverNames[i]->DriverName,Time);
-	}
-	if(!PlayerAdded)
-	{
-		ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
-	}
-
-	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
-	PC->VehicleUI->HideTimer();
-	
-	//Play Replay
-	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
-
-	//Wait for Confirmation before DestroyActivity
-}
-
-UWorld* UAA_TimeTrialActivity::GetWorld() const
-{
-	if(!Track)
-	{
-		UE_LOG(LogTemp,Warning,TEXT("%hs: No Track: GetWorld likely to fail"),__func__)
-	}
-	return Track->GetWorld();
 }
 
 void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit)
@@ -163,4 +100,73 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit)
 	{
 		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
 	}
+}
+
+void UAA_TimeTrialActivity::RaceEnded()
+{
+	//Play Replay
+	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
+
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::ReplayStartDelayEnded,ReplayStartDelay,false);
+}
+void UAA_TimeTrialActivity::ReplayStartDelayEnded()
+{
+	//Calculate Player Time
+	UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
+	float PlayerTime = FinishTime-StartTime;
+
+	//Show Score Screen
+	auto ScoreScreen = NewObject<UAA_TimeTrialScoreScreenUI>(this,ScoreScreenClass);
+	ScoreScreen->AddToViewport();
+
+	//Add results to score screen
+	TArray<FDriverName*> DriverNames;
+	DriverTable->GetAllRows("", DriverNames);
+	float Time =Track->FirstPlaceFinishTime;
+	bool PlayerAdded = false;
+	for(int i = 0; i < 10; i++)
+	{
+		Time += FMath::RandRange(.1f,1.f);
+		if(!PlayerAdded &&Time > PlayerTime)
+		{
+			ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
+			PlayerAdded = true;
+		}
+		ScoreScreen->AddDriverScore(DriverNames[i]->DriverName,Time);
+	}
+	if(!PlayerAdded)
+	{
+		ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
+	}
+
+	//Hide Time
+	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
+	PC->VehicleUI->HideTimer();
+}
+void UAA_TimeTrialActivity::DestroyActivity()
+{
+	//Unload the race
+	Track->UnloadRace();
+
+	//Put Player back where race started
+	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+	auto Rotation = Track->GetActorRotation();
+	auto Location = Track->GetActorLocation();
+	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
+	PlayerVehicle->ResetVehicle();
+
+	//Hide Timer (May be redundant, but we might leave before the race is over)
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
+
+	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
+}
+
+UWorld* UAA_TimeTrialActivity::GetWorld() const
+{
+	if(!Track)
+	{
+		UE_LOG(LogTemp,Warning,TEXT("%hs: No Track: GetWorld likely to fail"),__func__)
+	}
+	return Track->GetWorld();
 }

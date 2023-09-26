@@ -40,6 +40,7 @@ public:
 	UFUNCTION()
 	virtual void DestroyActivity() override;
 
+	void ReplayStartDelayEnded();
 	//call when TimeTrial ends
 	UFUNCTION()
 	virtual void RaceEnded();
@@ -68,6 +69,9 @@ private:
 
 	UPROPERTY()
 	float FinishDelay = 1.f;
+	
+	UPROPERTY()
+	float ReplayStartDelay = .2f;
 
 	UPROPERTY()
 	float StartTime;
