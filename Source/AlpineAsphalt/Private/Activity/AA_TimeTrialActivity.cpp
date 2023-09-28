@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_ActivityManagerSubsystem.h"
+#include "UI/AA_BaseUI.h"
 #include "UI/AA_TimeTrialScoreScreenUI.h"
 #include "UI/AA_VehicleUI.h"
 
@@ -64,8 +65,6 @@ void UAA_TimeTrialActivity::StartActivity()
 	FTimerHandle TimerHandle;
 	//TODO don't hardcode countdown time
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::CountdownEnded,3.f,false);
-	
-	//Wait for end of race
 }
 
 void UAA_TimeTrialActivity::CountdownEnded()
@@ -117,8 +116,8 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 	float PlayerTime = FinishTime-StartTime;
 
 	//Show Score Screen
-	auto ScoreScreen = NewObject<UAA_TimeTrialScoreScreenUI>(this,ScoreScreenClass);
-	ScoreScreen->AddToViewport();
+	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
+	UAA_TimeTrialScoreScreenUI* ScoreScreen = Cast<UAA_TimeTrialScoreScreenUI>(PC->BaseUI->PushMenu(ScoreScreenClass));
 
 	//Add results to score screen
 	TArray<FDriverName*> DriverNames;
@@ -141,7 +140,6 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 	}
 
 	//Hide Time
-	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
 	PC->VehicleUI->HideTimer();
 }
 void UAA_TimeTrialActivity::DestroyActivity()

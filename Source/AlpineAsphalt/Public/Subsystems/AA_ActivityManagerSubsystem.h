@@ -33,6 +33,9 @@ protected:
 	UFUNCTION()
 	void StartActivity();
 
+	UFUNCTION(BlueprintCallable)
+	void RestartActivity();
+
 	UFUNCTION()
 	void DestroyActivityFinished();
 

@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "AA_ExtendedCommonActivatableWidget.h"
 #include "AA_TimeTrialScoreScreenUI.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API UAA_TimeTrialScoreScreenUI : public UUserWidget
+class ALPINEASPHALT_API UAA_TimeTrialScoreScreenUI : public UAA_ExtendedCommonActivatableWidget
 {
 	GENERATED_BODY()
 

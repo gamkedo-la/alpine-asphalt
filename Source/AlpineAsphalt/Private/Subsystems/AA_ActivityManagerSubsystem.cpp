@@ -97,6 +97,32 @@ void UAA_ActivityManagerSubsystem::StartActivity()
 	CurrentActivity->StartActivity();
 }
 
+void UAA_ActivityManagerSubsystem::RestartActivity()
+{
+
+	//Destroy/////////////////////////////////
+	//Show Loading Screen
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->ShowLoadingScreen();
+
+	//Show Load Screen for minimum time
+	FTimerHandle TimerHandle;
+	FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this,&UAA_ActivityManagerSubsystem::LoadScreenMinimumCompleted,false);
+	LoadScreenFinished = false;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle,TimerDelegate,MinimumLoadScreenTime,false);
+
+	auto ActivityToRestart = CurrentActivity;
+	//Start Task to destroy Activity
+	//AsyncTask(ENamedThreads::GameThread, [&]()
+	//{
+		CurrentActivity->DestroyActivity();
+		ActivityLoaded = false;
+		CurrentActivity = nullptr;
+	//});
+	//Destroy Done////////////////////////
+
+	LaunchActivity(ActivityToRestart);
+}
+
 void UAA_ActivityManagerSubsystem::DestroyActivityFinished()
 {
 	if(!LoadScreenFinished || ActivityLoaded){return;}
