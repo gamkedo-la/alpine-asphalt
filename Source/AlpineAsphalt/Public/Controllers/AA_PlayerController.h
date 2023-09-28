@@ -8,6 +8,7 @@
 #include "Interface/AA_InteractableInterface.h"
 #include "AA_PlayerController.generated.h"
 
+class UAA_BaseUI;
 class UAA_VehicleUI;
 class AAA_WheeledVehiclePawn;
 
@@ -81,8 +82,14 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	UAA_VehicleUI* VehicleUI;
 
+	UPROPERTY(BlueprintReadOnly)
+	UAA_BaseUI* BaseUI;
+
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	TSubclassOf<UAA_VehicleUI> VehicleUIClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = UI)
+	TSubclassOf<UAA_BaseUI> BaseUIClass;
 	
 	virtual void OnPossess(APawn* InPawn) override;
 
