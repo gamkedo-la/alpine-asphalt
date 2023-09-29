@@ -27,6 +27,9 @@ void UAA_TimeTrialActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 
 void UAA_TimeTrialActivity::LoadActivity()
 {
+	//Start Replay
+	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
+	
 	//Spawn DataLayers, Despawn DataLayers, Spawn Checkpoints
 	Track->LoadRace();
 
@@ -59,9 +62,6 @@ void UAA_TimeTrialActivity::StartActivity()
 {
 	//Ensure Index is reset
 	LastCheckpointHitIndex = -1;
-    	
-	//Start Replay
-	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
 	
 	//Start Countdown
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
@@ -107,7 +107,7 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit)
 void UAA_TimeTrialActivity::RaceEnded()
 {
 	//Play Replay
-	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"));
+	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"),GetWorld());
 
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::ReplayStartDelayEnded,ReplayStartDelay,false);
