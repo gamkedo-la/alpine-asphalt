@@ -57,6 +57,9 @@ void UAA_TimeTrialActivity::LoadActivity()
 
 void UAA_TimeTrialActivity::StartActivity()
 {
+	//Ensure Index is reset
+	LastCheckpointHitIndex = -1;
+    	
 	//Start Replay
 	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
 	
@@ -144,6 +147,12 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 }
 void UAA_TimeTrialActivity::DestroyActivity()
 {
+	//Unbind to Checkpoints
+	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
+	{
+		Checkpoint->CheckpointHit.RemoveDynamic(this, &UAA_TimeTrialActivity::CheckpointHit);
+	}
+	
 	//Unload the race
 	Track->UnloadRace();
 
