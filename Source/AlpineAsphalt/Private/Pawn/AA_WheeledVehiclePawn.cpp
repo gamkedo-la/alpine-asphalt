@@ -53,7 +53,6 @@ UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovemen
 	return VehicleMovementComponent;
 }
 
-#if WITH_EDITOR
 void AAA_WheeledVehiclePawn::SetVehiclePaint(int PaintIndex)
 {
 	ensure(VehicleData);
@@ -100,6 +99,8 @@ void AAA_WheeledVehiclePawn::SetColorFour(FColor ColorToSet)
 	ColorFour = ColorToSet;
 }
 
+#if WITH_EDITOR
+
 void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -144,8 +145,6 @@ void AAA_WheeledVehiclePawn::DisplayDebug(UCanvas* Canvas, const FDebugDisplayIn
 
 	Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);
 }
-
-#if WITH_EDITOR
 
 void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData)
 {
@@ -202,8 +201,6 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 
 
 }
-
-#endif
 
 void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
 {

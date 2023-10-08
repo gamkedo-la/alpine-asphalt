@@ -72,8 +72,6 @@ public:
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void CameraLook(FVector2D Input);
 
-#if WITH_EDITOR
-
 	///Cosmetic Functions
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetVehiclePaint(int PaintIndex);
@@ -88,8 +86,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorFour(FColor ColorToSet);
 	
-#endif
-
 	UPROPERTY()
 	UMaterialInstanceDynamic* PaintMaterial;
 
@@ -113,10 +109,8 @@ public:
 	//~ Begin AActor Interface
 	virtual void DisplayDebug(class UCanvas* Canvas, const FDebugDisplayInfo& DebugDisplay, float& YL, float& YPos) override;
 
-#if WITH_EDITOR
 	UFUNCTION(BlueprintCallable)
 	void SetVehicleData(UAA_VehicleDataAsset* NewVehicleData);
-#endif
 	
 	/** Rewind Functions **/
 	virtual void SetRewindTime(float Time) override;
