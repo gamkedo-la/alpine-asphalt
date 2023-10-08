@@ -14,8 +14,6 @@ UAA_VehicleAudioComponent::UAA_VehicleAudioComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 	EngineAudioComponent = CreateDefaultSubobject<UAudioComponent>(VehicleAudioComponentName);
-	EngineAudioComponent->SetActive(true);
-	EngineAudioComponent->SetVolumeMultiplier(1.5);
 }
 
 
@@ -23,13 +21,14 @@ UAA_VehicleAudioComponent::UAA_VehicleAudioComponent()
 void UAA_VehicleAudioComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	EngineAudioComponent->SetActive(true);
+	EngineAudioComponent->SetVolumeMultiplier(1.5);
+
 	if(EngineAudioComponent != nullptr)
 	{
 		EngineAudioComponent->Play();
 	}
-
-	// ...
-	
 }
 
 
