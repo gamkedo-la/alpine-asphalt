@@ -17,7 +17,10 @@ void FAlpineAsphaltEditorModule::StartupModule()
 	const TSharedPtr<AA_CheckpointVisualizer> Visualizer = MakeShareable(new AA_CheckpointVisualizer);
 	if(Visualizer.IsValid())
 	{
-		GUnrealEd->RegisterComponentVisualizer(UAA_CheckpointComponent::StaticClass()->GetFName(),Visualizer);
+		if (GUnrealEd)
+		{
+			GUnrealEd->RegisterComponentVisualizer(UAA_CheckpointComponent::StaticClass()->GetFName(), Visualizer);
+		}
 		Visualizer->OnRegister();
 	}
 }
