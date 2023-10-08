@@ -22,11 +22,10 @@ void UAA_VehicleAudioComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	EngineAudioComponent->SetActive(true);
-	EngineAudioComponent->SetVolumeMultiplier(1.5);
-
 	if(EngineAudioComponent != nullptr)
 	{
+		EngineAudioComponent->SetActive(true);
+		EngineAudioComponent->SetVolumeMultiplier(1.5);
 		EngineAudioComponent->Play();
 	}
 }
