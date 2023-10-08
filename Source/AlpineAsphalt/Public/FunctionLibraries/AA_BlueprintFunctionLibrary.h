@@ -18,11 +18,15 @@ class ALPINEASPHALT_API UAA_BlueprintFunctionLibrary : public UBlueprintFunction
 	GENERATED_BODY()
 
 public:
+
+#if WITH_EDITOR
+
 	UFUNCTION(BlueprintCallable,Category=LandscapeSpline)
 	static void GenerateRoadSpline(class AActor* LandscapeSpline,TSubclassOf<AAA_RoadSplineActor> RoadSplineBP);
 
 	UFUNCTION(BlueprintCallable,Category=RaceSpline)
 	static void GenerateRaceSpline(TArray<class AActor*> RoadSplines, TSubclassOf<AAA_TrackInfoActor> RaceSplineBP);
+#endif
 
 	UFUNCTION(BlueprintCallable, Category=ChaosWheel)
 	static UPhysicalMaterial* GetWheelContactMaterial(UChaosVehicleWheel* Wheel);

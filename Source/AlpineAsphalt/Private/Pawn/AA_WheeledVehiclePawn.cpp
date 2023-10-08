@@ -145,6 +145,8 @@ void AAA_WheeledVehiclePawn::DisplayDebug(UCanvas* Canvas, const FDebugDisplayIn
 	Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);Super::DisplayDebug(Canvas, DebugDisplay, YL, YPos);
 }
 
+#if WITH_EDITOR
+
 void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData)
 {
 	UE_LOG(Vehicle, Log, TEXT("Setting Vehicle Data"))
@@ -200,6 +202,8 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 
 
 }
+
+#endif
 
 void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
 {

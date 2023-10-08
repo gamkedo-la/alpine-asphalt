@@ -12,6 +12,10 @@
 #include "Engine/StaticMeshSocket.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 
+#pragma region Editor Only Members
+
+#if WITH_EDITOR
+
 /**
  * @brief
  * Generates AA_RoadSplines_CPP for the given Landscape Spline
@@ -238,6 +242,10 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 	RaceSpline->Spline->AddPoint(NewPoint);
 	RaceSpline->RoadWidth.Add(RoadSplines[LastIndex]->RoadWidth[!CurrentStart]);
 }
+
+#endif
+
+#pragma endregion Editor Only Members
 
 UPhysicalMaterial* UAA_BlueprintFunctionLibrary::GetWheelContactMaterial(UChaosVehicleWheel* Wheel)
 {
