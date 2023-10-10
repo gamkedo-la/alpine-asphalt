@@ -8,6 +8,7 @@
 #include "LandscapeSplineActor.h"
 #include "LandscapeSplineControlPoint.h"
 #include "Actors/AA_RoadSplineActor.h"
+#include "Components/AA_CheckpointComponent.h"
 #include "Components/SplineComponent.h"
 #include "Engine/StaticMeshSocket.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
@@ -241,6 +242,11 @@ void UAA_BlueprintFunctionLibrary::GenerateRaceSpline(const TArray<AActor*> Road
 		WorldToActorSpaceTransform.TransformRotation(Rotation.Quaternion()).Rotator());
 	RaceSpline->Spline->AddPoint(NewPoint);
 	RaceSpline->RoadWidth.Add(RoadSplines[LastIndex]->RoadWidth[!CurrentStart]);
+
+	//Spawn Initial Checkpoints
+	RaceSpline->CheckpointComponent->GenerateCheckpoints();
+	//Add at least one start location
+	RaceSpline->StartLocations.Add(FTransform::Identity);
 }
 
 #endif
