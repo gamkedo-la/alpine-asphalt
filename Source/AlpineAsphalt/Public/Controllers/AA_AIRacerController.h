@@ -19,9 +19,10 @@ class ALPINEASPHALT_API AAA_AIRacerController : public AAIController
 public:
 	AAA_AIRacerController();
 
+	UFUNCTION(BlueprintCallable)
+	UAA_AIVehicleControlComponent* GetVehicleControlComponent() const { return VehicleControlComponent; }
 
 private:
-
 	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
 	TObjectPtr<UAA_AIVehicleControlComponent> VehicleControlComponent;
 };

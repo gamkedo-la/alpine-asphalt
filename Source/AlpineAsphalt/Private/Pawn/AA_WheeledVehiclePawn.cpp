@@ -99,6 +99,26 @@ void AAA_WheeledVehiclePawn::SetColorFour(FColor ColorToSet)
 	ColorFour = ColorToSet;
 }
 
+float AAA_WheeledVehiclePawn::GetVehicleSpeed() const
+{
+	if (!VehicleMovementComponent)
+	{
+		return 0.0f;
+	}
+
+	return VehicleMovementComponent->GetForwardSpeed();
+}
+
+float AAA_WheeledVehiclePawn::GetVehicleSpeedMph() const
+{
+	if (!VehicleMovementComponent)
+	{
+		return 0.0f;
+	}
+
+	return VehicleMovementComponent->GetForwardSpeedMPH();
+}
+
 #if WITH_EDITOR
 
 void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

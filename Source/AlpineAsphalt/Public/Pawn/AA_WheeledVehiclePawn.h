@@ -85,6 +85,13 @@ public:
 	void SetColorThree(FColor ColorToSet);
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorFour(FColor ColorToSet);
+
+
+	UFUNCTION(BlueprintPure, Category = Movement)
+	float GetVehicleSpeed() const;
+
+	UFUNCTION(BlueprintPure, Category = Movement)
+	float GetVehicleSpeedMph() const;
 	
 	UPROPERTY()
 	UMaterialInstanceDynamic* PaintMaterial;
