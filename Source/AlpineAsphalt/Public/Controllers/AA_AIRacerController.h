@@ -6,6 +6,8 @@
 #include "AIController.h"
 #include "AA_AIRacerController.generated.h"
 
+class UAA_AIVehicleControlComponent;
+
 /**
  * 
  */
@@ -13,5 +15,13 @@ UCLASS()
 class ALPINEASPHALT_API AAA_AIRacerController : public AAIController
 {
 	GENERATED_BODY()
-	
+
+public:
+	AAA_AIRacerController();
+
+
+private:
+
+	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
+	TObjectPtr<UAA_AIVehicleControlComponent> VehicleControlComponent;
 };
