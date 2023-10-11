@@ -61,20 +61,15 @@ void UAA_AIVehicleControlComponent::CalculateThrottle() const
 	const float CurrentSpeedMph = VehiclePawn->GetVehicleSpeedMph();
 	const float ThrottleValue = SmoothThrottle(CurrentSpeedMph);
 
-	if (ThrottleValue > 0)
+	if (ThrottleValue >= 0)
 	{
 		VehiclePawn->SetThrottle(ThrottleValue);
 		VehiclePawn->SetBrake(0);
 	}
-	else if(FMath::IsNearlyZero(ThrottleValue))
-	{
-		VehiclePawn->SetThrottle(0);
-		VehiclePawn->SetBrake(-ThrottleValue);
-	}
 	else
 	{
 		VehiclePawn->SetThrottle(0);
-		VehiclePawn->SetBrake(1.0f);
+		VehiclePawn->SetBrake(-ThrottleValue);
 	}
 }
 
