@@ -9,7 +9,8 @@ public class AlpineAsphaltTarget : TargetRules
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.Latest;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 
-		ExtraModuleNames.AddRange( new string[] { "AlpineAsphalt" } );
+        ExtraModuleNames.AddRange( new string[] { "AlpineAsphalt" } );
 	}
 }
