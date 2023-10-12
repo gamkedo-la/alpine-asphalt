@@ -4,7 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Interface/AA_RewindableInterface.h"
+#include "VisualLogger/VisualLoggerDebugSnapshotInterface.h"
+
 #include "SnapshotData.h"
+
 #include "AA_WheeledVehiclePawn.generated.h"
 
 struct FInputActionValue;
@@ -14,7 +17,7 @@ DECLARE_LOG_CATEGORY_EXTERN(Vehicle, Log, All);
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_WheeledVehiclePawn : public APawn, public IAA_RewindableInterface
+class ALPINEASPHALT_API AAA_WheeledVehiclePawn : public APawn, public IAA_RewindableInterface, public IVisualLoggerDebugSnapshotInterface
 {
 	GENERATED_BODY()
 
@@ -92,6 +95,38 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = Movement)
 	float GetVehicleSpeedMph() const;
+
+	UFUNCTION(BlueprintPure)
+	float GetVehicleLength() const;
+
+	UFUNCTION(BlueprintPure)
+	float GetVehicleHeight() const;
+
+	UFUNCTION(BlueprintPure)
+	virtual FVector GetFrontWorldLocation() const;
+
+	UFUNCTION(BlueprintPure)
+	virtual FVector GetBackWorldLocation() const;
+
+	UFUNCTION(BlueprintPure)
+	virtual FVector GetTopWorldLocation() const;
+
+	UFUNCTION(BlueprintPure)
+	virtual FVector GetBottomWorldLocation() const;
+
+	UFUNCTION(BlueprintPure)
+	FBox GetAABB() const;
+
+	/*
+	* Gets a value [0,1] indicating how well the car is steering toward its intended target with 1 being perfectly on target.
+	*/
+	UFUNCTION(BlueprintPure)
+	float GetTraction() const;
+
+// Used for visual logger debug tool to display attributes about the actor - only enabled in non-shipping builds
+#if ENABLE_VISUAL_LOG
+	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;
+#endif
 	
 	UPROPERTY()
 	UMaterialInstanceDynamic* PaintMaterial;
@@ -135,3 +170,38 @@ public:
 	//Cached property of Rewind Subsystem
 	float RewindResolution = 0.f;
 };
+
+#pragma region Inline Definitions
+
+inline FVector AAA_WheeledVehiclePawn::GetFrontWorldLocation() const
+{
+	return GetActorLocation() + GetActorForwardVector() * GetVehicleLength() * 0.5f;
+}
+
+inline FVector AAA_WheeledVehiclePawn::GetBackWorldLocation() const
+{
+	return GetActorLocation() - GetActorForwardVector() * GetVehicleLength() * 0.5f;
+}
+
+inline FVector AAA_WheeledVehiclePawn::GetBottomWorldLocation() const
+{
+	return GetActorLocation();
+}
+
+inline FVector AAA_WheeledVehiclePawn::GetTopWorldLocation() const
+{
+	return GetBottomWorldLocation() + FVector(0, 0, GetVehicleHeight());
+}
+
+inline float AAA_WheeledVehiclePawn::GetVehicleLength() const
+{
+	const FVector& VehicleExtent = GetAABB().GetExtent();
+	return FMath::Max(VehicleExtent.X, VehicleExtent.Y) * 2;
+}
+
+inline float AAA_WheeledVehiclePawn::GetVehicleHeight() const
+{
+	return GetAABB().GetExtent().Z * 2;
+}
+
+#pragma endregion Inline Definitions

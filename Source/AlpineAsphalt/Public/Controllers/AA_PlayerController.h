@@ -98,6 +98,9 @@ public:
 	void AddInteractables(IAA_InteractableInterface* Interactable);
 	void RemoveInteractable(IAA_InteractableInterface* Interactable);
 
+protected:
+	virtual void BeginPlay() override;
+
 private:
 	UPROPERTY()
 	UEnhancedInputComponent* EInputComponent;
@@ -126,5 +129,13 @@ private:
 	void CancelRewind(const FInputActionValue& Value);
 	void RewindTime(const FInputActionValue& Value);
 	void FastForwardTime(const FInputActionValue& Value);
+
+	void InitDebugDraw();
+	void DestroyDebugDraw();
+
+	private:
+	#if ENABLE_VISUAL_LOG
+		FTimerHandle VisualLoggerTimer{};
+	#endif
 	
 };

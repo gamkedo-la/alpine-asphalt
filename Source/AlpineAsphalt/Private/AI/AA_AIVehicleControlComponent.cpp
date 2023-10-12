@@ -97,7 +97,7 @@ void UAA_AIVehicleControlComponent::CalculateSteering() const
 	// Based on https://dev.epicgames.com/community/learning/tutorials/ryL5/unreal-engine-follow-a-spline-and-report-distance-along-it-using-an-actor-component
 	check(VehiclePawn);
 
-	const FVector DestinationDelta = CurrentMovementTarget - VehiclePawn->GetActorLocation();
+	const FVector DestinationDelta = CurrentMovementTarget - VehiclePawn->GetFrontWorldLocation();
 
 	const float TargetYawDelta = GetTargetSteeringYawAngle(DestinationDelta);
 	const float RawSteeringValue = UKismetMathLibrary::MapRangeClamped(TargetYawDelta, -CurrentMaxSteeringAngle, CurrentMaxSteeringAngle, -1.0f, 1.0f);

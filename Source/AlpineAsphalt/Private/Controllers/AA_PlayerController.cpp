@@ -10,6 +10,9 @@
 #include "UI/AA_VehicleUI.h"
 #include "UI/AA_BaseUI.h"
 
+#include "Logging/AlpineAsphaltLogger.h"
+#include "VisualLogger/VisualLogger.h"
+
 DEFINE_LOG_CATEGORY(PlayerControllerLog);
 
 void AAA_PlayerController::OnPossess(APawn* InPawn)
@@ -108,6 +111,13 @@ void AAA_PlayerController::AddInteractables(IAA_InteractableInterface* Interacta
 void AAA_PlayerController::RemoveInteractable(IAA_InteractableInterface* Interactable)
 {
 	Interactables.Remove(Interactable);
+}
+
+void AAA_PlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitDebugDraw();
 }
 
 void AAA_PlayerController::SetBrake(const FInputActionValue& Value) 
@@ -241,4 +251,29 @@ void AAA_PlayerController::FastForwardTime(const FInputActionValue& Value)
 	{
 		UE_LOG(PlayerControllerLog,Error,TEXT("Rewind Subsystem Unavailable"))
 	}
+}
+
+void AAA_PlayerController::InitDebugDraw()
+{
+
+// Ensure that vehicle state logged regularly so we see the updates in the visual logger
+#if ENABLE_VISUAL_LOG
+
+	FTimerDelegate DebugDrawDelegate = FTimerDelegate::CreateLambda([this]()
+	{
+		UE_VLOG(this, LogAlpineAsphalt, Log, TEXT("Get Vehicle State"));
+	});
+
+	GetWorldTimerManager().SetTimer(VisualLoggerTimer, DebugDrawDelegate, 0.05f, true);
+
+#endif
+}
+
+void AAA_PlayerController::DestroyDebugDraw()
+{
+#if ENABLE_VISUAL_LOG
+
+	GetWorldTimerManager().ClearTimer(VisualLoggerTimer);
+
+#endif
 }

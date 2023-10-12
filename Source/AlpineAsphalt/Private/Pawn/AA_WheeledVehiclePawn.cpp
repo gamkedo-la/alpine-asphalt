@@ -6,6 +6,13 @@
 #include "Subsystems/AA_RewindSubsystem.h"
 #include "DataAsset/AA_VehicleDataAsset.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
+
+#include "VisualLogger/VisualLogger.h"
+#include "Logging/LoggingUtils.h"
+#include "Logging/AlpineAsphaltLogger.h"
+
+#include <numbers>
 
 FName AAA_WheeledVehiclePawn::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
 FName AAA_WheeledVehiclePawn::VehicleMeshComponentName(TEXT("VehicleMesh"));
@@ -269,3 +276,96 @@ void AAA_WheeledVehiclePawn::RecordSnapshot()
 	}
 	SnapshotData.Add(VehicleMovementComponent->GetSnapshot());
 }
+
+float AAA_WheeledVehiclePawn::GetTraction() const
+{
+	const auto& Velocity = GetVelocity();
+	const auto& ForwardVector = GetActorForwardVector();
+
+	const float DotProduct = Velocity.GetSafeNormal() | ForwardVector;
+	const float TractionFraction = DotProduct > 0 ? 2 * FMath::Asin(DotProduct) / std::numbers::pi : 0;
+
+	return TractionFraction;
+}
+
+FBox AAA_WheeledVehiclePawn::GetAABB() const
+{
+	FVector ActorOrigin, BoxExtent;
+
+	GetActorBounds(true, ActorOrigin, BoxExtent, false);
+
+	// ActorOrigin aligns with the AABB Origin correctly
+	return FBox::BuildAABB(ActorOrigin, BoxExtent);
+}
+
+//////////////// Visual Logger ////////////////////////
+#if ENABLE_VISUAL_LOG
+
+
+void AAA_WheeledVehiclePawn::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
+{
+	using namespace AA;
+
+	// helpful article about the Visual Logger
+	// https://benui.ca/unreal/visual-logger/
+
+	if (!VehicleMovementComponent || !Mesh)
+	{
+		return;
+	}
+
+	// Get reference to the current category
+	const int32 CatIndex = Snapshot->Status.AddZeroed();
+	FVisualLogStatusCategory& Category = Snapshot->Status[CatIndex];
+	Category.Category = FString::Printf(TEXT("Vehicle (%s)"), *GetName());
+
+	const auto ThrottleValue = VehicleMovementComponent->GetThrottleInput();
+	const auto BrakeValue = VehicleMovementComponent->GetBrakeInput();
+	const auto SteeringValue = VehicleMovementComponent->GetSteeringInput();
+
+	Category.Add(TEXT("Speed MPH"), FString::Printf(TEXT("%.1f"), GetVehicleSpeedMph()));
+	Category.Add(TEXT("Traction %"), FString::Printf(TEXT("%.1f"), GetTraction() * 100));
+	Category.Add(TEXT("Steering"), FString::Printf(TEXT("%.2f"), SteeringValue));
+	Category.Add(TEXT("Throttle"), FString::Printf(TEXT("%.2f"), ThrottleValue));
+	Category.Add(TEXT("Brake"), FString::Printf(TEXT("%.2f"), BrakeValue));
+
+	const bool bHandbrake = VehicleMovementComponent->GetHandbrakeInput();
+	Category.Add(TEXT("Handbrake"), LoggingUtils::GetBoolString(bHandbrake));
+
+	const auto& FrontWorldLocation = GetFrontWorldLocation();
+	const auto& ForwardVector = GetActorForwardVector();
+
+	// Change color based on speed and stopping
+	FColor BoxColor;
+	if (bHandbrake)
+	{
+		BoxColor = FColor::Red;
+	}
+	else if (BrakeValue > 0)
+	{
+		BoxColor = FColor::Orange;
+	}
+	else
+	{
+		// Blue -> Green
+		BoxColor = UKismetMathLibrary::LinearColorLerp(FColor::Blue, FColor::Green, FMath::Abs(ThrottleValue)).ToFColor(true);
+	}
+
+	// Add oriented bounded box for vehicle
+	const FVector& BoundsExtent = Mesh->GetLocalBounds().BoxExtent;
+	const FVector ZOffset(0, 0, BoundsExtent.Z);
+
+	const auto OBB = FBox::BuildAABB(ZOffset, BoundsExtent);
+	const auto TransformMatrix = GetActorTransform().ToMatrixNoScale();
+
+	Snapshot->AddElement(OBB, TransformMatrix, LogAlpineAsphalt.GetCategoryName(), ELogVerbosity::Log, BoxColor);
+
+	const auto MyController = GetController();
+	Snapshot->AddElement(GetActorLocation() + ZOffset, LogAlpineAsphalt.GetCategoryName(), ELogVerbosity::Log, BoxColor,
+		FString::Printf(TEXT("%s\n%s"), *GetName(), *LoggingUtils::GetName(MyController)));
+
+	// Forward vector
+	Snapshot->AddArrow(FrontWorldLocation, FrontWorldLocation + ForwardVector * 100.0f, LogAlpineAsphalt.GetCategoryName(), ELogVerbosity::Log, FColor::Red, TEXT("F"));
+}
+
+#endif //ENABLE_VISUAL_LOG
