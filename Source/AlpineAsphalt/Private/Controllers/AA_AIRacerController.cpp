@@ -9,3 +9,15 @@ AAA_AIRacerController::AAA_AIRacerController()
 {
 	VehicleControlComponent = CreateDefaultSubobject<UAA_AIVehicleControlComponent>(TEXT("Vehicle Control"));
 }
+
+#if ENABLE_VISUAL_LOG
+void AAA_AIRacerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
+{
+	Super::GrabDebugSnapshot(Snapshot);
+
+	if (VehicleControlComponent)
+	{
+		VehicleControlComponent->DescribeSelfToVisLog(Snapshot);
+	}
+}
+#endif

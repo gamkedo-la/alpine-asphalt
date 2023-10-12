@@ -22,6 +22,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UAA_AIVehicleControlComponent* GetVehicleControlComponent() const { return VehicleControlComponent; }
 
+#if ENABLE_VISUAL_LOG
+	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;
+#endif
+
 private:
 	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
 	TObjectPtr<UAA_AIVehicleControlComponent> VehicleControlComponent;

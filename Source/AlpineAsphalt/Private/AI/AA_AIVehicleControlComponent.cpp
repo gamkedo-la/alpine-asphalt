@@ -168,3 +168,18 @@ void UAA_AIVehicleControlComponent::SetMovementTarget(const FVector& MovementTar
 	CurrentMovementTarget = MovementTarget;
 	bTargetReached = false;
 }
+
+#if ENABLE_VISUAL_LOG
+
+void UAA_AIVehicleControlComponent::DescribeSelfToVisLog(FVisualLogEntry* Snapshot) const
+{
+	FVisualLogStatusCategory Category;
+	Category.Category = TEXT("AI Vehicle Control");
+
+	Category.Add(TEXT("DesiredSpeedMph"), FString::Printf(TEXT("%.1f"), DesiredSpeedMph));
+	Category.Add(TEXT("CurrentMovementTarget"), bTargetSet ? *CurrentMovementTarget.ToCompactString() : TEXT("N/A"));
+	Category.Add(TEXT("TargetReached"), bTargetSet ? LoggingUtils::GetBoolString(bTargetReached) : TEXT("N/A"));
+
+	Snapshot->Status.Add(Category);
+}
+#endif

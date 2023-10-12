@@ -26,6 +26,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetMovementTarget(const FVector& MovementTarget);
 
+#if ENABLE_VISUAL_LOG
+	virtual void DescribeSelfToVisLog(struct FVisualLogEntry* Snapshot) const;
+#endif // ENABLE_VISUAL_LOG
 
 protected:
 	virtual void BeginPlay() override;
