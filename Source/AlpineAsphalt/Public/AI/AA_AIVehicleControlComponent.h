@@ -26,6 +26,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetMovementTarget(const FVector& MovementTarget);
 
+	UFUNCTION(BlueprintPure)
+	float GetDesiredSpeedMph() const;
+
+	UFUNCTION(BlueprintPure)
+	FVector GetMovementTarget() const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsTargetReached() const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsTargetSet() const;
+
 #if ENABLE_VISUAL_LOG
 	virtual void DescribeSelfToVisLog(struct FVisualLogEntry* Snapshot) const;
 #endif // ENABLE_VISUAL_LOG
@@ -38,8 +50,13 @@ protected:
 private:
 	void CalculateThrottle() const;
 	float SmoothThrottle(float CurrentSpeed) const;
+	void SetSpeedControls(float ThrottleValue) const;
 
-	void CalculateSteering() const;
+	void CalculateSteering(const FVector& DestinationDelta) const;
+
+	bool ShouldReverseThrottleAndSteering(const FVector& DestinationDelta) const;
+	void CalculateReverseThrottleAndSteering(const FVector& DestinationDelta) const;
+
 	float GetTargetSteeringYawAngle(const FVector& DestinationDelta) const;
 
 	bool HasReachedTarget() const;
@@ -57,11 +74,15 @@ private:
 	* Delta radius for when the target reached event will be generated.
 	*/
 	UPROPERTY(EditAnywhere)
-	float TargetReachedRadius{ 200.0f };
+	float TargetReachedRadius{ 250.0f };
 
 	// TODO: Will calculate this from wheel data in the movement component and also changes based on velocity from steering curve
 	UPROPERTY(EditAnywhere)
 	float CurrentMaxSteeringAngle{ 45.0f };
+
+	// TODO: Will calculate this from vehicle data in the movement component
+	UPROPERTY(EditAnywhere)
+	float DefaultTurningCircleRadius{ 1200.0f };
 
 	/*
 	* Desired speed in mph
@@ -87,6 +108,21 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RawFactorSwitchoverThreshold{ 0.1f };
 
+	UPROPERTY(VisibleAnywhere)
+	bool bTurningAround{ false };
+
+	UPROPERTY(EditAnywhere)
+	float TurnAroundCosineThreshold{ 0.0f };
+
+	UPROPERTY(EditAnywhere)
+	float ContinueTurningAroundCosineThreshold{ 0.25f };
+
+	UPROPERTY(EditAnywhere)
+	float ReverseThrottleValue{ -1.0f / 3 };
+
+	UPROPERTY(EditAnywhere)
+	float ReverseSpeedThresholdMph{ 5.0f };
+
 	/*
 	* Current movement target.
 	*/
@@ -100,5 +136,26 @@ private:
 };
 
 #pragma region Inline Definitions
+
+
+inline float UAA_AIVehicleControlComponent::GetDesiredSpeedMph() const
+{
+	return DesiredSpeedMph;
+}
+
+inline FVector UAA_AIVehicleControlComponent::GetMovementTarget() const
+{
+	return CurrentMovementTarget;
+}
+
+inline bool UAA_AIVehicleControlComponent::IsTargetReached() const
+{
+	return bTargetReached;
+}
+
+inline bool UAA_AIVehicleControlComponent::IsTargetSet() const
+{
+	return bTargetSet;
+}
 
 #pragma endregion Inline Definitions
