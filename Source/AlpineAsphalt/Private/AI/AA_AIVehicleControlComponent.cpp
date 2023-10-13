@@ -280,7 +280,14 @@ bool UAA_AIVehicleControlComponent::HasReachedTarget() const
 
 void UAA_AIVehicleControlComponent::CheckIfReachedTarget()
 {
-	if (bTargetReached || !HasReachedTarget())
+	// already fired event
+	if (bTargetReached)
+	{
+		return;
+	}
+
+	// We haven't reached the target or the target is now behind us and didn't start that way
+	if (!HasReachedTarget() && (bTargetStartedBehind || !IsTargetBehind()))
 	{
 		return;
 	}
@@ -292,6 +299,18 @@ void UAA_AIVehicleControlComponent::CheckIfReachedTarget()
 	UE_VLOG_EVENT_WITH_DATA(GetOwner(), EventVehicleTargetReached, *LoggingUtils::GetName(VehiclePawn));
 
 	OnVehicleReachedTarget.Broadcast(VehiclePawn, CurrentMovementTarget);
+}
+
+bool UAA_AIVehicleControlComponent::IsTargetBehind() const
+{
+	if (!VehiclePawn)
+	{
+		return false;
+	}
+
+	const auto ToTarget = CurrentMovementTarget - VehiclePawn->GetFrontWorldLocation();
+
+	return (ToTarget | VehiclePawn->GetActorForwardVector()) < 0;
 }
 
 void UAA_AIVehicleControlComponent::SetDesiredSpeedMph(float SpeedMph)
@@ -316,6 +335,7 @@ void UAA_AIVehicleControlComponent::SetMovementTarget(const FVector& MovementTar
 
 	CurrentMovementTarget = MovementTarget;
 	bTargetReached = false;
+	bTargetStartedBehind = IsTargetBehind();
 }
 
 #if ENABLE_VISUAL_LOG

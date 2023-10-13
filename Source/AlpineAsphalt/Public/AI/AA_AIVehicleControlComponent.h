@@ -65,6 +65,7 @@ private:
 
 	bool HasReachedTarget() const;
 	void CheckIfReachedTarget();
+	bool IsTargetBehind() const;
 
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
@@ -137,6 +138,7 @@ private:
 	bool bTargetReached{ };
 
 	bool bTargetSet{};
+	bool bTargetStartedBehind{};
 };
 
 #pragma region Inline Definitions
