@@ -4,6 +4,9 @@
 #include "Controllers/AA_AIRacerController.h"
 
 #include "AI/AA_AIVehicleControlComponent.h"
+#include "AI/AA_RacerSplineFollowingComponent.h"
+#include "AI/AA_ObstacleDetectionComponent.h"
+#include "AI/AA_RacerObstacleAvoidanceComponent.h"
 
 #include "VisualLogger/VisualLogger.h"
 #include "Logging/AlpineAsphaltLogger.h"
@@ -17,6 +20,9 @@ using namespace AA;
 AAA_AIRacerController::AAA_AIRacerController()
 {
 	VehicleControlComponent = CreateDefaultSubobject<UAA_AIVehicleControlComponent>(TEXT("Vehicle Control"));
+	RacerSplineFollowingComponent = CreateDefaultSubobject<UAA_RacerSplineFollowingComponent>(TEXT("Racer Spline Following"));
+	ObstacleDetectionComponent = CreateDefaultSubobject<UAA_ObstacleDetectionComponent>(TEXT("Obstacle Detection"));
+	RacerObstacleAvoidanceComponent = CreateDefaultSubobject<UAA_RacerObstacleAvoidanceComponent>(TEXT("Racer Obstacle Avoidance"));
 }
 
 #if ENABLE_VISUAL_LOG
@@ -45,6 +51,8 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnPossess: %s"), *GetName(), *LoggingUtils::GetName(InPawn));
 
 	Super::OnPossess(InPawn);
+
+	RacerContext = {};
 
 	auto VehiclePawn = Cast<AAA_WheeledVehiclePawn>(InPawn);
 

@@ -4,9 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+
+#include "AI/AA_RacerContextProvider.h"
+#include "AI/AA_AIRacerContext.h"
+
 #include "AA_AIRacerController.generated.h"
 
 class UAA_AIVehicleControlComponent;
+class UAA_RacerSplineFollowingComponent;
+class UAA_ObstacleDetectionComponent;
+class UAA_RacerObstacleAvoidanceComponent;
+
 class AAA_WheeledVehiclePawn;
 class ALandscape;
 
@@ -14,7 +22,7 @@ class ALandscape;
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_AIRacerController : public AAIController
+class ALPINEASPHALT_API AAA_AIRacerController : public AAIController, public IAA_RacerContextProvider
 {
 	GENERATED_BODY()
 
@@ -23,6 +31,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	UAA_AIVehicleControlComponent* GetVehicleControlComponent() const { return VehicleControlComponent; }
+
+	// Inherited via IAA_RacerContextProvider
+	virtual FAA_AIRacerContext& GetRacerContext() override;
 
 #if ENABLE_VISUAL_LOG
 	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;
@@ -43,12 +54,35 @@ private:
 	FVector ClampTargetToGround(const FVector& Position) const;
 
 private:
-	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
-	TObjectPtr<UAA_AIVehicleControlComponent> VehicleControlComponent;
 
+	UPROPERTY(Transient)
+	FAA_AIRacerContext RacerContext{};
+
+	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
+	TObjectPtr<UAA_AIVehicleControlComponent> VehicleControlComponent{};
+
+	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
+	TObjectPtr<UAA_RacerSplineFollowingComponent> RacerSplineFollowingComponent{};
+
+	UPROPERTY(Category = "Obstacles", VisibleDefaultsOnly)
+	TObjectPtr<UAA_ObstacleDetectionComponent> ObstacleDetectionComponent{};
+
+	UPROPERTY(Category = "Obstacles", VisibleDefaultsOnly)
+	TObjectPtr<UAA_RacerObstacleAvoidanceComponent> RacerObstacleAvoidanceComponent{};
+
+	
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float LookaheadDistance{ 1000.0f };
 
 	UPROPERTY(Transient)
 	ALandscape* Landscape{};
 };
+
+#pragma region Inline Definitions
+
+inline FAA_AIRacerContext& AAA_AIRacerController::GetRacerContext()
+{
+	return RacerContext;
+}
+
+#pragma endregion Inline Definitions
