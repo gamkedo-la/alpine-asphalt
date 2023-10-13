@@ -47,11 +47,7 @@ protected:
 	virtual void OnUnPossess() override final;
 
 private:
-	UFUNCTION()
-	void SelectNewMovementTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& PreviousMovementTarget);
-
-	ALandscape* GetLandscapeActor() const;
-	FVector ClampTargetToGround(const FVector& Position) const;
+	void SetupComponentEventBindings();
 
 private:
 
@@ -69,13 +65,6 @@ private:
 
 	UPROPERTY(Category = "Obstacles", VisibleDefaultsOnly)
 	TObjectPtr<UAA_RacerObstacleAvoidanceComponent> RacerObstacleAvoidanceComponent{};
-
-	
-	UPROPERTY(Category = "Movement", EditAnywhere)
-	float LookaheadDistance{ 1000.0f };
-
-	UPROPERTY(Transient)
-	ALandscape* Landscape{};
 };
 
 #pragma region Inline Definitions

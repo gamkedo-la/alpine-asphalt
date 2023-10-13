@@ -43,6 +43,15 @@ void UAA_AIVehicleControlComponent::SetVehiclePawn(AAA_WheeledVehiclePawn* Pawn)
 	VehiclePawn = Pawn;
 }
 
+void UAA_AIVehicleControlComponent::OnVehicleTargetUpdated(AAA_WheeledVehiclePawn* TheVehiclePawn, const FVector& MovementTarget, float NewDesiredSpeedMph)
+{
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: OnVehicleTargetUpdated - MovementTarget=%s; NewDesiredSpeedMph=%f"),
+		*LoggingUtils::GetName(GetOwner()), *GetName(), *MovementTarget.ToCompactString(), NewDesiredSpeedMph);
+
+	SetDesiredSpeedMph(NewDesiredSpeedMph);
+	SetMovementTarget(MovementTarget);
+}
+
 void UAA_AIVehicleControlComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);

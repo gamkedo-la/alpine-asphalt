@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
+#include "AI/AA_AIRacerEvents.h"
+
 #include "AA_AIVehicleControlComponent.generated.h"
 
 class AAA_WheeledVehiclePawn;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnVehicleReachedTarget, AAA_WheeledVehiclePawn*, VehiclePawn, const FVector&, Target);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ALPINEASPHALT_API UAA_AIVehicleControlComponent : public UActorComponent
@@ -19,6 +21,8 @@ public:
 	UAA_AIVehicleControlComponent();
 
 	void SetVehiclePawn(AAA_WheeledVehiclePawn* Pawn);
+	UFUNCTION()
+	void OnVehicleTargetUpdated(AAA_WheeledVehiclePawn* TheVehiclePawn, const FVector& MovementTarget, float NewDesiredSpeedMph);
 
 	UFUNCTION(BlueprintCallable)
 	void SetDesiredSpeedMph(float SpeedMph);
