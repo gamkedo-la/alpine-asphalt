@@ -12,8 +12,12 @@
 #include "Logging/AlpineAsphaltLogger.h"
 #include "Logging/LoggingUtils.h"
 #include "Landscape.h"
+#include "Components/SplineComponent.h"
 
+#include "Actors/AA_TrackInfoActor.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
+
+#include <limits>
 
 using namespace AA;
 
@@ -55,6 +59,7 @@ void AAA_AIRacerController::BeginPlay()
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: BeginPlay"), *GetName());
 
 	Super::BeginPlay();
+
 }
 
 void AAA_AIRacerController::OnPossess(APawn* InPawn)
@@ -73,6 +78,8 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 			*GetName(), *LoggingUtils::GetName(InPawn), InPawn ? *LoggingUtils::GetName(InPawn->GetClass()) : TEXT("NULL"));
 		return;
 	}
+
+	SetRaceTrack(*VehiclePawn);
 
 	check(VehicleControlComponent);
 	VehicleControlComponent->SetVehiclePawn(VehiclePawn);
@@ -109,6 +116,51 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 	VehicleControlComponent->OnVehicleReachedTarget.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::SelectNewMovementTarget);
 	RacerSplineFollowingComponent->OnVehicleTargetUpdated.AddDynamic(VehicleControlComponent, &UAA_AIVehicleControlComponent::OnVehicleTargetUpdated);
 	RacerObstacleAvoidanceComponent->OnVehicleAvoidancePositionUpdated.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated);
+}
+
+void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn)
+{
+	// TODO: This will probably be passed in externally
+	// here we just find the nearest one
+
+	const auto GameWorld = GetWorld();
+
+	AAA_TrackInfoActor* NearestRaceTrack{};
+	double NearestDistSq{ std::numeric_limits<double>::max() };
+
+	const auto& VehicleLocation = VehiclePawn.GetActorLocation();
+
+	for (TObjectIterator<AAA_TrackInfoActor> It; It; ++It)
+	{
+		if (GameWorld != It->GetWorld() || !It->Spline)
+		{
+			continue;
+		}
+
+		AAA_TrackInfoActor* RaceTrack = *It;
+
+		const auto NearestSplineLocation = RaceTrack->Spline->FindLocationClosestToWorldLocation(VehicleLocation, ESplineCoordinateSpace::World);
+		double DistSq = FVector::DistSquared(VehicleLocation, NearestSplineLocation);
+			
+		if (DistSq < NearestDistSq)
+		{
+			NearestRaceTrack = RaceTrack;
+			NearestDistSq = DistSq;
+		}
+	}
+
+	RacerContext.RaceTrack = NearestRaceTrack;
+	
+	if (NearestRaceTrack)
+	{
+		UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: SetRaceTrack: NearestRaceTrack=%s"),
+			*GetName(), *NearestRaceTrack->GetName());
+	}
+	else
+	{
+		UE_VLOG_UELOG(this, LogAlpineAsphalt, Error, TEXT("%s: SetRaceTrack: NearestRaceTrack could not be determined!"),
+			*GetName());
+	}
 }
 
 #endif

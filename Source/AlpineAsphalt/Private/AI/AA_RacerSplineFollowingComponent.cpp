@@ -129,6 +129,8 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 {
 	check(RacerContextProvider);
 
+	// TODO: Use the Spline from the RacerContext
+
 	SelectNewMovementTarget(RacerContextProvider->GetRacerContext().VehiclePawn, FVector::ZeroVector);
 }
 

@@ -48,6 +48,7 @@ protected:
 
 private:
 	void SetupComponentEventBindings();
+	void SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn);
 
 private:
 
