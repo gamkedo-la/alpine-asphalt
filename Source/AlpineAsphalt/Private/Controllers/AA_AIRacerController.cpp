@@ -96,10 +96,7 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 	// The vehicle changes parameters on start so defer setting these 
 	FTimerHandle OneShotTimer;
 	
-	GetWorldTimerManager().SetTimer(OneShotTimer,
-		FTimerDelegate::CreateUObject<ThisClass, TWeakObjectPtr<AAA_WheeledVehiclePawn>>(this, &ThisClass::SetVehicleParameters, VehiclePawn),
-		AIRacerControllerOneShotTimerDelay, false
-	);
+	GetWorldTimerManager().SetTimer(OneShotTimer, this, &ThisClass::SetVehicleParameters, AIRacerControllerOneShotTimerDelay);
 
 	if(!RacerContext.RaceTrack)
 	{
@@ -201,9 +198,9 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 	}
 }
 
-void AAA_AIRacerController::SetVehicleParameters(TWeakObjectPtr<AAA_WheeledVehiclePawn> VehiclePawnPtr)
+void AAA_AIRacerController::SetVehicleParameters()
 {
-	auto VehiclePawn = VehiclePawnPtr.Get();
+	auto VehiclePawn = RacerContext.VehiclePawn;
 
 	if (!VehiclePawn)
 	{
