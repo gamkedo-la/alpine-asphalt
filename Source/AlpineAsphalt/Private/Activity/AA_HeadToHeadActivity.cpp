@@ -51,6 +51,7 @@ void UAA_HeadToHeadActivity::LoadActivity()
 
 	AAA_AIRacerController* AI;
 	AAA_WheeledVehiclePawn* AIVehicle;
+	int RandomIndex;
 	//Spawn an AI for every other Starting Position and Park
 	for(int i = 0; i < Track->StartLocations.Num() - 1; i++)
 	{
@@ -64,6 +65,8 @@ void UAA_HeadToHeadActivity::LoadActivity()
 									FMath::RandRange(0,256),
 									FMath::RandRange(0,256),
 									FMath::RandRange(0,256)));
+			RandomIndex = FMath::RandRange(0,VehiclesToSpawn.Num()-1);
+			AIVehicle->SetVehicleData(VehiclesToSpawn[RandomIndex]);
 			AIVehicle->GetVehicleMovementComponent()->SetParked(true);
 			AIVehicle->SpawnDefaultController();
 			AI = Cast<AAA_AIRacerController>(AIVehicle->Controller);

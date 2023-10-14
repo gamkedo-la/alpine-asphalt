@@ -4,6 +4,7 @@
 #include "AA_HeadToHeadActivity.generated.h"
 
 
+class UAA_VehicleDataAsset;
 class AAA_WheeledVehiclePawn;
 class UAA_TimeTrialScoreScreenUI;
 class AAA_TrackInfoActor;
@@ -44,6 +45,10 @@ protected:
 	void CheckpointHit(int IndexCheckpointHit);
 
 private:
+
+	UPROPERTY(EditDefaultsOnly)
+	TArray<UAA_VehicleDataAsset*> VehiclesToSpawn;
+	
 	UPROPERTY()
 	AAA_TrackInfoActor* Track;
 
