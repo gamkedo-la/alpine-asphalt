@@ -137,7 +137,8 @@ void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& Prope
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if(GetWorld()->WorldType != EWorldType::PIE)
+	
+	if(GetWorld() && GetWorld()->WorldType != EWorldType::PIE)
 	{
 		return;
 	}
