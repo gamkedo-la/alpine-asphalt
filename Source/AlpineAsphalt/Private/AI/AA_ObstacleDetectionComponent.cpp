@@ -13,7 +13,7 @@ using namespace AA;
 UAA_ObstacleDetectionComponent::UAA_ObstacleDetectionComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 	PrimaryComponentTick.TickInterval = 0.5f;
 }
 
@@ -28,7 +28,7 @@ void UAA_ObstacleDetectionComponent::BeginPlay()
 	if (!RacerContextProvider)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Error,
-			TEXT("%s-s: BeginPlay - Owner does not implement IAA_RacerContextProvider"),
+			TEXT("%s-%s: BeginPlay - Owner does not implement IAA_RacerContextProvider"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 		return;
 	}

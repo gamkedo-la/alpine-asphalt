@@ -29,6 +29,9 @@ public:
 	UFUNCTION()
 	void OnVehicleAvoidancePositionUpdated(AAA_WheeledVehiclePawn* VehiclePawn, const FAA_AIRacerAvoidanceContext& AvoidanceContext);
 
+	UFUNCTION()
+	void SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition);
+
 #if ENABLE_VISUAL_LOG
 	virtual void DescribeSelfToVisLog(struct FVisualLogEntry* Snapshot) const;
 #endif // ENABLE_VISUAL_LOG

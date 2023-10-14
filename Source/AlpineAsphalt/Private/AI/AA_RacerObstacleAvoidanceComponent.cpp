@@ -31,7 +31,7 @@ void UAA_RacerObstacleAvoidanceComponent::BeginPlay()
 	if (!RacerContextProvider)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Error,
-			TEXT("%s-s: BeginPlay - Owner does not implement IAA_RacerContextProvider"),
+			TEXT("%s-%s: BeginPlay - Owner does not implement IAA_RacerContextProvider"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 		return;
 	}

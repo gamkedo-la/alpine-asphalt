@@ -14,6 +14,7 @@ class UAA_AIVehicleControlComponent;
 class UAA_RacerSplineFollowingComponent;
 class UAA_ObstacleDetectionComponent;
 class UAA_RacerObstacleAvoidanceComponent;
+class UAA_AIGetUnstuckComponent;
 
 class AAA_WheeledVehiclePawn;
 class ALandscape;
@@ -70,6 +71,9 @@ private:
 
 	UPROPERTY(Category = "Obstacles", VisibleDefaultsOnly)
 	TObjectPtr<UAA_RacerObstacleAvoidanceComponent> RacerObstacleAvoidanceComponent{};
+
+	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
+	TObjectPtr<UAA_AIGetUnstuckComponent> GetUnstuckComponent{};
 };
 
 #pragma region Inline Definitions

@@ -23,7 +23,7 @@ DEFINE_VLOG_EVENT(EventVehicleTargetReached, Display, "Target Reached")
 UAA_AIVehicleControlComponent::UAA_AIVehicleControlComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = false;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
 	PrimaryComponentTick.TickInterval = 0.1f;
 }
 

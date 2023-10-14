@@ -35,7 +35,7 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 	if (!RacerContextProvider)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Error,
-			TEXT("%s-s: BeginPlay - Owner does not implement IAA_RacerContextProvider"),
+			TEXT("%s-%s: BeginPlay - Owner does not implement IAA_RacerContextProvider"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 		return;
 	}
@@ -58,14 +58,14 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 	if (!Context.RaceTrack)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning,
-			TEXT("%s-s: SetInitialMovementTarget - RaceTrack not set!"),
+			TEXT("%s-%s: SetInitialMovementTarget - RaceTrack not set!"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 		return;
 	}
 	if (!Context.RaceTrack->Spline)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Error,
-			TEXT("%s-s: SetInitialMovementTarget - RaceTrack=%s does not have a Spline set!"),
+			TEXT("%s-%s: SetInitialMovementTarget - RaceTrack=%s does not have a Spline set!"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *Context.RaceTrack->GetName());
 		return;
 	}
@@ -75,7 +75,7 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 	if (!LastSplineState)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Display,
-			TEXT("%s-s: SetInitialMovementTarget - RaceTrack=%s Completed!"),
+			TEXT("%s-%s: SetInitialMovementTarget - RaceTrack=%s Completed!"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *Context.RaceTrack->GetName());
 		return;
 	}
@@ -85,6 +85,35 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 
 void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_WheeledVehiclePawn* VehiclePawn, const FAA_AIRacerAvoidanceContext& AvoidanceContext)
 {
+}
+
+void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition)
+{
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: VehiclePawn=%s; IdealSeekPosition=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *IdealSeekPosition.ToCompactString());
+
+	check(VehiclePawn);
+	check(RacerContextProvider);
+	auto& RacerContext = RacerContextProvider->GetRacerContext();
+
+	check(RacerContext.RaceTrack);
+	check(RacerContext.RaceTrack->Spline);
+
+	auto RaceSpline = RacerContext.RaceTrack->Spline;
+
+	const auto Key = RaceSpline->FindInputKeyClosestToWorldLocation(IdealSeekPosition);
+	const auto DistanceAlongSpline = RaceSpline->GetDistanceAlongSplineAtSplineInputKey(Key);
+
+	auto NextSplineState = GetNextSplineState(RacerContext, DistanceAlongSpline);
+
+	if (!NextSplineState)
+	{
+		return;
+	}
+
+	LastSplineState = NextSplineState;
+
+	UpdateMovementFromLastSplineState(RacerContext);
 }
 
 void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
@@ -175,7 +204,7 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 	LastCurvature = CalculateUpcomingRoadCurvature();
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
-		TEXT("%s-s: UpdateMovementFromLastSplineState - Curvature=%f"),
+		TEXT("%s-%s: UpdateMovementFromLastSplineState - Curvature=%f"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), LastCurvature);
 
 	const auto StraightnessFactor = 1 - LastCurvature;
