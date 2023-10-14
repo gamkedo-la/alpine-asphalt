@@ -175,7 +175,8 @@ bool UAA_AIVehicleControlComponent::ShouldReverseThrottleAndSteering(const FVect
 	// Turn around to reach destination if it is inside the turning circle radius
 	const float TargetDistance = DestinationDelta.Size();
 	// TODO: Calculate turning circle radius from current steering angle and vehicle properties
-	const float TurningCircleRadius = DefaultTurningCircleRadius * VehiclePawn->GetVehicleSpeedMph() / 10.0f;
+	const float TurningCircleRadius = DefaultTurningCircleRadius * 
+		FMath::Max(TurningCircleRadiusSpeedMphBase, VehiclePawn->GetVehicleSpeedMph()) / TurningCircleRadiusSpeedMphBase;
 
 	bool bShouldTurnAround = TargetDistance < TurningCircleRadius;
 
@@ -238,7 +239,7 @@ void UAA_AIVehicleControlComponent::SetSpeedControls(float ThrottleValue) const
 
 	if (ThrottleValue >= 0)
 	{
-		if (MovementComponent->GetTargetGear() == -1 && VehiclePawn->GetVehicleSpeedMph() > -ReverseSpeedThresholdMph)
+		if (MovementComponent->GetTargetGear() == -1)
 		{
 			MovementComponent->SetTargetGear(1, true);
 		}
@@ -247,28 +248,31 @@ void UAA_AIVehicleControlComponent::SetSpeedControls(float ThrottleValue) const
 		VehiclePawn->SetThrottle(ThrottleValue);
 		VehiclePawn->SetBrake(0);
 	}
-	else if(VehiclePawn->GetVehicleSpeedMph() > ReverseSpeedThresholdMph)
+	else if (bTurningAround)
 	{
-		VehiclePawn->SetThrottle(0);
-		if (bTurningAround)
+		if (VehiclePawn->GetVehicleSpeedMph() > ReverseSpeedThresholdMph)
 		{
+			VehiclePawn->SetThrottle(0);
 			VehiclePawn->SetHandbrake(true);
 			VehiclePawn->SetBrake(1.0f);
 		}
+		// Reverse
 		else
 		{
-			VehiclePawn->SetBrake(-ThrottleValue);
+			MovementComponent->SetTargetGear(-1, true);
+
+			VehiclePawn->SetThrottle(-ThrottleValue);
+			VehiclePawn->SetBrake(0);
+			VehiclePawn->SetHandbrake(false);
 		}
 	}
-	// Reverse
+	// Brake
 	else
 	{
-		MovementComponent->SetTargetGear(-1, true);
-
-		VehiclePawn->SetThrottle(-ThrottleValue);
-		VehiclePawn->SetBrake(0);
-		VehiclePawn->SetHandbrake(false);
+		VehiclePawn->SetThrottle(0);
+		VehiclePawn->SetBrake(-ThrottleValue);
 	}
+
 }
 
 bool UAA_AIVehicleControlComponent::HasReachedTarget() const

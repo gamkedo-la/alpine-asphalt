@@ -11,7 +11,6 @@
 #include "VisualLogger/VisualLogger.h"
 #include "Logging/AlpineAsphaltLogger.h"
 #include "Logging/LoggingUtils.h"
-#include "Landscape.h"
 
 #include "Pawn/AA_WheeledVehiclePawn.h"
 
@@ -41,10 +40,7 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 		return;
 	}
 
-	Landscape = GetLandscapeActor();
-
-	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: BeginPlay: Landscape=%s"),
-		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(Landscape));
+	LastCurvature = 1.0f;
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::SetInitialMovementTarget);
 }
@@ -91,55 +87,6 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 {
 }
 
-ALandscape* UAA_RacerSplineFollowingComponent::GetLandscapeActor() const
-{
-	const auto GameWorld = GetWorld();
-
-	for (TObjectIterator<ALandscape> It; It; ++It)
-	{
-		if (GameWorld == It->GetWorld())
-		{
-			return *It;
-		}
-	}
-	return nullptr;
-}
-
-FVector UAA_RacerSplineFollowingComponent::ClampTargetToGround(const FVector& Position) const
-{
-	if (!Landscape || !RacerContextProvider)
-	{
-		return Position;
-	}
-
-	FCollisionQueryParams CollisionQueryParams;
-	CollisionQueryParams.AddIgnoredActor(RacerContextProvider->GetRacerContext().VehiclePawn);
-
-	constexpr float TraceOffset = 2000;
-	const FVector TraceStart = Position + FVector(0, 0, TraceOffset);
-	const FVector TraceEnd = Position - FVector(0, 0, TraceOffset);
-
-	FHitResult HitResult;
-	// TODO: This isn't working - maybe due to this https://forums.unrealengine.com/t/actorlinetracesingle-returning-inaccurate-hit-result/343365
-	// Not super important as this is temp code until start following the race spline
-	if (Landscape->ActorLineTraceSingle(HitResult, TraceStart, TraceEnd, ECollisionChannel::ECC_Visibility, CollisionQueryParams))
-	{
-		return HitResult.Location;
-	}
-
-	if (auto World = GetWorld(); World && World->LineTraceSingleByChannel(
-		HitResult,
-		TraceStart,
-		TraceEnd,
-		ECollisionChannel::ECC_Visibility,
-		CollisionQueryParams))
-	{
-		return HitResult.Location;
-	}
-
-	return Position;
-}
-
 void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 {
 	check(RacerContextProvider);
@@ -158,7 +105,6 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 	// check the distance to the first point, if it is >= NextDistanceAlongSpline then just return; otherwise increase up to that point
 	if (CurrentDistance < LookaheadDistance)
 	{
-
 		LastSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + LookaheadDistance - CurrentDistance);
 		if (!LastSplineState)
 		{
@@ -208,7 +154,13 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 		return std::nullopt;
 	}
 
-	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + LookaheadDistance;
+	// Adjust lookahead based on current curvature
+	// We need to actually lookahead further as curvature increases so that we can adjust for the car turning
+	//const auto CurrentLookaheadDistance = FMath::Lerp(LookaheadDistance, MaxLookaheadDistance, LastCurvature);
+	// Try inverting that again and looking ahead less with more curvature
+	const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, 1 - LastCurvature);
+
+	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + CurrentLookaheadDistance;
 	const auto NextDistanceAlongSpline = FMath::Min(NextIdealDistanceAlongSpline, SplineLength);
 
 	FSplineState State;
@@ -226,7 +178,15 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 	check(LastSplineState);
 
 	// Adjust speed based on upcoming curvature
-	const auto NewSpeed = FMath::Clamp(MaxSpeedMph * (1 - CalculateUpcomingRoadCurvature()), MinSpeedMph, MaxSpeedMph);
+	LastCurvature = CalculateUpcomingRoadCurvature();
+
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-s: UpdateMovementFromLastSplineState - Curvature=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), LastCurvature);
+
+	const auto StraightnessFactor = 1 - LastCurvature;
+
+	const auto NewSpeed = FMath::Clamp(MaxSpeedMph * StraightnessFactor, MinSpeedMph, MaxSpeedMph);
 
 	RacerContext.DesiredSpeedMph = NewSpeed;
 	RacerContext.MovementTarget = LastSplineState->WorldLocation;
@@ -263,7 +223,7 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 	FVisualLogStatusCategory Category;
 	Category.Category = TEXT("Racer Spline Following Component");
 	
-	Category.Add(TEXT("LookaheadDistance"), FString::Printf(TEXT("%.1f"), LookaheadDistance));
+	Category.Add(TEXT("LastCurvature"), FString::Printf(TEXT("%.1f"), LastCurvature));
 
 	if (RacerContextProvider && LastSplineState && RacerContextProvider->GetRacerContext().VehiclePawn && 
 		RacerContextProvider->GetRacerContext().RaceTrack && RacerContextProvider->GetRacerContext().RaceTrack->Spline)

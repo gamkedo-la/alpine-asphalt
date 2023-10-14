@@ -325,6 +325,7 @@ void AAA_WheeledVehiclePawn::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 
 	Category.Add(TEXT("Speed MPH"), FString::Printf(TEXT("%.1f"), GetVehicleSpeedMph()));
 	Category.Add(TEXT("Traction %"), FString::Printf(TEXT("%.1f"), GetTraction() * 100));
+	Category.Add(TEXT("Gear"), FString::Printf(TEXT("%d"), VehicleMovementComponent->GetCurrentGear()));
 	Category.Add(TEXT("Steering"), FString::Printf(TEXT("%.2f"), SteeringValue));
 	Category.Add(TEXT("Throttle"), FString::Printf(TEXT("%.2f"), ThrottleValue));
 	Category.Add(TEXT("Brake"), FString::Printf(TEXT("%.2f"), BrakeValue));

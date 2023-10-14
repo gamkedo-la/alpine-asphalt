@@ -89,6 +89,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	float DefaultTurningCircleRadius{ 1200.0f };
 
+	UPROPERTY(EditAnywhere)
+	float TurningCircleRadiusSpeedMphBase{ 10.0f };
+
 	/*
 	* Desired speed in mph
 	*/
@@ -113,7 +116,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RawFactorSwitchoverThreshold{ 0.1f };
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleInstanceOnly)
 	bool bTurningAround{ false };
 
 	UPROPERTY(EditAnywhere)
