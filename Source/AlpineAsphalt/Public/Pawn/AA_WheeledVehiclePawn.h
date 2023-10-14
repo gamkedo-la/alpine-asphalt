@@ -136,13 +136,13 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = VehicleVisuals)
 	int DecalTextureIndex = 0;
 	UPROPERTY(EditInstanceOnly, Category = VehicleVisuals)
-	FColor ColorOne;
+	FColor ColorOne = FColor::Blue;
 	UPROPERTY(EditInstanceOnly, Category = VehicleVisuals)
-	FColor ColorTwo;
+	FColor ColorTwo = FColor::White;
 	UPROPERTY(EditInstanceOnly, Category = VehicleVisuals)
-	FColor ColorThree;
+	FColor ColorThree = FColor::Black;
 	UPROPERTY(EditInstanceOnly, Category = VehicleVisuals)
-	FColor ColorFour;
+	FColor ColorFour = FColor::Green;
 	
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty( FPropertyChangedEvent & PropertyChangedEvent ) override;

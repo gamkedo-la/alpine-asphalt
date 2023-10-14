@@ -42,6 +42,11 @@ void AAA_WheeledVehiclePawn::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SetColorOne(ColorOne);
+	SetColorTwo(ColorTwo);
+	SetColorThree(ColorThree);
+	SetColorFour(ColorFour);
+	
 	if(UAA_RewindSubsystem* RewindSystem= GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
 		GetWorldTimerManager().SetTimer(RecordingSnapshotTimerHandle, this, &AAA_WheeledVehiclePawn::RecordSnapshot,RewindSystem->RecordingResolution,true);
@@ -132,6 +137,10 @@ void AAA_WheeledVehiclePawn::PostEditChangeProperty(FPropertyChangedEvent& Prope
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
+	if(GetWorld()->WorldType != EWorldType::PIE)
+	{
+		return;
+	}
 	//If property changed is VehicleData
 	if(PropertyChangedEvent.Property->GetName() == "VehicleData")
 	{
@@ -198,12 +207,12 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
 	if(PaintMaterial)
 	{
-		SetVehiclePaint(0);
-		SetVehicleDecal(0);
-		SetColorOne(FColor::Blue);
-		SetColorTwo(FColor::White);
-		SetColorThree(FColor::Black);
-		SetColorFour(FColor::Green);
+		SetVehiclePaint(PaintTextureIndex);
+		SetVehicleDecal(DecalTextureIndex);
+		SetColorOne(ColorOne);
+		SetColorTwo(ColorTwo);
+		SetColorThree(ColorThree);
+		SetColorFour(ColorFour);
 	}
 	
 	//I feel like this is needed, but it only works without it?
