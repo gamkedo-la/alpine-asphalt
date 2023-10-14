@@ -66,19 +66,19 @@ void AAA_PlayerController::SetupInputComponent()
 	EInputComponent->BindAction(InputLookAround,ETriggerEvent::Completed, this, &AAA_PlayerController::CameraLook);
 	
 	//Reset Vehicle
-	EInputComponent->BindAction(InputReset,ETriggerEvent::Triggered, this, &AAA_PlayerController::ResetVehicle);
+	EInputComponent->BindAction(InputReset,ETriggerEvent::Started, this, &AAA_PlayerController::ResetVehicle);
 
 	//Shift Up
-	EInputComponent->BindAction(InputShiftUp,ETriggerEvent::Triggered, this, &AAA_PlayerController::ShiftUp);
+	EInputComponent->BindAction(InputShiftUp,ETriggerEvent::Started, this, &AAA_PlayerController::ShiftUp);
 	
 	//Shift Down
-	EInputComponent->BindAction(InputShiftDown,ETriggerEvent::Triggered, this, &AAA_PlayerController::ShiftDown);
+	EInputComponent->BindAction(InputShiftDown,ETriggerEvent::Started, this, &AAA_PlayerController::ShiftDown);
 
 	//Toggle Camera
-	EInputComponent->BindAction(InputToggleCamera,ETriggerEvent::Triggered, this, &AAA_PlayerController::ToggleCamera);
+	EInputComponent->BindAction(InputToggleCamera,ETriggerEvent::Started, this, &AAA_PlayerController::ToggleCamera);
 
 	//Interact
-	EInputComponent->BindAction(InputInteract,ETriggerEvent::Triggered, this, &AAA_PlayerController::Interact);
+	EInputComponent->BindAction(InputInteract,ETriggerEvent::Started, this, &AAA_PlayerController::Interact);
 
 
 	//Enter Rewind Mode
