@@ -50,6 +50,7 @@ protected:
 private:
 	void SetupComponentEventBindings();
 	void SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn);
+	void SetVehicleParameters(TWeakObjectPtr<AAA_WheeledVehiclePawn> VehiclePawnPtr);
 
 private:
 

@@ -21,6 +21,11 @@
 
 using namespace AA;
 
+namespace
+{
+	constexpr float AIRacerControllerOneShotTimerDelay = 0.25f;
+}
+
 AAA_AIRacerController::AAA_AIRacerController()
 {
 	VehicleControlComponent = CreateDefaultSubobject<UAA_AIVehicleControlComponent>(TEXT("Vehicle Control"));
@@ -87,6 +92,14 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 			*GetName(), *LoggingUtils::GetName(InPawn), InPawn ? *LoggingUtils::GetName(InPawn->GetClass()) : TEXT("NULL"));
 		return;
 	}
+
+	// The vehicle changes parameters on start so defer setting these 
+	FTimerHandle OneShotTimer;
+	
+	GetWorldTimerManager().SetTimer(OneShotTimer,
+		FTimerDelegate::CreateUObject<ThisClass, TWeakObjectPtr<AAA_WheeledVehiclePawn>>(this, &ThisClass::SetVehicleParameters, VehiclePawn),
+		AIRacerControllerOneShotTimerDelay, false
+	);
 
 	if(!RacerContext.RaceTrack)
 	{
@@ -186,4 +199,17 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 		UE_VLOG_UELOG(this, LogAlpineAsphalt, Error, TEXT("%s: SetRaceTrack: NearestRaceTrack could not be determined!"),
 			*GetName());
 	}
+}
+
+void AAA_AIRacerController::SetVehicleParameters(TWeakObjectPtr<AAA_WheeledVehiclePawn> VehiclePawnPtr)
+{
+	auto VehiclePawn = VehiclePawnPtr.Get();
+
+	if (!VehiclePawn)
+	{
+		return;
+	}
+
+	VehiclePawn->SetTractionControlState(true);
+	VehiclePawn->SetABSState(true);
 }

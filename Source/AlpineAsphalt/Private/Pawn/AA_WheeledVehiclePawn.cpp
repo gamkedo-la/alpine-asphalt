@@ -363,6 +363,14 @@ void AAA_WheeledVehiclePawn::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 	const bool bHandbrake = VehicleMovementComponent->GetHandbrakeInput();
 	Category.Add(TEXT("Handbrake"), LoggingUtils::GetBoolString(bHandbrake));
 
+	const auto& Wheels = VehicleMovementComponent->Wheels;
+	if (!Wheels.IsEmpty())
+	{
+		const auto AnyWheel = Wheels[0];
+		Category.Add(TEXT("ABS"), LoggingUtils::GetBoolString(AnyWheel->bABSEnabled));
+		Category.Add(TEXT("Traction Control"), LoggingUtils::GetBoolString(AnyWheel->bTractionControlEnabled));
+	}
+
 	const auto& FrontWorldLocation = GetFrontWorldLocation();
 	const auto& ForwardVector = GetActorForwardVector();
 
