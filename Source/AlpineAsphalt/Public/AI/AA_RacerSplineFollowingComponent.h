@@ -12,7 +12,6 @@
 #include "AA_RacerSplineFollowingComponent.generated.h"
 
 class AAA_WheeledVehiclePawn;
-class ALandscape;
 class IAA_RacerContextProvider;
 struct FAA_AIRacerContext;
 
@@ -38,10 +37,6 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-
-	ALandscape* GetLandscapeActor() const;
-	FVector ClampTargetToGround(const FVector& Position) const;
-
 	// TODO: May respond to a race start event
 	void SetInitialMovementTarget();
 
@@ -76,6 +71,12 @@ private:
 	float LookaheadDistance{ 1000.0f };
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
+	float MaxLookaheadDistance{ 4000.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float MinLookaheadDistance{ 300.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
 	float MinSpeedMph{ 20.0f };
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
@@ -84,7 +85,6 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float RoadCurvatureLookaheadFactor{ 3.0f };
 
-
-	UPROPERTY(Transient)
-	ALandscape* Landscape{};
+	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
+	float LastCurvature{ 1.0f };
 };
