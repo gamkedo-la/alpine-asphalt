@@ -34,6 +34,7 @@ public:
 
 	// Inherited via IAA_RacerContextProvider
 	virtual FAA_AIRacerContext& GetRacerContext() override;
+	void SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor);
 
 #if ENABLE_VISUAL_LOG
 	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;

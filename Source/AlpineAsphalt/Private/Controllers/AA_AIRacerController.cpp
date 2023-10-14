@@ -29,6 +29,11 @@ AAA_AIRacerController::AAA_AIRacerController()
 	RacerObstacleAvoidanceComponent = CreateDefaultSubobject<UAA_RacerObstacleAvoidanceComponent>(TEXT("Racer Obstacle Avoidance"));
 }
 
+void AAA_AIRacerController::SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor)
+{
+	RacerContext.RaceTrack = TrackInfoActor;
+}
+
 #if ENABLE_VISUAL_LOG
 void AAA_AIRacerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 {
@@ -54,6 +59,8 @@ void AAA_AIRacerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 		RacerObstacleAvoidanceComponent->DescribeSelfToVisLog(Snapshot);
 	}
 }
+#endif
+
 void AAA_AIRacerController::BeginPlay()
 {
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: BeginPlay"), *GetName());
@@ -79,7 +86,10 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 		return;
 	}
 
-	SetRaceTrack(*VehiclePawn);
+	if(!RacerContext.RaceTrack)
+	{
+		SetRaceTrack(*VehiclePawn);
+	}
 
 	check(VehicleControlComponent);
 	VehicleControlComponent->SetVehiclePawn(VehiclePawn);
@@ -172,5 +182,3 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 			*GetName());
 	}
 }
-
-#endif
