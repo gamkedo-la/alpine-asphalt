@@ -111,6 +111,26 @@ void AAA_WheeledVehiclePawn::SetColorFour(FColor ColorToSet)
 	ColorFour = ColorToSet;
 }
 
+void AAA_WheeledVehiclePawn::SetABSState(bool Enabled)
+{
+	ensure(VehicleMovementComponent);
+	auto Wheels = 	VehicleMovementComponent->Wheels;
+	for(int i = 0; i < Wheels.Num(); i++)
+	{
+		Wheels[i]->bABSEnabled = Enabled;
+	}
+}
+
+void AAA_WheeledVehiclePawn::SetTractionControlState(bool Enabled)
+{
+	ensure(VehicleMovementComponent);
+	auto Wheels = 	VehicleMovementComponent->Wheels;
+	for(int i = 0; i < Wheels.Num(); i++)
+	{
+		Wheels[i]->bTractionControlEnabled = Enabled;
+	}
+}
+
 float AAA_WheeledVehiclePawn::GetVehicleSpeed() const
 {
 	if (!VehicleMovementComponent)

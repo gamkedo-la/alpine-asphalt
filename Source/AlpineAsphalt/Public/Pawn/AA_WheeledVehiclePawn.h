@@ -89,7 +89,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorFour(FColor ColorToSet);
 
+	//Set Vehicle Properties
+	UFUNCTION(BlueprintCallable, Category = VehicleControlSettings)
+	void SetABSState(bool Enabled);
 
+	UFUNCTION(BlueprintCallable, Category = VehicleControlSettings)
+	void SetTractionControlState(bool Enabled);
+
+	//Pure Getters
 	UFUNCTION(BlueprintPure, Category = Movement)
 	float GetVehicleSpeed() const;
 
