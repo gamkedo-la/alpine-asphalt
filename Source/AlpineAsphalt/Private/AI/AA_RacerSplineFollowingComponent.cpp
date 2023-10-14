@@ -179,7 +179,9 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	// We need to actually lookahead further as curvature increases so that we can adjust for the car turning
 	//const auto CurrentLookaheadDistance = FMath::Lerp(LookaheadDistance, MaxLookaheadDistance, LastCurvature);
 	// Try inverting that again and looking ahead less with more curvature
-	const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, 1 - LastCurvature);
+	//const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, 1 - LastCurvature);
+	const auto LookaheadAlpha = FMath::Max(0, Vehicle->GetVehicleSpeedMph() - MinSpeedMph) / (MaxSpeedMph - MinSpeedMph);
+	const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, LookaheadAlpha);
 
 	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + CurrentLookaheadDistance;
 
