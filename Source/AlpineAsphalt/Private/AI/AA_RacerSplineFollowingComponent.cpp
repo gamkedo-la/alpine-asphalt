@@ -182,8 +182,8 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 
 	const auto& CurrentVehicleLocation = Vehicle->GetFrontWorldLocation();
 
-	const auto Key = State.SplineKey = Spline->FindInputKeyClosestToWorldLocation(CurrentVehicleLocation);
-	State.DistanceAlongSpline = Spline->GetDistanceAlongSplineAtSplineInputKey(Key);
+	const auto Key = State.SplineKey = 0;
+	State.DistanceAlongSpline = 0;
 	State.SplineDirection = Spline->GetDirectionAtSplineInputKey(Key, ESplineCoordinateSpace::World);
 	State.WorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(State.DistanceAlongSpline);
 
