@@ -18,7 +18,7 @@ FName AAA_WheeledVehiclePawn::VehicleMovementComponentName(TEXT("WheeledVehicleM
 FName AAA_WheeledVehiclePawn::VehicleMeshComponentName(TEXT("VehicleMesh"));
 
 //Define Log for Vehicle
-DEFINE_LOG_CATEGORY(Vehicle);
+DEFINE_LOG_CATEGORY(LogAAVehicle);
 
 AAA_WheeledVehiclePawn::AAA_WheeledVehiclePawn(const class FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
 {
@@ -50,7 +50,7 @@ void AAA_WheeledVehiclePawn::BeginPlay()
 		RewindSystem->RegisterRewindable(this);
 	}else
 	{
-		UE_LOG(Vehicle,Error,TEXT("Rewind Subsystem Unavailable"))
+		UE_LOG(LogAAVehicle,Error,TEXT("Rewind Subsystem Unavailable"))
 	}
 	
 }
@@ -175,16 +175,16 @@ void AAA_WheeledVehiclePawn::DisplayDebug(UCanvas* Canvas, const FDebugDisplayIn
 
 void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData)
 {
-	UE_LOG(Vehicle, Log, TEXT("Setting Vehicle Data"))
+	UE_LOG(LogAAVehicle, Log, TEXT("Setting Vehicle Data"))
 	if(NewVehicleData == nullptr)
 	{
-		UE_LOG(Vehicle,Warning,TEXT("New VehicleData was nullptr"))
+		UE_LOG(LogAAVehicle, Warning,TEXT("New VehicleData was nullptr"))
 		return;
 	}
 	//TODO: Add support for changing wheel count?
 	if(VehicleMovementComponent->WheelSetups.Num() != NewVehicleData->WheelSetups.Num())
 	{
-		UE_LOG(Vehicle,Warning,TEXT("Changing Wheel Count Not Currently Supported"))
+		UE_LOG(LogAAVehicle, Warning,TEXT("Changing Wheel Count Not Currently Supported"))
 		return;
 	}
 	
@@ -238,12 +238,12 @@ void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
 	index = SnapshotData.Num() - (index + 1); 
 	if(index < SnapshotData.Num())
 	{
-		UE_LOG(Vehicle,Verbose,TEXT("Setting Snapshot %d of %d"),index, SnapshotData.Num())
+		UE_LOG(LogAAVehicle,Verbose,TEXT("Setting Snapshot %d of %d"),index, SnapshotData.Num())
 		const FWheeledSnaphotData Snapshot = SnapshotData[index]; 
 		VehicleMovementComponent->SetSnapshot(Snapshot);
 	}else
 	{
-		UE_LOG(Vehicle,Error,TEXT("Snapshot Index out of bounds while rewinding."))
+		UE_LOG(LogAAVehicle,Error,TEXT("Snapshot Index out of bounds while rewinding."))
 	}
 }
 

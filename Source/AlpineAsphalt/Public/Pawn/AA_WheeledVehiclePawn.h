@@ -12,7 +12,7 @@
 
 struct FInputActionValue;
 //Define Log for Vehicle
-DECLARE_LOG_CATEGORY_EXTERN(Vehicle, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogAAVehicle, Log, All);
 /**
  * 
  */
