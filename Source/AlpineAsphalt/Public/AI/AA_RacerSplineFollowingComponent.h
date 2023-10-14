@@ -7,11 +7,14 @@
 
 #include "AI/AA_AIRacerEvents.h"
 
+#include <optional>
+
 #include "AA_RacerSplineFollowingComponent.generated.h"
 
 class AAA_WheeledVehiclePawn;
 class ALandscape;
 class IAA_RacerContextProvider;
+struct FAA_AIRacerContext;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ALPINEASPHALT_API UAA_RacerSplineFollowingComponent : public UActorComponent
@@ -42,6 +45,24 @@ private:
 	// TODO: May respond to a race start event
 	void SetInitialMovementTarget();
 
+	struct FSplineState
+	{
+		FVector WorldLocation;
+		FVector SplineDirection;
+		float SplineKey;
+		float DistanceAlongSpline;	
+	};
+
+	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
+	std::optional<FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride = {}) const;
+
+	void UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext);
+
+	/*
+	* Curvature between [0,1] indicating how steep the upcoming road is for speed adjustment purposes.
+	*/
+	float CalculateUpcomingRoadCurvature() const;
+
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleTargetUpdated OnVehicleTargetUpdated {};
@@ -49,10 +70,21 @@ public:
 private:
 	IAA_RacerContextProvider* RacerContextProvider{};
 
+	std::optional<FSplineState> LastSplineState{};
+
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float LookaheadDistance{ 1000.0f };
 
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float MinSpeedMph{ 20.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float MaxSpeedMph{ 80.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float RoadCurvatureLookaheadFactor{ 3.0f };
+
+
 	UPROPERTY(Transient)
 	ALandscape* Landscape{};
-		
 };

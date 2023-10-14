@@ -121,12 +121,12 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn)
 {
 	// TODO: This will probably be passed in externally
-	// here we just find the nearest one
+	// here we just find the nearest one that has smallest completion percentage
 
 	const auto GameWorld = GetWorld();
 
 	AAA_TrackInfoActor* NearestRaceTrack{};
-	double NearestDistSq{ std::numeric_limits<double>::max() };
+	double SmallestCompletion{ std::numeric_limits<double>::max() };
 
 	const auto& VehicleLocation = VehiclePawn.GetActorLocation();
 
@@ -138,14 +138,24 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 		}
 
 		AAA_TrackInfoActor* RaceTrack = *It;
+		auto Spline = RaceTrack->Spline;
 
-		const auto NearestSplineLocation = RaceTrack->Spline->FindLocationClosestToWorldLocation(VehicleLocation, ESplineCoordinateSpace::World);
-		double DistSq = FVector::DistSquared(VehicleLocation, NearestSplineLocation);
+		const auto NearestSplineLocation = Spline->FindLocationClosestToWorldLocation(VehicleLocation, ESplineCoordinateSpace::World);
+		const double DistMeters = FVector::Distance(VehicleLocation, NearestSplineLocation) / 100;
+		// Don't find one too far away
+		if (DistMeters > MaxRaceDistance)
+		{
+			continue;
+		}
+
+		const auto Key = Spline->FindInputKeyClosestToWorldLocation(NearestSplineLocation);
+		const auto DistanceAlongSpline = Spline->GetDistanceAlongSplineAtSplineInputKey(Key);
+		const auto CompletionFraction = DistanceAlongSpline / Spline->GetSplineLength();
 			
-		if (DistSq < NearestDistSq)
+		if (CompletionFraction < SmallestCompletion)
 		{
 			NearestRaceTrack = RaceTrack;
-			NearestDistSq = DistSq;
+			SmallestCompletion = CompletionFraction;
 		}
 	}
 

@@ -52,6 +52,8 @@ private:
 
 private:
 
+	static constexpr double MaxRaceDistance = 500 * 100;
+
 	UPROPERTY(Transient)
 	FAA_AIRacerContext RacerContext{};
 
