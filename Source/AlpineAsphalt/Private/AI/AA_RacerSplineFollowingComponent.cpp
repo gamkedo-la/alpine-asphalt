@@ -146,14 +146,6 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	auto Spline = RacerContext.RaceTrack->Spline;
 	auto Vehicle = RacerContext.VehiclePawn;
 
-	const auto SplineLength = Spline->GetSplineLength();
-
-	// check if at the end of the spline
-	if (FMath::IsNearlyEqual(SplineLength, LastSplineState->DistanceAlongSpline))
-	{
-		return std::nullopt;
-	}
-
 	// Adjust lookahead based on current curvature
 	// We need to actually lookahead further as curvature increases so that we can adjust for the car turning
 	//const auto CurrentLookaheadDistance = FMath::Lerp(LookaheadDistance, MaxLookaheadDistance, LastCurvature);
@@ -161,7 +153,9 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, 1 - LastCurvature);
 
 	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + CurrentLookaheadDistance;
-	const auto NextDistanceAlongSpline = FMath::Min(NextIdealDistanceAlongSpline, SplineLength);
+
+	// If at end of spline, then wrap around
+	const auto NextDistanceAlongSpline = FMath::Wrap(NextIdealDistanceAlongSpline, 0.0f, Spline->GetSplineLength());
 
 	FSplineState State;
 

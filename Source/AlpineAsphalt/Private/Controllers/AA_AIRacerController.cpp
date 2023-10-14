@@ -39,6 +39,9 @@ void AAA_AIRacerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 {
 	Super::GrabDebugSnapshot(Snapshot);
 
+	auto& Category = Snapshot->Status[0];
+	Category.Add(TEXT("Race Track"), *LoggingUtils::GetName(RacerContext.RaceTrack));
+
 	if (VehicleControlComponent)
 	{
 		VehicleControlComponent->DescribeSelfToVisLog(Snapshot);
@@ -66,7 +69,6 @@ void AAA_AIRacerController::BeginPlay()
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: BeginPlay"), *GetName());
 
 	Super::BeginPlay();
-
 }
 
 void AAA_AIRacerController::OnPossess(APawn* InPawn)
@@ -101,6 +103,9 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 	// fallback would be to use a behavior tree or even just code up the logic in the AI Controller itself
 	
 	SetupComponentEventBindings();
+
+	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnPossess: RaceTrack=%s"),
+		*GetName(), *LoggingUtils::GetName(RacerContext.RaceTrack));
 }
 
 void AAA_AIRacerController::OnUnPossess()
