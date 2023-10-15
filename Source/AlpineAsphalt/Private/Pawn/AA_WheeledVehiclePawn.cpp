@@ -131,6 +131,25 @@ void AAA_WheeledVehiclePawn::SetTractionControlState(bool Enabled)
 	}
 }
 
+void AAA_WheeledVehiclePawn::BoostBrakingForce(float BrakeForceMultiplier)
+{
+	ensure(VehicleMovementComponent);
+	auto Wheels = VehicleMovementComponent->Wheels;
+
+	for (auto Wheel : Wheels)
+	{
+		if (Wheel->bAffectedByBrake)
+		{
+			Wheel->MaxBrakeTorque *= BrakeForceMultiplier;
+		}
+
+		if (Wheel->bAffectedByHandbrake)
+		{
+			Wheel->MaxHandBrakeTorque *= BrakeForceMultiplier;
+		}
+	}
+}
+
 float AAA_WheeledVehiclePawn::GetVehicleSpeed() const
 {
 	if (!VehicleMovementComponent)

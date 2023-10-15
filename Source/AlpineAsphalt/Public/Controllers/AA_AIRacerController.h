@@ -74,6 +74,15 @@ private:
 
 	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
 	TObjectPtr<UAA_AIGetUnstuckComponent> GetUnstuckComponent{};
+
+	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
+	bool bEnableABS{ true };
+
+	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
+	bool bEnableTractionControl{ true };
+
+	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
+	float BrakingForceBoostMultiplier{ 1.0f };
 };
 
 #pragma region Inline Definitions

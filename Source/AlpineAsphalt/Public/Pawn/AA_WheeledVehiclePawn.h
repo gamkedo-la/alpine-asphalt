@@ -96,6 +96,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = VehicleControlSettings)
 	void SetTractionControlState(bool Enabled);
 
+	UFUNCTION(BlueprintCallable, Category = VehicleControlSettings)
+	void BoostBrakingForce(float BrakeForceMultiplier);
+
 	//Pure Getters
 	UFUNCTION(BlueprintPure, Category = Movement)
 	float GetVehicleSpeed() const;

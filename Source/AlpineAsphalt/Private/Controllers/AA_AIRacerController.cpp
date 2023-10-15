@@ -14,6 +14,7 @@
 #include "Logging/LoggingUtils.h"
 #include "Landscape.h"
 #include "Components/SplineComponent.h"
+#include "ChaosWheeledVehicleMovementComponent.h"
 
 #include "Actors/AA_TrackInfoActor.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
@@ -216,6 +217,7 @@ void AAA_AIRacerController::SetVehicleParameters()
 		return;
 	}
 
-	VehiclePawn->SetTractionControlState(true);
-	VehiclePawn->SetABSState(true);
+	VehiclePawn->SetTractionControlState(bEnableTractionControl);
+	VehiclePawn->SetABSState(bEnableABS);
+	VehiclePawn->BoostBrakingForce(BrakingForceBoostMultiplier);
 }
