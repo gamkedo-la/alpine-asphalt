@@ -58,4 +58,8 @@ private:
 
 	int32 NextBufferIndex{};
 	bool bSufficientSamples{};
+
+	// Don't trigger stuck at start - wait for some movement initially
+	// TODO: Maybe there is an event we can subscribe to to "turn on the functionality"
+	bool bHasStarted{};
 };

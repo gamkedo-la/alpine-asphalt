@@ -148,7 +148,7 @@ std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(
 	if(InterceptTime < 0)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
-			TEXT("%s-%s: ComputeThreatVector - FALSE - %s InterceptTime=%fs < 0; CandidateVehicleSpeed=%fmph"),
+			TEXT("%s-%s: ComputeThreatVector - FALSE - %s: InterceptTime=%fs < 0; CandidateVehicleSpeed=%fmph"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *CandidateVehicle.GetName(), InterceptTime, CandidateVehicleSpeed * UnitConversions::CmsToMph);
 
 		return std::nullopt;
@@ -160,7 +160,7 @@ std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(
 	if (CandidateDistanceOverTime >= ThreatContext.DistanceToTarget)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
-			TEXT("%s-%s: ComputeThreatVector - FALSE - %s CandidateDistanceOverTime=%fcm >= TargetDistance=%fcm; InterceptTime=%fs,  CandidateVehicleSpeed=%fmph"),
+			TEXT("%s-%s: ComputeThreatVector - FALSE - %s: CandidateDistanceOverTime=%fcm >= TargetDistance=%fcm; InterceptTime=%fs,  CandidateVehicleSpeed=%fmph"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *CandidateVehicle.GetName(), CandidateDistanceOverTime, ThreatContext.DistanceToTarget,
 			InterceptTime, CandidateVehicleSpeed * UnitConversions::CmsToMph);
 

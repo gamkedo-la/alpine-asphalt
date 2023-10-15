@@ -136,7 +136,17 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 			TEXT("%s-%s: TickComponent - Not Stuck - AverageSpeed=%fcm/s >= MinAverageSpeed=%fcm/s"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), FMath::Sqrt(AverageSpeedSq), MinAverageSpeed);
+		// We got some movement, we can now officially "turn on" the functionality
+		bHasStarted = true;
+		return;
+	}
 
+	if (!bHasStarted)
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
+			TEXT("%s-%s: TickComponent - Skipping Stuck as no movement detected yet"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()));
+		ResetBuffer();
 		return;
 	}
 
