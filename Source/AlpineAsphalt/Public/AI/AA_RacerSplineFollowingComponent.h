@@ -45,6 +45,7 @@ private:
 
 	struct FSplineState
 	{
+		FVector OriginalWorldLocation;
 		FVector WorldLocation;
 		FVector SplineDirection;
 		float SplineKey;
@@ -90,4 +91,7 @@ private:
 
 	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
 	float LastCurvature{ 1.0f };
+
+	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
+	float CurrentOffset{ 0.0f };
 };

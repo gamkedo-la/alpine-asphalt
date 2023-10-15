@@ -8,7 +8,6 @@
 #include "Util/UnitConversions.h"
 #include "VisualLogger/VisualLogger.h"
 
-
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 

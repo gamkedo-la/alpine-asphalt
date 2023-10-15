@@ -147,6 +147,7 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 
 	VehicleControlComponent->OnVehicleReachedTarget.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::SelectNewMovementTarget);
 	RacerSplineFollowingComponent->OnVehicleTargetUpdated.AddDynamic(VehicleControlComponent, &UAA_AIVehicleControlComponent::OnVehicleTargetUpdated);
+	ObstacleDetectionComponent->OnVehicleObstaclesUpdated.AddDynamic(RacerObstacleAvoidanceComponent, &UAA_RacerObstacleAvoidanceComponent::OnVehicleObstaclesUpdated);
 	RacerObstacleAvoidanceComponent->OnVehicleAvoidancePositionUpdated.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated);
 	GetUnstuckComponent->OnVehicleStuck.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::SelectUnstuckTarget);
 }

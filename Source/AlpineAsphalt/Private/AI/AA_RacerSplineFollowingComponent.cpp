@@ -85,11 +85,80 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 
 void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_WheeledVehiclePawn* VehiclePawn, const FAA_AIRacerAvoidanceContext& AvoidanceContext)
 {
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: VehiclePawn=%s; AvoidanceContext=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *AvoidanceContext.ToString());
+
+	check(VehiclePawn);
+
+	if (AvoidanceContext.ThreatCount == 0 || FMath::IsNearlyZero(AvoidanceContext.NormalizedThreatScore))
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Updated Offset to 0"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()));
+
+		CurrentOffset = 0;
+		return;
+	}
+
+	if (!RacerContextProvider || !RacerContextProvider->GetRacerContext().RaceTrack || !LastSplineState)
+	{
+		return;
+	}
+
+	const auto RaceTrack = RacerContextProvider->GetRacerContext().RaceTrack;
+	const auto VehicleHalfWidth = VehiclePawn->GetVehicleWidth() * 0.5f;
+	const auto RoadHalfWidth = RaceTrack->GetWidthAtDistance(LastSplineState->DistanceAlongSpline) * 0.5f;
+	const auto MaxDelta = RoadHalfWidth - VehicleHalfWidth;
+
+	if (MaxDelta < 0)
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Unable to offset as VehicleHalfWidth=%f > RoadHalfWidth=%f - VehiclePawn=%s; AvoidanceContext=%s"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()),
+			VehicleHalfWidth, RoadHalfWidth,
+			*LoggingUtils::GetName(VehiclePawn), *AvoidanceContext.ToString());
+		CurrentOffset = 0;
+		return;
+	}
+
+	auto& RacerContext = RacerContextProvider->GetRacerContext();
+
+	const auto MovementVector = (RacerContext.MovementTarget - VehiclePawn->GetFrontWorldLocation()).GetSafeNormal();
+
+	// parallel choose max delta
+	if (FMath::IsNearlyEqual(AvoidanceContext.ThreatVector | MovementVector, 1.0f))
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentOffset=%f"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentOffset);
+
+		CurrentOffset = MaxDelta;
+	}
+	else
+	{
+		const auto OffsetVector = FMath::GetReflectionVector(AvoidanceContext.ThreatVector, MovementVector);
+		// cross product of reflection vector to choose which side of road to go on - Unreal uses Left hand rule since it is a left handed coordinate system
+
+		const auto CrossProduct = MovementVector ^ OffsetVector;
+		CurrentOffset = MaxDelta * FMath::Sign(CrossProduct.Z) * AvoidanceContext.NormalizedThreatScore;
+	}
+
+	// Apply Offset immediately
+	auto Spline = RacerContext.RaceTrack->Spline;
+	check(Spline);
+
+	const auto& RightVector = Spline->GetRightVectorAtSplineInputKey(LastSplineState->SplineKey, ESplineCoordinateSpace::World);
+	LastSplineState->WorldLocation = LastSplineState->OriginalWorldLocation + RightVector * CurrentOffset;
+
+	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, VehiclePawn->GetFrontWorldLocation(), VehiclePawn->GetFrontWorldLocation() + AvoidanceContext.ThreatVector * LookaheadDistance, FColor::Orange,
+		TEXT("%s - ThreatVector - Score=%s"), *VehiclePawn->GetName(), *FString::Printf(TEXT("%.3f"), AvoidanceContext.NormalizedThreatScore));
+
+	UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation, LastSplineState->WorldLocation + FVector(0,0,200.0f), 50.0f, FColor::Red,
+		TEXT("%s - Avoidance Update; CurrentOffset=%f"), *VehiclePawn->GetName(), CurrentOffset);
+
+	UpdateMovementFromLastSplineState(RacerContext);
 }
 
 void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition)
 {
-	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: VehiclePawn=%s; IdealSeekPosition=%s"),
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: SelectUnstuckTarget: VehiclePawn=%s; IdealSeekPosition=%s"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *IdealSeekPosition.ToCompactString());
 
 	check(VehiclePawn);
@@ -160,7 +229,7 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	const auto Key = State.SplineKey = 0;
 	State.DistanceAlongSpline = 0;
 	State.SplineDirection = Spline->GetDirectionAtSplineInputKey(Key, ESplineCoordinateSpace::World);
-	State.WorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(State.DistanceAlongSpline);
+	State.WorldLocation = State.OriginalWorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(State.DistanceAlongSpline);
 
 	return State;
 }
@@ -193,7 +262,14 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	const auto Key = State.SplineKey = Spline->GetInputKeyValueAtDistanceAlongSpline(NextDistanceAlongSpline);
 	State.DistanceAlongSpline = NextDistanceAlongSpline;
 	State.SplineDirection = Spline->GetDirectionAtSplineInputKey(Key, ESplineCoordinateSpace::World);
-	State.WorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(NextDistanceAlongSpline);
+	State.WorldLocation = State.OriginalWorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(NextDistanceAlongSpline);
+
+	// Offset road target position
+	if (!FMath::IsNearlyZero(CurrentOffset))
+	{
+		const auto& RightVector = Spline->GetRightVectorAtSplineInputKey(Key, ESplineCoordinateSpace::World);
+		State.WorldLocation += RightVector * CurrentOffset;
+	}
 
 	return State;
 }
@@ -249,6 +325,7 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 	Category.Category = TEXT("Racer Spline Following Component");
 	
 	Category.Add(TEXT("LastCurvature"), FString::Printf(TEXT("%.1f"), LastCurvature));
+	Category.Add(TEXT("CurrentOffset"), FString::Printf(TEXT("%.1f"), CurrentOffset));
 
 	if (RacerContextProvider && LastSplineState && RacerContextProvider->GetRacerContext().VehiclePawn && 
 		RacerContextProvider->GetRacerContext().RaceTrack && RacerContextProvider->GetRacerContext().RaceTrack->Spline)

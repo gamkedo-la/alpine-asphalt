@@ -110,6 +110,9 @@ public:
 	float GetVehicleHeight() const;
 
 	UFUNCTION(BlueprintPure)
+	float GetVehicleWidth() const;
+
+	UFUNCTION(BlueprintPure)
 	virtual FVector GetFrontWorldLocation() const;
 
 	UFUNCTION(BlueprintPure)
@@ -204,6 +207,12 @@ inline float AAA_WheeledVehiclePawn::GetVehicleLength() const
 {
 	const FVector& VehicleExtent = GetAABB().GetExtent();
 	return FMath::Max(VehicleExtent.X, VehicleExtent.Y) * 2;
+}
+
+inline float AAA_WheeledVehiclePawn::GetVehicleWidth() const
+{
+	const FVector& VehicleExtent = GetAABB().GetExtent();
+	return FMath::Min(VehicleExtent.X, VehicleExtent.Y) * 2;
 }
 
 inline float AAA_WheeledVehiclePawn::GetVehicleHeight() const

@@ -39,5 +39,15 @@ struct ALPINEASPHALT_API FAA_AIRacerAvoidanceContext
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
-	float OffsetValue{};
+	FVector ThreatVector{ EForceInit::ForceInitToZero };
+
+	/*
+	* Overall strength of threat [0,1].
+	*/
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
+	float NormalizedThreatScore{ };
+
+	int32 ThreatCount{};
+
+	FString ToString() const;
 };

@@ -6,10 +6,13 @@
 #include "Components/ActorComponent.h"
 #include "AI/AA_AIRacerEvents.h"
 
+#include <optional>
+
 #include "AA_RacerObstacleAvoidanceComponent.generated.h"
 
-class AAA_WheeledVehiclePawn;
 class IAA_RacerContextProvider;
+class AAA_WheeledVehiclePawn;
+struct FAA_AIRacerContext;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ALPINEASPHALT_API UAA_RacerObstacleAvoidanceComponent : public UActorComponent
@@ -35,5 +38,13 @@ public:
 	mutable FOnVehicleAvoidancePositionUpdated OnVehicleAvoidancePositionUpdated {};
 
 private:
+	struct FThreatContext;
+
+	std::optional<FVector> ComputeThreatVector(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const;
+
+	bool PopulateThreatContext(FThreatContext& ThreatContext) const;
+
+private:
 	IAA_RacerContextProvider* RacerContextProvider{};
 };
+
