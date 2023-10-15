@@ -28,6 +28,9 @@ struct ALPINEASPHALT_API FAA_AIRacerContext
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	TObjectPtr<AAA_TrackInfoActor> RaceTrack{};
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
+	float DistanceAlongSpline {};
 };
 
 /**

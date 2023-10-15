@@ -8,6 +8,8 @@
 #include "Logging/LoggingUtils.h"
 #include "AI/AA_RacerContextProvider.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
+#include "Components/SplineComponent.h"
+#include "Actors/AA_TrackInfoActor.h"
 
 using namespace AA;
 
@@ -16,6 +18,7 @@ struct UAA_ObstacleDetectionComponent::FThreatContext
 	FVector ReferencePosition;
 	const FAA_AIRacerContext* RacerContext;
 	FVector ToMovementTarget;
+	AController* MyController;
 };
 
 UAA_ObstacleDetectionComponent::UAA_ObstacleDetectionComponent()
@@ -66,7 +69,12 @@ void UAA_ObstacleDetectionComponent::TickComponent(float DeltaTime, ELevelTick T
 	}
 
 	FThreatContext ThreatContext;
-	PopulateThreatContext(ThreatContext);
+	if (!PopulateThreatContext(ThreatContext))
+	{
+		return;
+	}
+
+	const auto& AIContext = RacerContextProvider->GetRacerContext();
 
 	for (auto CandidateVehicle : AllVehicles)
 	{
@@ -75,7 +83,7 @@ void UAA_ObstacleDetectionComponent::TickComponent(float DeltaTime, ELevelTick T
 			continue;
 		}
 
-		if(IsPotentialThreat(ThreatContext, *CandidateVehicle))
+		if(IsPotentialThreat(AIContext, ThreatContext, *CandidateVehicle))
 		{
 			UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Verbose, CandidateVehicle->GetActorLocation(), CandidateVehicle->GetActorLocation() + FVector(0, 0, 100.f), 50.0f, FColor::Orange,
 				TEXT("%s - Candidate threat: %s"), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(CandidateVehicle));
@@ -91,16 +99,32 @@ void UAA_ObstacleDetectionComponent::TickComponent(float DeltaTime, ELevelTick T
 	OnVehicleObstaclesUpdated.Broadcast(RacerContextProvider->GetRacerContext().VehiclePawn, DetectedVehicles);
 }
 
-void UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& ThreatContext) const
+bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& ThreatContext) const
 {
-	check(RacerContextProvider);
+	if (!RacerContextProvider)
+	{
+		return false;
+	}
+
 	const auto& Context = RacerContextProvider->GetRacerContext();
 	const auto MyVehicle = Context.VehiclePawn;
-	check(MyVehicle);
+
+	if (!MyVehicle)
+	{
+		return false;
+	}
 
 	ThreatContext.RacerContext = &Context;
 	ThreatContext.ReferencePosition = MyVehicle->GetBackWorldLocation();
 	ThreatContext.ToMovementTarget = Context.MovementTarget - ThreatContext.ReferencePosition;
+	ThreatContext.MyController = MyVehicle->GetController();
+
+	if (!ThreatContext.MyController)
+	{
+		return false;
+	}
+
+	return true;
 }
 
 void UAA_ObstacleDetectionComponent::PopulateAllVehicles()
@@ -134,7 +158,7 @@ void UAA_ObstacleDetectionComponent::PopulateAllVehicles()
 		*GetName(), *LoggingUtils::GetName(GetOwner()), AllVehicles.Num());
 }
 
-bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const
+bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FAA_AIRacerContext& AIContext, const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const
 {
 	// Right now only consider those along side vehicle or in front
 	const auto& MyReferencePosition = ThreatContext.ReferencePosition;
@@ -148,7 +172,37 @@ bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FThreatContext& Thr
 		return false;
 	}
 
-	return ToCandidate.SizeSquared() <= FMath::Square(MaxDistanceThresholdMeters * 100);
+	// Quick straight-line distance check
+	const auto MaxDistanceThreshold = MaxDistanceThresholdMeters * 100;
+
+	if (ToCandidate.SizeSquared() > FMath::Square(MaxDistanceThreshold))
+	{
+		return false;
+	}
+
+	// Check LOS - look a bit above vehicle
+	if (!ThreatContext.MyController->LineOfSightTo(&CandidateVehicle, CandidateVehicle.GetTopWorldLocation() + FVector(0, 0, 200), true))
+	{
+		return false;
+	}
+
+	// Check track position - TODO: should be able to cache this for other racers
+	// Technically "AIContext.DistanceAlongSpline" is the target and not current position
+	//  TODO: Could pass that into threat context to avoid recalculating every time here
+	const auto MyDistanceAlongSpine = AIContext.DistanceAlongSpline;
+	if (auto RaceTrackSpline = AIContext.RaceTrack ? AIContext.RaceTrack->Spline : nullptr; RaceTrackSpline)
+	{
+		// This is an expensive call - maybe move up before LOS if we cache it - possibly removing the first distance check
+		const auto CandidateKeyPosition = RaceTrackSpline->FindInputKeyClosestToWorldLocation(CandidateReferencePosition);
+		const auto CandidateDistanceAlongSpline = RaceTrackSpline->GetDistanceAlongSplineAtSplineInputKey(CandidateKeyPosition);
+
+		if (FMath::Abs(CandidateDistanceAlongSpline - MyDistanceAlongSpine) > MaxDistanceThreshold)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 #if ENABLE_VISUAL_LOG

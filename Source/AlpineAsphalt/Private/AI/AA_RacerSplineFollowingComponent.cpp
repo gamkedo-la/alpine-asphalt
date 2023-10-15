@@ -291,6 +291,7 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 
 	RacerContext.DesiredSpeedMph = NewSpeed;
 	RacerContext.MovementTarget = LastSplineState->WorldLocation;
+	RacerContext.DistanceAlongSpline = LastSplineState->DistanceAlongSpline;
 
 	OnVehicleTargetUpdated.Broadcast(RacerContext.VehiclePawn, RacerContext.MovementTarget, RacerContext.DesiredSpeedMph);
 }

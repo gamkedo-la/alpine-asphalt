@@ -35,9 +35,9 @@ private:
 
 	void PopulateAllVehicles();
 
-	bool IsPotentialThreat(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const;
+	bool IsPotentialThreat(const FAA_AIRacerContext& AIContext, const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const;
 
-	void PopulateThreatContext(FThreatContext& ThreatContext) const;
+	bool PopulateThreatContext(FThreatContext& ThreatContext) const;
 
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
