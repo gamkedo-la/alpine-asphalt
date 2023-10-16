@@ -89,6 +89,14 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float RoadCurvatureLookaheadFactor{ 3.0f };
 
+	/*
+	* Balance between curvature and speed for setting the lookahead target.
+	* Values range [0,1].
+	* As curvature and speed increases, the lookahead distance increases.
+	*/
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float LookaheadCurvatureAlphaWeight{ 0.5f };
+
 	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
 	float LastCurvature{ 1.0f };
 

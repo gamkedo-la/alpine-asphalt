@@ -120,8 +120,8 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	}
 
 	auto& RacerContext = RacerContextProvider->GetRacerContext();
-
-	const auto MovementVector = (RacerContext.MovementTarget - VehiclePawn->GetFrontWorldLocation()).GetSafeNormal();
+	const auto& RacerReferencePosition = VehiclePawn->GetFrontWorldLocation();
+	const auto MovementVector = (RacerContext.MovementTarget - RacerReferencePosition).GetSafeNormal();
 
 	// parallel choose max delta
 	if (FMath::IsNearlyEqual(AvoidanceContext.ThreatVector | MovementVector, 1.0f))
@@ -133,10 +133,10 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	}
 	else
 	{
-		const auto OffsetVector = FMath::GetReflectionVector(AvoidanceContext.ThreatVector, MovementVector);
-		// cross product of reflection vector to choose which side of road to go on - Unreal uses Left hand rule since it is a left handed coordinate system
-
-		const auto CrossProduct = MovementVector ^ OffsetVector;
+		const auto AvoidanceTargetVector = FMath::GetReflectionVector(AvoidanceContext.ThreatVector, MovementVector);
+		// cross product of reflection vector to choose which side of road to go on -
+		//  Unreal uses Left hand rule since it is a left handed coordinate system so need to invert the order of cross product
+		const auto CrossProduct = AvoidanceTargetVector ^ MovementVector;
 		CurrentOffset = MaxDelta * FMath::Sign(CrossProduct.Z) * AvoidanceContext.NormalizedThreatScore;
 	}
 
@@ -144,14 +144,30 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	auto Spline = RacerContext.RaceTrack->Spline;
 	check(Spline);
 
-	const auto& RightVector = Spline->GetRightVectorAtSplineInputKey(LastSplineState->SplineKey, ESplineCoordinateSpace::World);
-	LastSplineState->WorldLocation = LastSplineState->OriginalWorldLocation + RightVector * CurrentOffset;
+	const auto& ForwardVector = VehiclePawn->GetActorForwardVector();
+	for (int32 i = 0; i < 2; ++i)
+	{
+		const auto& RightVector = Spline->GetRightVectorAtSplineInputKey(LastSplineState->SplineKey, ESplineCoordinateSpace::World);
+		const auto NewCandidateLocation = LastSplineState->WorldLocation = LastSplineState->OriginalWorldLocation + RightVector * CurrentOffset;
 
-	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, VehiclePawn->GetFrontWorldLocation(), VehiclePawn->GetFrontWorldLocation() + AvoidanceContext.ThreatVector * LookaheadDistance, FColor::Orange,
+		const auto ToNewCandidateLocation = NewCandidateLocation - RacerReferencePosition;
+		// If the new location is behind us due to highly curved spline, then select a new target and offset again - only due this one additional time
+		if ((LastSplineState->WorldLocation | ForwardVector) > 0)
+		{
+			break;
+		}
+
+		LastSplineState = GetNextSplineState(RacerContext);
+	}
+
+	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerReferencePosition + FVector(0, 0, 50.0f) + AvoidanceContext.ThreatVector * LookaheadDistance, FColor::Orange,
 		TEXT("%s - ThreatVector - Score=%s"), *VehiclePawn->GetName(), *FString::Printf(TEXT("%.3f"), AvoidanceContext.NormalizedThreatScore));
 
-	UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation, LastSplineState->WorldLocation + FVector(0,0,200.0f), 50.0f, FColor::Red,
-		TEXT("%s - Avoidance Update; CurrentOffset=%f"), *VehiclePawn->GetName(), CurrentOffset);
+	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerContext.MovementTarget + FVector(0,0,50.0f), FColor::Green,
+		TEXT("%s - MovementVector"), *VehiclePawn->GetName());
+
+	UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0,0,50.0f), 100.0f, FColor::Red,
+		TEXT("%s - Avoidance Target; CurrentOffset=%f"), *VehiclePawn->GetName(), CurrentOffset);
 
 	UpdateMovementFromLastSplineState(RacerContext);
 }
@@ -244,12 +260,13 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	auto Spline = RacerContext.RaceTrack->Spline;
 	auto Vehicle = RacerContext.VehiclePawn;
 
-	// Adjust lookahead based on current curvature
+	// Adjust lookahead based on current curvature and speed of car
 	// We need to actually lookahead further as curvature increases so that we can adjust for the car turning
-	//const auto CurrentLookaheadDistance = FMath::Lerp(LookaheadDistance, MaxLookaheadDistance, LastCurvature);
-	// Try inverting that again and looking ahead less with more curvature
-	//const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, 1 - LastCurvature);
-	const auto LookaheadAlpha = FMath::Max(0, Vehicle->GetVehicleSpeedMph() - MinSpeedMph) / (MaxSpeedMph - MinSpeedMph);
+	// Alpha of 1 is max distance and 0 is min distance lookahead
+	const auto LookaheadSpeedAlpha = FMath::Max(0, Vehicle->GetVehicleSpeedMph() - MinSpeedMph) / (MaxSpeedMph - MinSpeedMph);
+	const auto LookaheadCurvatureAlpha = LastCurvature;
+	const auto LookaheadAlpha = LookaheadCurvatureAlpha * LookaheadCurvatureAlphaWeight + LookaheadSpeedAlpha * (1 - LookaheadCurvatureAlphaWeight);
+
 	const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, LookaheadAlpha);
 
 	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + CurrentLookaheadDistance;

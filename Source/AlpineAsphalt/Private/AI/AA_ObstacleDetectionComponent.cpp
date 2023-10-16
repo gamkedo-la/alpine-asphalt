@@ -115,7 +115,7 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 	}
 
 	ThreatContext.RacerContext = &Context;
-	ThreatContext.ReferencePosition = MyVehicle->GetBackWorldLocation();
+	ThreatContext.ReferencePosition = MyVehicle->GetFrontWorldLocation();
 	ThreatContext.ToMovementTarget = Context.MovementTarget - ThreatContext.ReferencePosition;
 	ThreatContext.MyController = MyVehicle->GetController();
 
@@ -162,7 +162,7 @@ bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FAA_AIRacerContext&
 {
 	// Right now only consider those along side vehicle or in front
 	const auto& MyReferencePosition = ThreatContext.ReferencePosition;
-	const auto& CandidateReferencePosition = CandidateVehicle.GetFrontWorldLocation();
+	const auto& CandidateReferencePosition = CandidateVehicle.GetBackWorldLocation();
 	const auto ToCandidate = CandidateReferencePosition - MyReferencePosition;
 
 	const auto DotProduct = ToCandidate | ThreatContext.ToMovementTarget;

@@ -136,18 +136,19 @@ std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(
 
 	if (ToThreat.IsNearlyZero())
 	{
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 			TEXT("%s-%s: ComputeThreatVector - FALSE - %s ToThreat nearly zero"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *CandidateVehicle.GetName());
 
 		return std::nullopt;
 	}
 
-	const auto InterceptTime = (ThreatContext.VehicleSpeed - CandidateVehicleSpeed) / ToThreat.Size();
+	const auto DistanceToThreat = ToThreat.Size();
+	const auto InterceptTime = (ThreatContext.VehicleSpeed - CandidateVehicleSpeed) / DistanceToThreat;
 
 	if(InterceptTime < 0)
 	{
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 			TEXT("%s-%s: ComputeThreatVector - FALSE - %s: InterceptTime=%fs < 0; CandidateVehicleSpeed=%fmph"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *CandidateVehicle.GetName(), InterceptTime, CandidateVehicleSpeed * UnitConversions::CmsToMph);
 
@@ -159,7 +160,7 @@ std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(
 	// Will not catch up to target in time
 	if (CandidateDistanceOverTime >= ThreatContext.DistanceToTarget)
 	{
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 			TEXT("%s-%s: ComputeThreatVector - FALSE - %s: CandidateDistanceOverTime=%fcm >= TargetDistance=%fcm; InterceptTime=%fs,  CandidateVehicleSpeed=%fmph"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *CandidateVehicle.GetName(), CandidateDistanceOverTime, ThreatContext.DistanceToTarget,
 			InterceptTime, CandidateVehicleSpeed * UnitConversions::CmsToMph);
@@ -167,10 +168,25 @@ std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(
 		return std::nullopt;
 	}
 
-	// Normalize so that closer targets have higher weight
-	const auto Score = FMath::Square((ThreatContext.DistanceToTarget - CandidateDistanceOverTime) / ThreatContext.DistanceToTarget);
+	const auto ToThreatNormalized = ToThreat / DistanceToThreat;
+	const auto ThreatAlignmentDotProduct = ToThreatNormalized | ThreatContext.ToMovementTargetNormalized;
 
-	return ToThreat.GetSafeNormal() * Score;
+	// Normalize so that closer targets have higher weight and those more aligned to our movement direction
+	const auto Score = FMath::Square((ThreatContext.DistanceToTarget - CandidateDistanceOverTime) / ThreatContext.DistanceToTarget * ThreatAlignmentDotProduct);
+			
+	const auto& ToThreatFront = CandidateVehicle.GetFrontWorldLocation() - MyReferencePosition;
+
+	const auto ScaledThreatVector = ToThreatFront.GetSafeNormal() * Score;
+
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
+		TEXT("%s-%s: ComputeThreatVector - TRUE - %s: CandidateVehicleSpeed=%fmph; InterceptTime=%fs; CandidateDistanceOverTime=%fm; Score=%f; ScaledThreatVector=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), *CandidateVehicle.GetName(),
+		CandidateVehicleSpeed * UnitConversions::CmsToMph, InterceptTime, CandidateDistanceOverTime, Score, *ScaledThreatVector.ToCompactString());
+
+	UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Log, CandidateReferencePosition, CandidateReferencePosition + FVector(0, 0, 200.0f), 50.0f, FColor::Red,
+		TEXT("%s - Avoidance Threat; Score=%f"), *CandidateVehicle.GetName(), Score);
+
+	return ScaledThreatVector;
 }
 
 #if ENABLE_VISUAL_LOG
