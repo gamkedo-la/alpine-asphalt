@@ -336,24 +336,33 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 
 float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 {
-	// A simple first approach is to take the spline direction at the start and compare it to start + lookahead*factor
 	if (!LastSplineState || !RacerContextProvider)
 	{
 		return 0.0f;
 	}
 
-	const auto LookaheadState = GetNextSplineState(RacerContextProvider->GetRacerContext(), LastSplineState->DistanceAlongSpline + LookaheadDistance * RoadCurvatureLookaheadFactor);
+	const auto& RacerContext = RacerContextProvider->GetRacerContext();
+	const auto& MyVehicle = RacerContext.VehiclePawn;
 
+	if (!MyVehicle)
+	{
+		return 0.0f;
+	}
+
+	const auto LookaheadState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + LookaheadDistance * RoadCurvatureLookaheadFactor);
+
+	// Base curvature on direction vector to current target and direction from that target to one after it
 	if (!LookaheadState)
 	{
 		return 0.0f;
 	}
 
-	// [-1,1]
-	const auto DotProduct = LastSplineState->SplineDirection | LookaheadState->SplineDirection;
+	const auto ToCurrentTargetNormalized = (LastSplineState->WorldLocation - MyVehicle->GetFrontWorldLocation()).GetSafeNormal();
+	const auto CurrentTargetToNextNormalized = (LookaheadState->WorldLocation - LastSplineState->WorldLocation).GetSafeNormal();
+	const auto DotProduct = ToCurrentTargetNormalized | CurrentTargetToNextNormalized;
 
-	// If DotProduct is 1 then return 0, if -1 then return 1
-	return (1 - DotProduct) * 0.5f;
+	// consider anything <= 0 a curvature of one
+	return FMath::Min(1 - DotProduct, 1);
 }
 
 #if ENABLE_VISUAL_LOG
