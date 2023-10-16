@@ -116,7 +116,9 @@ private:
 	void SetThrottle(const FInputActionValue& Value);
 	void SetHandbrake(const FInputActionValue& Value);
 	void SetSteering(const FInputActionValue& Value);
+	void CameraLookStart(const FInputActionValue& Value);
 	void CameraLook(const FInputActionValue& Value);
+	void CameraLookFinish(const FInputActionValue& Value);
 	void ResetVehicle(const FInputActionValue& Value);
 	void ShiftUp(const FInputActionValue& Value);
 	void ShiftDown(const FInputActionValue& Value);

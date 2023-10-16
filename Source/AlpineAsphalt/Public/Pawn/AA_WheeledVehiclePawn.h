@@ -75,6 +75,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void CameraLook(FVector2D Input);
 
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void CameraLookStart();
+
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void CameraLookFinish();
+
+
 	///Cosmetic Functions
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetVehiclePaint(int PaintIndex);

@@ -61,9 +61,9 @@ void AAA_PlayerController::SetupInputComponent()
 	EInputComponent->BindAction(InputSteering,ETriggerEvent::Completed, this, &AAA_PlayerController::SetSteering);
 
 	//Camera Look
+	EInputComponent->BindAction(InputLookAround,ETriggerEvent::Started, this, &AAA_PlayerController::CameraLookStart);
 	EInputComponent->BindAction(InputLookAround,ETriggerEvent::Triggered, this, &AAA_PlayerController::CameraLook);
-	EInputComponent->BindAction(InputLookAround,ETriggerEvent::Ongoing, this, &AAA_PlayerController::CameraLook);
-	EInputComponent->BindAction(InputLookAround,ETriggerEvent::Completed, this, &AAA_PlayerController::CameraLook);
+	EInputComponent->BindAction(InputLookAround,ETriggerEvent::Completed, this, &AAA_PlayerController::CameraLookFinish);
 	
 	//Reset Vehicle
 	EInputComponent->BindAction(InputReset,ETriggerEvent::Started, this, &AAA_PlayerController::ResetVehicle);
@@ -140,9 +140,19 @@ void AAA_PlayerController::SetSteering(const FInputActionValue& Value)
 	VehiclePawn->SetSteering(Value.Get<float>());
 }
 
+void AAA_PlayerController::CameraLookStart(const FInputActionValue& Value)
+{
+	VehiclePawn->CameraLookStart();
+}
+
 void AAA_PlayerController::CameraLook(const FInputActionValue& Value) 
 {
 	VehiclePawn->CameraLook(Value.Get<FVector2D>());
+}
+
+void AAA_PlayerController::CameraLookFinish(const FInputActionValue& Value)
+{
+	VehiclePawn->CameraLookFinish();
 }
 
 void AAA_PlayerController::ResetVehicle(const FInputActionValue& Value) 
