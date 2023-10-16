@@ -52,6 +52,8 @@ void UAA_RacerObstacleAvoidanceComponent::OnVehicleObstaclesUpdated(AAA_WheeledV
 
 	FVector AccumulatedThreatVector{ 0 };
 	int ThreatCount{};
+	float NormalizedSpeed{};
+	float ScoreSum{};
 
 	for (auto DetectedVehicle : VehicleObstacles)
 	{
@@ -60,17 +62,25 @@ void UAA_RacerObstacleAvoidanceComponent::OnVehicleObstaclesUpdated(AAA_WheeledV
 			continue;
 		}
 
-		if (const auto ThreatVectorOptional = ComputeThreatVector(ThreatContext, *DetectedVehicle))
+		if (const auto ThreatResultOptional = ComputeThreatResult(ThreatContext, *DetectedVehicle))
 		{
 			++ThreatCount;
-			AccumulatedThreatVector += *ThreatVectorOptional;
+			AccumulatedThreatVector += ThreatResultOptional->ThreatVector;
+			NormalizedSpeed += DetectedVehicle->GetVehicleSpeed() * ThreatResultOptional->Score;
+			ScoreSum += ThreatResultOptional->Score;
 		}
+	}
+
+	if (ThreatCount > 0)
+	{
+		NormalizedSpeed /= ScoreSum;
 	}
 
 	FAA_AIRacerAvoidanceContext AvoidanceContext;
 	AvoidanceContext.ThreatCount = ThreatCount;
 	AvoidanceContext.ThreatVector = AccumulatedThreatVector.GetSafeNormal();
 	AvoidanceContext.NormalizedThreatScore = FMath::Min(AccumulatedThreatVector.Size(), 1.0f);
+	AvoidanceContext.NormalizedThreatSpeedMph = NormalizedSpeed * UnitConversions::CmsToMph;
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 		TEXT("%s-%s: OnVehicleObstaclesUpdated - %s"),
@@ -127,7 +137,7 @@ bool UAA_RacerObstacleAvoidanceComponent::PopulateThreatContext(FThreatContext& 
 	return true;
 }
 
-std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const
+std::optional<UAA_RacerObstacleAvoidanceComponent::FThreatResult> UAA_RacerObstacleAvoidanceComponent::ComputeThreatResult(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const
 {
 	const auto& MyReferencePosition = ThreatContext.ReferencePosition;
 	const auto& CandidateReferencePosition = CandidateVehicle.GetBackWorldLocation();
@@ -173,6 +183,16 @@ std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(
 
 	// Normalize so that closer targets have higher weight and those more aligned to our movement direction
 	const auto Score = FMath::Square((ThreatContext.DistanceToTarget - CandidateDistanceOverTime) / ThreatContext.DistanceToTarget * ThreatAlignmentDotProduct);
+
+	if (FMath::IsNearlyZero(Score))
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
+			TEXT("%s-%s: ComputeThreatVector - FALSE - %s: Score is 0: CandidateDistanceOverTime=%fcm >= TargetDistance=%fcm; InterceptTime=%fs,  CandidateVehicleSpeed=%fmph"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), *CandidateVehicle.GetName(), CandidateDistanceOverTime, ThreatContext.DistanceToTarget,
+			InterceptTime, CandidateVehicleSpeed * UnitConversions::CmsToMph);
+
+		return std::nullopt;
+	}
 			
 	const auto& ToThreatFront = CandidateVehicle.GetFrontWorldLocation() - MyReferencePosition;
 
@@ -186,7 +206,11 @@ std::optional<FVector> UAA_RacerObstacleAvoidanceComponent::ComputeThreatVector(
 	UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Log, CandidateReferencePosition, CandidateReferencePosition + FVector(0, 0, 200.0f), 50.0f, FColor::Red,
 		TEXT("%s - Avoidance Threat; Score=%f"), *CandidateVehicle.GetName(), Score);
 
-	return ScaledThreatVector;
+	return FThreatResult
+	{
+		.ThreatVector = ScaledThreatVector,
+		.Score = Score
+	};
 }
 
 #if ENABLE_VISUAL_LOG

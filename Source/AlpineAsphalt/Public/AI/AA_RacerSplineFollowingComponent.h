@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 
 #include "AI/AA_AIRacerEvents.h"
+#include "AI/AA_AIRacerContext.h"
 
 #include <optional>
 
@@ -13,7 +14,6 @@
 
 class AAA_WheeledVehiclePawn;
 class IAA_RacerContextProvider;
-struct FAA_AIRacerContext;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ALPINEASPHALT_API UAA_RacerSplineFollowingComponent : public UActorComponent
@@ -62,6 +62,10 @@ private:
 	*/
 	float CalculateUpcomingRoadCurvature() const;
 
+	void ResetAvoidanceContext();
+
+	float ClampSpeed(float Speed) const;
+
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleTargetUpdated OnVehicleTargetUpdated {};
@@ -70,6 +74,7 @@ private:
 	IAA_RacerContextProvider* RacerContextProvider{};
 
 	std::optional<FSplineState> LastSplineState{};
+	std::optional<FAA_AIRacerAvoidanceContext> LastAvoidanceContext{};
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float LookaheadDistance{ 1000.0f };
@@ -103,3 +108,12 @@ private:
 	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
 	float CurrentOffset{ 0.0f };
 };
+
+#pragma region Inline Definitions
+
+inline float UAA_RacerSplineFollowingComponent::ClampSpeed(float Speed) const
+{
+	return FMath::Clamp(Speed, MinSpeedMph, MaxSpeedMph);
+}
+
+#pragma endregion

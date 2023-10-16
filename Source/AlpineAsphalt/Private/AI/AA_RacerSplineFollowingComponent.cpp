@@ -95,12 +95,13 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Updated Offset to 0"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 
-		CurrentOffset = 0;
+		ResetAvoidanceContext();
 		return;
 	}
 
 	if (!RacerContextProvider || !RacerContextProvider->GetRacerContext().RaceTrack || !LastSplineState)
 	{
+		ResetAvoidanceContext();
 		return;
 	}
 
@@ -115,7 +116,8 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 			*GetName(), *LoggingUtils::GetName(GetOwner()),
 			VehicleHalfWidth, RoadHalfWidth,
 			*LoggingUtils::GetName(VehiclePawn), *AvoidanceContext.ToString());
-		CurrentOffset = 0;
+
+		ResetAvoidanceContext();
 		return;
 	}
 
@@ -169,7 +171,15 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0,0,50.0f), 100.0f, FColor::Red,
 		TEXT("%s - Avoidance Target; CurrentOffset=%f"), *VehiclePawn->GetName(), CurrentOffset);
 
+	LastAvoidanceContext = LastAvoidanceContext;
+
 	UpdateMovementFromLastSplineState(RacerContext);
+}
+
+void UAA_RacerSplineFollowingComponent::ResetAvoidanceContext()
+{
+	CurrentOffset = 0;
+	LastAvoidanceContext.reset();
 }
 
 void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition)
@@ -304,7 +314,18 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 
 	const auto StraightnessFactor = 1 - LastCurvature;
 
-	const auto NewSpeed = FMath::Clamp(MaxSpeedMph * StraightnessFactor, MinSpeedMph, MaxSpeedMph);
+	auto NewSpeed = ClampSpeed(MaxSpeedMph * StraightnessFactor);
+	// Scale the speed to avoidance target as well
+	if (LastAvoidanceContext && NewSpeed > LastAvoidanceContext->NormalizedThreatSpeedMph)
+	{
+		const auto InitialNewSpeed = NewSpeed;
+		NewSpeed = ClampSpeed(
+			NewSpeed * (1 - LastAvoidanceContext->NormalizedThreatScore) + LastAvoidanceContext->NormalizedThreatScore * LastAvoidanceContext->NormalizedThreatSpeedMph);
+
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("%s-%s: UpdateMovementFromLastSplineState - Adjusting speed target based on avoidance data: InitialNewSpeed=%fmph; AdjustedNewSpeed=%fmph; AvoidanceContext=%s"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), InitialNewSpeed, NewSpeed, *LastAvoidanceContext->ToString());
+	}
 
 	RacerContext.DesiredSpeedMph = NewSpeed;
 	RacerContext.MovementTarget = LastSplineState->WorldLocation;

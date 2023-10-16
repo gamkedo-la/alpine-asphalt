@@ -50,6 +50,12 @@ struct ALPINEASPHALT_API FAA_AIRacerAvoidanceContext
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	float NormalizedThreatScore{ };
 
+	/*
+	* Normalized speed of current threats.
+	*/
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
+	float NormalizedThreatSpeedMph{ };
+
 	int32 ThreatCount{};
 
 	FString ToString() const;

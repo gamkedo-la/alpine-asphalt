@@ -40,7 +40,13 @@ public:
 private:
 	struct FThreatContext;
 
-	std::optional<FVector> ComputeThreatVector(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const;
+	struct FThreatResult
+	{
+		FVector ThreatVector;
+		double Score;
+	};
+
+	std::optional<FThreatResult> ComputeThreatResult(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const;
 
 	bool PopulateThreatContext(FThreatContext& ThreatContext) const;
 
