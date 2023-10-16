@@ -49,7 +49,8 @@ private:
 		FVector WorldLocation;
 		FVector SplineDirection;
 		float SplineKey;
-		float DistanceAlongSpline;	
+		float DistanceAlongSpline;
+		float RoadOffset{};
 	};
 
 	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
@@ -66,6 +67,8 @@ private:
 	float CalculateMaxOffsetAtLastSplineState() const;
 
 	void ResetAvoidanceContext();
+
+	float CalculateNewSpeed(const FAA_AIRacerContext& RacerContext) const;
 
 	float ClampSpeed(float Speed) const;
 
@@ -105,11 +108,21 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float LookaheadCurvatureAlphaWeight{ 0.5f };
 
+
+	/**
+	*  Reduce speed by this factor for each avoidance threat detected.
+	*/
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float AvoidanceThreatSpeedReductionFactor{ 1.0f / 6 };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float CurvatureRoadOffsetBlendFactor{ 0.5f };
+
 	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
 	float LastCurvature{ 0.0f };
 
 	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
-	float CurrentOffset{ 0.0f };
+	float CurrentAvoidanceOffset{ 0.0f };
 };
 
 #pragma region Inline Definitions

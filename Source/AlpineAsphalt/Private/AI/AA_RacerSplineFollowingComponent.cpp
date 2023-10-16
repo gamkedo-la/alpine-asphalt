@@ -124,10 +124,10 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	// parallel choose max delta
 	if (FMath::IsNearlyEqual(AvoidanceContext.ThreatVector | MovementVector, 1.0f))
 	{
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentOffset=%f"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentOffset);
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentAvoidanceOffset=%f"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentAvoidanceOffset);
 
-		CurrentOffset = MaxDelta;
+		CurrentAvoidanceOffset = MaxDelta;
 	}
 	else
 	{
@@ -135,7 +135,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 		// cross product of reflection vector to choose which side of road to go on -
 		//  Unreal uses Left hand rule since it is a left handed coordinate system so need to invert the order of cross product
 		const auto CrossProduct = AvoidanceTargetVector ^ MovementVector;
-		CurrentOffset = MaxDelta * FMath::Sign(CrossProduct.Z) * AvoidanceContext.NormalizedThreatScore;
+		CurrentAvoidanceOffset = MaxDelta * FMath::Sign(CrossProduct.Z) * AvoidanceContext.NormalizedThreatScore;
 	}
 
 	// Apply Offset immediately
@@ -145,7 +145,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	const auto& ForwardVector = VehiclePawn->GetActorForwardVector();
 	for (int32 i = 0; i < 2; ++i)
 	{
-		UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentOffset);
+		UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentAvoidanceOffset);
 		const auto NewCandidateLocation = LastSplineState->WorldLocation;
 
 		const auto ToNewCandidateLocation = NewCandidateLocation - RacerReferencePosition;
@@ -165,7 +165,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 		TEXT("%s - MovementVector"), *VehiclePawn->GetName());
 
 	UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0,0,50.0f), 100.0f, FColor::Red,
-		TEXT("%s - Avoidance Target; CurrentOffset=%f"), *VehiclePawn->GetName(), CurrentOffset);
+		TEXT("%s - Avoidance Target; CurrentAvoidanceOffset=%f"), *VehiclePawn->GetName(), CurrentAvoidanceOffset);
 
 	LastAvoidanceContext = LastAvoidanceContext;
 
@@ -174,7 +174,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 
 void UAA_RacerSplineFollowingComponent::ResetAvoidanceContext()
 {
-	CurrentOffset = 0;
+	CurrentAvoidanceOffset = 0;
 	LastAvoidanceContext.reset();
 }
 
@@ -288,13 +288,15 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	State.WorldLocation = State.OriginalWorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(NextDistanceAlongSpline);
 
 	// Offset road target position
-	UpdateSplineStateWithRoadOffset(RacerContext, State, CurrentOffset);
+	UpdateSplineStateWithRoadOffset(RacerContext, State, CurrentAvoidanceOffset);
 
 	return State;
 }
 
 void UAA_RacerSplineFollowingComponent::UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, FSplineState& SplineState, float RoadOffset) const
 {
+	SplineState.RoadOffset = RoadOffset;
+
 	if (FMath::IsNearlyZero(RoadOffset))
 	{
 		return;
@@ -306,47 +308,77 @@ void UAA_RacerSplineFollowingComponent::UpdateSplineStateWithRoadOffset(const FA
 
 	const auto& RightVector = Spline->GetRightVectorAtSplineInputKey(SplineState.SplineKey, ESplineCoordinateSpace::World);
 	SplineState.WorldLocation = SplineState.OriginalWorldLocation + RightVector * RoadOffset;
+
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: UpdateSplineStateWithRoadOffset: RoadOffset=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), RoadOffset);
 }
 
 void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext)
 {
 	check(LastSplineState);
+	check(RacerContext.VehiclePawn);
 
 	// Adjust speed based on upcoming curvature
 	LastCurvature = CalculateUpcomingRoadCurvature();
 
 	// Adjust positioning based on curvature if not avoiding an obstacle 
-	// - head to outside of track to minimize the angular velocity and give best chance to negotiate the turn
-	if (CurrentOffset >= 0)
+	// head to outside of track to minimize the angular velocity and give best chance to negotiate the turn
+	const auto CurrentAvoidanceOffsetSign = FMath::Sign(CurrentAvoidanceOffset);
+	const auto LastCurvatureSign = FMath::Sign(LastCurvature);
+
+	// Either adding a new offset or increasing the current one in the same direction
+	if (!FMath::IsNearlyZero(LastCurvature) && (FMath::IsNearlyZero(CurrentAvoidanceOffsetSign) || FMath::IsNearlyEqual(CurrentAvoidanceOffsetSign, LastCurvatureSign)))
 	{
-		CurrentOffset = FMath::Max(CurrentOffset, !FMath::IsNearlyZero(LastCurvature) ? CalculateMaxOffsetAtLastSplineState() * LastCurvature : 0.0f);
-		UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentOffset);
+		const auto CurvatureAdjustedOffset = LastCurvatureSign * FMath::Max(CurrentAvoidanceOffset * CurrentAvoidanceOffsetSign, CalculateMaxOffsetAtLastSplineState() * LastCurvature * LastCurvatureSign);
+
+		// Blend with previous
+		const auto AdjustedOffset = LastSplineState->RoadOffset * CurvatureRoadOffsetBlendFactor + CurvatureAdjustedOffset * (1 - CurvatureRoadOffsetBlendFactor);
+		UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, AdjustedOffset);
 	}
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 		TEXT("%s-%s: UpdateMovementFromLastSplineState - Curvature=%f"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), LastCurvature);
 
-	const auto StraightnessFactor = 1 - FMath::Abs(LastCurvature);
+	RacerContext.DesiredSpeedMph = CalculateNewSpeed(RacerContext);
+	RacerContext.MovementTarget = LastSplineState->WorldLocation;
+	RacerContext.DistanceAlongSpline = LastSplineState->DistanceAlongSpline;
 
-	auto NewSpeed = ClampSpeed(MaxSpeedMph * StraightnessFactor);
+	OnVehicleTargetUpdated.Broadcast(RacerContext.VehiclePawn, RacerContext.MovementTarget, RacerContext.DesiredSpeedMph);
+}
+
+float UAA_RacerSplineFollowingComponent::CalculateNewSpeed(const FAA_AIRacerContext& RacerContext) const
+{
+	check(RacerContext.VehiclePawn);
+
+	// if target is behind us reduce speed to minimum
+	const auto ToMovementTarget = RacerContext.MovementTarget - RacerContext.VehiclePawn->GetFrontWorldLocation();
+	const auto TargetDotProduct = RacerContext.VehiclePawn->GetActorForwardVector() | ToMovementTarget;
+
+	if (TargetDotProduct <= 0)
+	{
+		return MinSpeedMph;
+	}
+
+	// Make curvature influence max speed with square of straightness factor [0,1]
+	const auto StraightnessFactor = 1 - FMath::Abs(LastCurvature);
+	auto NewSpeed = ClampSpeed(MaxSpeedMph * FMath::Square(StraightnessFactor));
+
 	// Scale the speed to avoidance target as well
 	if (LastAvoidanceContext && NewSpeed > LastAvoidanceContext->NormalizedThreatSpeedMph)
 	{
 		const auto InitialNewSpeed = NewSpeed;
 		NewSpeed = ClampSpeed(
-			NewSpeed * (1 - LastAvoidanceContext->NormalizedThreatScore) + LastAvoidanceContext->NormalizedThreatScore * LastAvoidanceContext->NormalizedThreatSpeedMph);
+			(NewSpeed * (1 - LastAvoidanceContext->NormalizedThreatScore) + LastAvoidanceContext->NormalizedThreatScore * LastAvoidanceContext->NormalizedThreatSpeedMph) *
+			// reduce speed 10% for each threat
+			(1 - AvoidanceThreatSpeedReductionFactor * LastAvoidanceContext->ThreatCount));
 
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 			TEXT("%s-%s: UpdateMovementFromLastSplineState - Adjusting speed target based on avoidance data: InitialNewSpeed=%fmph; AdjustedNewSpeed=%fmph; AvoidanceContext=%s"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), InitialNewSpeed, NewSpeed, *LastAvoidanceContext->ToString());
 	}
 
-	RacerContext.DesiredSpeedMph = NewSpeed;
-	RacerContext.MovementTarget = LastSplineState->WorldLocation;
-	RacerContext.DistanceAlongSpline = LastSplineState->DistanceAlongSpline;
-
-	OnVehicleTargetUpdated.Broadcast(RacerContext.VehiclePawn, RacerContext.MovementTarget, RacerContext.DesiredSpeedMph);
+	return NewSpeed;
 }
 
 float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
@@ -378,7 +410,6 @@ float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 
 	// consider anything <= 0 a curvature of one
 	// Sign is based on sign of cross product - left is positive and right is negative - this helps with offset calculations
-	// Reverse order due to left hand rule
 	const auto Sign = -FMath::Sign((ToCurrentTargetNormalized ^ CurrentTargetToNextNormalized).Z);
 	return Sign * FMath::Min(1 - DotProduct, 1);
 }
@@ -425,7 +456,7 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 	Category.Category = TEXT("Racer Spline Following Component");
 	
 	Category.Add(TEXT("LastCurvature"), FString::Printf(TEXT("%.1f"), LastCurvature));
-	Category.Add(TEXT("CurrentOffset"), FString::Printf(TEXT("%.1f"), CurrentOffset));
+	Category.Add(TEXT("CurrentAvoidanceOffset"), FString::Printf(TEXT("%.1f"), CurrentAvoidanceOffset));
 
 	if (RacerContextProvider && LastSplineState && RacerContextProvider->GetRacerContext().VehiclePawn && 
 		RacerContextProvider->GetRacerContext().RaceTrack && RacerContextProvider->GetRacerContext().RaceTrack->Spline)
@@ -433,6 +464,8 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 		const auto& Context = RacerContextProvider->GetRacerContext();
 		const auto Spline = Context.RaceTrack->Spline;
 		const auto Vehicle = Context.VehiclePawn;
+
+		Category.Add(TEXT("RoadOffset"), FString::Printf(TEXT("%.1f"), LastSplineState->RoadOffset));
 
 		Category.Add(TEXT("DistanceAlongSpline"), FString::Printf(TEXT("%.1f"), LastSplineState->DistanceAlongSpline));
 

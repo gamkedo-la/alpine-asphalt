@@ -162,6 +162,7 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 
 	AAA_TrackInfoActor* NearestRaceTrack{};
 	double SmallestCompletion{ std::numeric_limits<double>::max() };
+	double SmallestDistance{ std::numeric_limits<double>::max() };
 
 	const auto& VehicleLocation = VehiclePawn.GetActorLocation();
 
@@ -185,12 +186,18 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 
 		const auto Key = Spline->FindInputKeyClosestToWorldLocation(NearestSplineLocation);
 		const auto DistanceAlongSpline = Spline->GetDistanceAlongSplineAtSplineInputKey(Key);
-		const auto CompletionFraction = DistanceAlongSpline / Spline->GetSplineLength();
+		// If we are close to the end of the race just wrap back to beginning
+		auto CompletionFraction = DistanceAlongSpline / Spline->GetSplineLength();
+		if (CompletionFraction > 0.9f)
+		{
+			CompletionFraction = 0.0f;
+		}
 			
-		if (CompletionFraction < SmallestCompletion)
+		if (CompletionFraction < SmallestCompletion || (FMath::IsNearlyZero(CompletionFraction) && DistMeters < SmallestDistance))
 		{
 			NearestRaceTrack = RaceTrack;
 			SmallestCompletion = CompletionFraction;
+			SmallestDistance = DistMeters;
 		}
 	}
 
