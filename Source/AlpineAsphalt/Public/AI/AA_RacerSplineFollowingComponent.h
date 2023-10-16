@@ -54,6 +54,7 @@ private:
 
 	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
 	std::optional<FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride = {}) const;
+	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, FSplineState& SplineState, float RoadOffset) const;
 
 	void UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext);
 
@@ -61,6 +62,8 @@ private:
 	* Curvature between [0,1] indicating how steep the upcoming road is for speed adjustment purposes.
 	*/
 	float CalculateUpcomingRoadCurvature() const;
+
+	float CalculateMaxOffsetAtLastSplineState() const;
 
 	void ResetAvoidanceContext();
 
