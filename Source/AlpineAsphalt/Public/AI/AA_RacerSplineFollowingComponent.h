@@ -51,6 +51,7 @@ private:
 		float SplineKey;
 		float DistanceAlongSpline;
 		float RoadOffset{};
+		float LookaheadDistance;
 	};
 
 	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
@@ -81,9 +82,6 @@ private:
 
 	std::optional<FSplineState> LastSplineState{};
 	std::optional<FAA_AIRacerAvoidanceContext> LastAvoidanceContext{};
-
-	UPROPERTY(Category = "Movement", EditAnywhere)
-	float LookaheadDistance{ 1000.0f };
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float MaxLookaheadDistance{ 4000.0f };

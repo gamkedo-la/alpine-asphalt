@@ -158,7 +158,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 		LastSplineState = GetNextSplineState(RacerContext);
 	}
 
-	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerReferencePosition + FVector(0, 0, 50.0f) + AvoidanceContext.ThreatVector * LookaheadDistance, FColor::Orange,
+	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerReferencePosition + FVector(0, 0, 50.0f) + AvoidanceContext.ThreatVector * LastSplineState->LookaheadDistance, FColor::Orange,
 		TEXT("%s - ThreatVector - Score=%s"), *VehiclePawn->GetName(), *FString::Printf(TEXT("%.3f"), AvoidanceContext.NormalizedThreatScore));
 
 	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerContext.MovementTarget + FVector(0,0,50.0f), FColor::Green,
@@ -223,9 +223,9 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 	// This isn't perfect as the road could curve but should be an okay approximation and it's just the start which is usually mostly straight anyway
 	const auto CurrentDistance = FVector::Distance(LastSplineState->WorldLocation, Context.VehiclePawn->GetFrontWorldLocation());
 	// check the distance to the first point, if it is >= NextDistanceAlongSpline then just return; otherwise increase up to that point
-	if (CurrentDistance < LookaheadDistance)
+	if (CurrentDistance < LastSplineState->LookaheadDistance)
 	{
-		LastSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + LookaheadDistance - CurrentDistance);
+		LastSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance - CurrentDistance);
 		if (!LastSplineState)
 		{
 			return;
@@ -252,6 +252,7 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	State.DistanceAlongSpline = 0;
 	State.SplineDirection = Spline->GetDirectionAtSplineInputKey(Key, ESplineCoordinateSpace::World);
 	State.WorldLocation = State.OriginalWorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(State.DistanceAlongSpline);
+	State.LookaheadDistance = MinLookaheadDistance;
 
 	return State;
 }
@@ -266,6 +267,8 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	auto Spline = RacerContext.RaceTrack->Spline;
 	auto Vehicle = RacerContext.VehiclePawn;
 
+	FSplineState State;
+
 	// Adjust lookahead based on current curvature and speed of car
 	// We need to actually lookahead further as curvature increases so that we can adjust for the car turning
 	// Alpha of 1 is max distance and 0 is min distance lookahead
@@ -273,14 +276,12 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	const auto LookaheadCurvatureAlpha = FMath::Abs(LastCurvature);
 	const auto LookaheadAlpha = LookaheadCurvatureAlpha * LookaheadCurvatureAlphaWeight + LookaheadSpeedAlpha * (1 - LookaheadCurvatureAlphaWeight);
 
-	const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, LookaheadAlpha);
+	State.LookaheadDistance = FMath::Lerp(MinLookaheadDistance, MaxLookaheadDistance, LookaheadAlpha);
 
-	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + CurrentLookaheadDistance;
+	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + State.LookaheadDistance;
 
 	// If at end of spline, then wrap around
 	const auto NextDistanceAlongSpline = FMath::Wrap(NextIdealDistanceAlongSpline, 0.0f, Spline->GetSplineLength());
-
-	FSplineState State;
 
 	const auto Key = State.SplineKey = Spline->GetInputKeyValueAtDistanceAlongSpline(NextDistanceAlongSpline);
 	State.DistanceAlongSpline = NextDistanceAlongSpline;
@@ -396,7 +397,7 @@ float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 		return 0.0f;
 	}
 
-	const auto LookaheadState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + LookaheadDistance * RoadCurvatureLookaheadFactor);
+	const auto LookaheadState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance * RoadCurvatureLookaheadFactor);
 
 	// Base curvature on direction vector to current target and direction from that target to one after it
 	if (!LookaheadState)
@@ -466,6 +467,7 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 		const auto Vehicle = Context.VehiclePawn;
 
 		Category.Add(TEXT("RoadOffset"), FString::Printf(TEXT("%.1f"), LastSplineState->RoadOffset));
+		Category.Add(TEXT("Lookahead Distance"), FString::Printf(TEXT("%.1f"), LastSplineState->LookaheadDistance));
 
 		Category.Add(TEXT("DistanceAlongSpline"), FString::Printf(TEXT("%.1f"), LastSplineState->DistanceAlongSpline));
 

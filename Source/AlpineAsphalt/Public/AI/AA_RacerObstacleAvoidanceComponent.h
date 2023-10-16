@@ -52,5 +52,11 @@ private:
 
 private:
 	IAA_RacerContextProvider* RacerContextProvider{};
+
+	/*
+	* If potential threat is <= this amount of car lengths then consider the threat no matter what the speed and alignment.
+	*/
+	UPROPERTY(Category = "Avoidance", EditAnywhere)
+	float MinThreatSpeedCarLengthsDistance{ 2.0f };
 };
 
