@@ -106,7 +106,7 @@ private:
 	float LookaheadCurvatureAlphaWeight{ 0.5f };
 
 	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
-	float LastCurvature{ 1.0f };
+	float LastCurvature{ 0.0f };
 
 	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
 	float CurrentOffset{ 0.0f };

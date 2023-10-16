@@ -40,7 +40,7 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 		return;
 	}
 
-	LastCurvature = 1.0f;
+	LastCurvature = 0.0f;
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::SetInitialMovementTarget);
 }
@@ -270,7 +270,7 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	// We need to actually lookahead further as curvature increases so that we can adjust for the car turning
 	// Alpha of 1 is max distance and 0 is min distance lookahead
 	const auto LookaheadSpeedAlpha = FMath::Max(0, Vehicle->GetVehicleSpeedMph() - MinSpeedMph) / (MaxSpeedMph - MinSpeedMph);
-	const auto LookaheadCurvatureAlpha = LastCurvature;
+	const auto LookaheadCurvatureAlpha = FMath::Abs(LastCurvature);
 	const auto LookaheadAlpha = LookaheadCurvatureAlpha * LookaheadCurvatureAlphaWeight + LookaheadSpeedAlpha * (1 - LookaheadCurvatureAlphaWeight);
 
 	const auto CurrentLookaheadDistance = FMath::Lerp(MinLookaheadDistance, LookaheadDistance, LookaheadAlpha);
@@ -319,7 +319,7 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 	// - head to outside of track to minimize the angular velocity and give best chance to negotiate the turn
 	if (CurrentOffset >= 0)
 	{
-		CurrentOffset = FMath::Max(CurrentOffset, LastCurvature > 0 ? CalculateMaxOffsetAtLastSplineState() * LastCurvature : 0.0f);
+		CurrentOffset = FMath::Max(CurrentOffset, !FMath::IsNearlyZero(LastCurvature) ? CalculateMaxOffsetAtLastSplineState() * LastCurvature : 0.0f);
 		UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentOffset);
 	}
 
@@ -327,7 +327,7 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 		TEXT("%s-%s: UpdateMovementFromLastSplineState - Curvature=%f"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), LastCurvature);
 
-	const auto StraightnessFactor = 1 - LastCurvature;
+	const auto StraightnessFactor = 1 - FMath::Abs(LastCurvature);
 
 	auto NewSpeed = ClampSpeed(MaxSpeedMph * StraightnessFactor);
 	// Scale the speed to avoidance target as well
@@ -377,7 +377,10 @@ float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 	const auto DotProduct = ToCurrentTargetNormalized | CurrentTargetToNextNormalized;
 
 	// consider anything <= 0 a curvature of one
-	return FMath::Min(1 - DotProduct, 1);
+	// Sign is based on sign of cross product - left is positive and right is negative - this helps with offset calculations
+	// Reverse order due to left hand rule
+	const auto Sign = -FMath::Sign((ToCurrentTargetNormalized ^ CurrentTargetToNextNormalized).Z);
+	return Sign * FMath::Min(1 - DotProduct, 1);
 }
 
 float UAA_RacerSplineFollowingComponent::CalculateMaxOffsetAtLastSplineState() const
