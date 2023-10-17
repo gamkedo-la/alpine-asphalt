@@ -19,6 +19,7 @@ struct UAA_ObstacleDetectionComponent::FThreatContext
 	const FAA_AIRacerContext* RacerContext;
 	FVector ToMovementTarget;
 	AController* MyController;
+	float DistanceAlongSpline;
 };
 
 UAA_ObstacleDetectionComponent::UAA_ObstacleDetectionComponent()
@@ -112,6 +113,18 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 		return false;
 	}
 
+	const auto RaceTrack = Context.RaceTrack;
+	if (!RaceTrack)
+	{
+		return false;
+	}
+
+	const auto Spline = RaceTrack->Spline;
+	if (!Spline)
+	{
+		return false;
+	}
+
 	ThreatContext.RacerContext = &Context;
 	ThreatContext.ReferencePosition = MyVehicle->GetFrontWorldLocation();
 	ThreatContext.ToMovementTarget = Context.MovementTarget - ThreatContext.ReferencePosition;
@@ -121,6 +134,9 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 	{
 		return false;
 	}
+
+	// Use current location since AIContext.DistanceAlongSpline is the target position and not the current
+	ThreatContext.DistanceAlongSpline = GetDistanceAlongSplineAtLocation(*Spline, ThreatContext.ReferencePosition);
 
 	return true;
 }
@@ -184,15 +200,12 @@ bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FAA_AIRacerContext&
 		return false;
 	}
 
-	// Check track position - TODO: should be able to cache this for other racers
-	// Technically "AIContext.DistanceAlongSpline" is the target and not current position
-	//  TODO: Could pass that into threat context to avoid recalculating every time here
-	const auto MyDistanceAlongSpine = AIContext.DistanceAlongSpline;
+	const auto MyDistanceAlongSpine = ThreatContext.DistanceAlongSpline;
 	if (auto RaceTrackSpline = AIContext.RaceTrack ? AIContext.RaceTrack->Spline : nullptr; RaceTrackSpline)
 	{
-		// This is an expensive call - maybe move up before LOS if we cache it - possibly removing the first distance check
-		const auto CandidateKeyPosition = RaceTrackSpline->FindInputKeyClosestToWorldLocation(CandidateReferencePosition);
-		const auto CandidateDistanceAlongSpline = RaceTrackSpline->GetDistanceAlongSplineAtSplineInputKey(CandidateKeyPosition);
+		// This is an expensive call but we don't tick at a high rate.  
+		// We could use a cached value, but it is more accurate if we use the current position and here we want to use the back location and not front.
+		const auto CandidateDistanceAlongSpline = GetDistanceAlongSplineAtLocation(*RaceTrackSpline, CandidateReferencePosition);
 
 		if (FMath::Abs(CandidateDistanceAlongSpline - MyDistanceAlongSpine) > MaxDistanceThreshold)
 		{
@@ -201,6 +214,12 @@ bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FAA_AIRacerContext&
 	}
 
 	return true;
+}
+
+float UAA_ObstacleDetectionComponent::GetDistanceAlongSplineAtLocation(const USplineComponent& SplineComponent, const FVector& WorldLocation)
+{
+	const auto Key = SplineComponent.FindInputKeyClosestToWorldLocation(WorldLocation);
+	return SplineComponent.GetDistanceAlongSplineAtSplineInputKey(Key);
 }
 
 #if ENABLE_VISUAL_LOG

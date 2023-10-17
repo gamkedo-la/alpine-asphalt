@@ -13,6 +13,7 @@
 class IAA_RacerContextProvider;
 class AAA_WheeledVehiclePawn;
 struct FAA_AIRacerContext;
+class USplineComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ALPINEASPHALT_API UAA_ObstacleDetectionComponent : public UActorComponent
@@ -38,6 +39,8 @@ private:
 	bool IsPotentialThreat(const FAA_AIRacerContext& AIContext, const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const;
 
 	bool PopulateThreatContext(FThreatContext& ThreatContext) const;
+
+	static float GetDistanceAlongSplineAtLocation(const USplineComponent& SplineComponent, const FVector& WorldLocation);
 
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
