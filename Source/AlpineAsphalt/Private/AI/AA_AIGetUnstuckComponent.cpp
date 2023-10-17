@@ -150,9 +150,22 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 		return;
 	}
 
+	const auto CurrentTimeSeconds = GetWorld()->GetTimeSeconds();
+	if (CurrentTimeSeconds - LastStuckTime > 2 * MinStuckTime)
+	{
+		// new stuck event - reset counter
+		ConsecutiveStuckCount = 1;
+	}
+	else
+	{
+		++ConsecutiveStuckCount;
+	}
+
+	LastStuckTime = CurrentTimeSeconds;
+
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
-		TEXT("%s-%s: TickComponent - Stuck - AverageVelocity=%fcm/s < MinAverageSpeed=%fcm/s"),
-		*GetName(), *LoggingUtils::GetName(GetOwner()), FMath::Sqrt(AverageSpeedSq), MinAverageSpeed);
+		TEXT("%s-%s: TickComponent - Stuck (%d x) - AverageVelocity=%fcm/s < MinAverageSpeed=%fcm/s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), ConsecutiveStuckCount, FMath::Sqrt(AverageSpeedSq), MinAverageSpeed);
 
 	// We are stuck, make sure we cool down by resetting the buffer after the event is fired
 	ResetBuffer();
@@ -184,11 +197,13 @@ FVector UAA_AIGetUnstuckComponent::CalculateIdealSeekPosition(const AAA_WheeledV
 	check(MovementComponent);
 
 	bool bSeekForward = MovementComponent->GetThrottleInput() < 0;
+
+	const auto AdjustedUnstuckSeekOffset = UnstuckSeekOffset * ConsecutiveStuckCount;
 	
 	if (bSeekForward)
 	{
-		return VehiclePawn.GetFrontWorldLocation() + VehiclePawn.GetActorForwardVector() * UnstuckSeekOffset;
+		return VehiclePawn.GetFrontWorldLocation() + VehiclePawn.GetActorForwardVector() * AdjustedUnstuckSeekOffset;
 	}
 
-	return VehiclePawn.GetBackWorldLocation() - VehiclePawn.GetActorForwardVector() * UnstuckSeekOffset;
+	return VehiclePawn.GetBackWorldLocation() - VehiclePawn.GetActorForwardVector() * AdjustedUnstuckSeekOffset;
 }

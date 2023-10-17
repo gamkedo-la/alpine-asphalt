@@ -56,6 +56,9 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float UnstuckSeekOffset{ 1000.0f };
 
+	int32 ConsecutiveStuckCount{};
+	float LastStuckTime{ -1.0f };
+
 	int32 NextBufferIndex{};
 	bool bSufficientSamples{};
 

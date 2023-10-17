@@ -399,6 +399,7 @@ void AAA_WheeledVehiclePawn::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 		const auto AnyWheel = Wheels[0];
 		Category.Add(TEXT("ABS"), LoggingUtils::GetBoolString(AnyWheel->bABSEnabled));
 		Category.Add(TEXT("Traction Control"), LoggingUtils::GetBoolString(AnyWheel->bTractionControlEnabled));
+		Category.Add(TEXT("Wheel Load Ratio"), *FString::Printf(TEXT("%d"), AnyWheel->WheelLoadRatio));
 	}
 
 	const auto& FrontWorldLocation = GetFrontWorldLocation();
