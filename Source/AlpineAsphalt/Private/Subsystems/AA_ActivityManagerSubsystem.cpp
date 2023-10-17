@@ -3,6 +3,7 @@
 #include "Controllers/AA_PlayerController.h"
 #include "Activity/AA_BaseActivity.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystems/AA_RewindSubsystem.h"
 #include "UI/AA_BaseUI.h"
 #include "UI/AA_VehicleUI.h"
 
@@ -93,6 +94,7 @@ void UAA_ActivityManagerSubsystem::StartActivity()
 		UE_LOG(ActivityManagerSubsystem,Error,TEXT("Can't Start CurrentActivity: CurrentActivity was nullptr"))
 		return;
 	}
+	GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->ResetRewindHistory();
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->HideLoadingScreen();
 	
 	CurrentActivity->StartActivity();
@@ -128,6 +130,7 @@ void UAA_ActivityManagerSubsystem::DestroyActivityFinished()
 {
 	if(!LoadScreenFinished || ActivityLoaded){return;}
 
+	GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->ResetRewindHistory();
 	//End Loading Screen
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->HideLoadingScreen();
 	

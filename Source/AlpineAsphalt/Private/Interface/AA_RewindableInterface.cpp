@@ -11,3 +11,7 @@ void IAA_RewindableInterface::PauseRecordingSnapshots()
 void IAA_RewindableInterface::ResumeRecordingSnapshots()
 {
 }
+
+void IAA_RewindableInterface::ResetRewindHistory()
+{
+}

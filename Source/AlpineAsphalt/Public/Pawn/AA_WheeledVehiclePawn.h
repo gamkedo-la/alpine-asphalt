@@ -38,6 +38,7 @@ public:
 	AAA_WheeledVehiclePawn(const class FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
+	virtual void Destroyed() override;
 
 	/** Name of the MeshComponent. Use this name if you want to prevent creation of the component (with ObjectInitializer.DoNotCreateDefaultSubobject). */
 	static FName VehicleMeshComponentName;
@@ -191,6 +192,7 @@ public:
 	virtual void SetRewindTime(float Time) override;
 	virtual void PauseRecordingSnapshots() override;
 	virtual void ResumeRecordingSnapshots() override;
+	virtual void ResetRewindHistory() override;
 	void RecordSnapshot();
 	/** Rewind Properties **/
 	FTimerHandle RecordingSnapshotTimerHandle;
@@ -202,6 +204,8 @@ public:
 	float RewindTime = 0;
 	//Cached property of Rewind Subsystem
 	float RewindResolution = 0.f;
+
+	bool SnapshotsPaused = false;
 };
 
 #pragma region Inline Definitions

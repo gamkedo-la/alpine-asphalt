@@ -60,6 +60,12 @@ void AAA_WheeledVehiclePawn::BeginPlay()
 	
 }
 
+void AAA_WheeledVehiclePawn::Destroyed()
+{
+	Super::Destroyed();
+	GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->UnregisterRewindable(this);
+}
+
 UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovementComponent() const
 {
 	return VehicleMovementComponent;
@@ -295,7 +301,8 @@ void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
 	RewindTime = Time;
 
 	int index = FMath::FloorToInt(RewindTime/RewindResolution);
-	index = SnapshotData.Num() - (index + 1); 
+	index = SnapshotData.Num() - (index + 1);
+	index = index >= 0 ? index : 0;
 	if(index < SnapshotData.Num())
 	{
 		UE_LOG(LogAAVehicle,Verbose,TEXT("Setting Snapshot %d of %d"),index, SnapshotData.Num())
@@ -311,6 +318,7 @@ void AAA_WheeledVehiclePawn::PauseRecordingSnapshots()
 {
 	RecordSnapshot();
 	GetWorldTimerManager().PauseTimer(RecordingSnapshotTimerHandle);
+	SnapshotsPaused = true;
 }
 
 void AAA_WheeledVehiclePawn::ResumeRecordingSnapshots()
@@ -325,11 +333,18 @@ void AAA_WheeledVehiclePawn::ResumeRecordingSnapshots()
 			SnapshotData.RemoveAt(i);
 		}
 	}
+	SnapshotsPaused = false;
 	GetWorldTimerManager().UnPauseTimer(RecordingSnapshotTimerHandle);
+}
+
+void AAA_WheeledVehiclePawn::ResetRewindHistory()
+{
+	SnapshotData.Empty();
 }
 
 void AAA_WheeledVehiclePawn::RecordSnapshot()
 {
+	if(SnapshotsPaused){return;}
 	if(SnapshotData.Num() > MaxSnapshots)
 	{
 		SnapshotData.RemoveAt(0);

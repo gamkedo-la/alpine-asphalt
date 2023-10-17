@@ -7,16 +7,32 @@
 
 DEFINE_LOG_CATEGORY(RewindSubsystem);
 
+void UAA_RewindSubsystem::OnWorldBeginPlay(UWorld& InWorld)
+{
+	Super::OnWorldBeginPlay(InWorld);
+
+	RewindStartTime = InWorld.GetTimeSeconds();
+}
+
+float UAA_RewindSubsystem::GetMaxRewindTime()
+{
+	float ElapsedTime = GetWorld()->GetTimeSeconds() - RewindStartTime;
+	float MaxTime = FMath::Clamp(ElapsedTime,0,MaxRecordingLength);
+	return MaxTime;
+}
+
 void UAA_RewindSubsystem::Tick(const float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	/*
 	if(!RewindModeActive)
 	{
 		MaxRewindValue += DeltaTime;
 		MaxRewindValue = FMath::Clamp(MaxRewindValue,0.f,MaxRecordingLength);
 		UE_LOG(RewindSubsystem,Verbose,TEXT("MaxRewindTime: %f"), MaxRewindValue)
 	}
+	*/
 }
 
 TStatId UAA_RewindSubsystem::GetStatId() const
@@ -28,9 +44,14 @@ void UAA_RewindSubsystem::RegisterRewindable(IAA_RewindableInterface* Rewindable
 {
 	RewindableActors.Add(Rewindable);
 }
+void UAA_RewindSubsystem::UnregisterRewindable(IAA_RewindableInterface* Rewindable)
+{
+	RewindableActors.Remove(Rewindable);
+}
 
 void UAA_RewindSubsystem::Rewind(float AmountToRewind)
 {
+	float MaxRewindValue = GetMaxRewindTime();
 	CurrentRewindValue += AmountToRewind;
 	CurrentRewindValue = FMath::Clamp(CurrentRewindValue,0.f,MaxRewindValue);
 	UE_LOG(RewindSubsystem,Verbose,TEXT("CurrentRewindValue: %f"), CurrentRewindValue)
@@ -45,6 +66,7 @@ void UAA_RewindSubsystem::Rewind(float AmountToRewind)
 
 void UAA_RewindSubsystem::FastForward(float AmountToFastForward)
 {
+	float MaxRewindValue = GetMaxRewindTime();
 	CurrentRewindValue -= AmountToFastForward;
 	CurrentRewindValue = FMath::Clamp(CurrentRewindValue,0.f,MaxRewindValue);
 	UE_LOG(RewindSubsystem,Verbose,TEXT("CurrentRewindValue: %f"), CurrentRewindValue)
@@ -101,11 +123,20 @@ void UAA_RewindSubsystem::ConfirmRewind()
 
 	RewindModeActive = false;
 
-	MaxRewindValue -= CurrentRewindValue;
+	RewindStartTime += CurrentRewindValue;
 	
 	CurrentRewindValue = 0.f;
 
 	DeactivatedDelegate.Broadcast();
+}
+
+void UAA_RewindSubsystem::ResetRewindHistory()
+{
+	for (const auto Rewindable : RewindableActors)
+	{
+		Rewindable->ResetRewindHistory();
+	}
+	RewindStartTime = GetWorld()->GetTimeSeconds();
 }
 
 bool UAA_RewindSubsystem::IsRewindModeActive()

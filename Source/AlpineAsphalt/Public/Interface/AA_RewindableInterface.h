@@ -15,5 +15,6 @@ public:
 	virtual void SetRewindTime(float Time);
 	virtual void PauseRecordingSnapshots();
 	virtual void ResumeRecordingSnapshots();
+	virtual void ResetRewindHistory();
 };
 

@@ -8,6 +8,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
 #include "Controllers/AA_PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_ActivityManagerSubsystem.h"
 #include "UI/AA_VehicleUI.h"
@@ -125,6 +126,12 @@ void AAA_TrackInfoActor::Interact(AAA_PlayerController* Interactor)
 	{
 		UE_LOG(LogTemp,Error,TEXT("No Activity Set on Object %s: Cannot start Activity"), *this->GetName());
 		return;
+	}
+	const auto PlayerController = UGameplayStatics::GetPlayerController(GetWorld(),0);
+	if(const auto PC = Cast<AAA_PlayerController>(PlayerController))
+	{
+		PC->RemoveInteractable(this);
+		PC->VehicleUI->ShowRaceInteraction(TrackName,false);
 	}
 	//Launch Activity
 	auto NewActivity = NewObject<UAA_BaseActivity>(this,ActivityType);
