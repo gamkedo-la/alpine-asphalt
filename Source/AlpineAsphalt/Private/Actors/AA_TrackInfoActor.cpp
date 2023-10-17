@@ -10,6 +10,7 @@
 #include "Controllers/AA_PlayerController.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_ActivityManagerSubsystem.h"
+#include "UI/AA_VehicleUI.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
 // Sets default values
@@ -92,10 +93,14 @@ void AAA_TrackInfoActor::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AAc
 {
 	if(const auto HitVehicle = Cast<AAA_WheeledVehiclePawn>(OtherActor))
 	{
-		if(const auto PC = Cast<AAA_PlayerController>(HitVehicle->Controller))
+		if(GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->CanLaunchActivity())
 		{
-			PC->AddInteractables(this);
-			UE_LOG(LogTemp,Warning,TEXT("Hit Race"));
+			if(const auto PC = Cast<AAA_PlayerController>(HitVehicle->Controller))
+			{
+				PC->AddInteractables(this);
+				PC->VehicleUI->ShowRaceInteraction(TrackName,true);
+				UE_LOG(LogTemp,Warning,TEXT("Hit Race"));
+			}
 		}
 	}
 }
@@ -108,6 +113,7 @@ void AAA_TrackInfoActor::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActo
 		if(const auto PC = Cast<AAA_PlayerController>(HitVehicle->Controller))
 		{
 			PC->RemoveInteractable(this);
+			PC->VehicleUI->ShowRaceInteraction(TrackName,false);
 			UE_LOG(LogTemp,Warning,TEXT("Left Race"));
 		}
 	}

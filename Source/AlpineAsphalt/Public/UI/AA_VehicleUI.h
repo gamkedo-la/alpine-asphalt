@@ -29,4 +29,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void UpdateGear(int NewGear);
+
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void ShowRaceInteraction(const FString& RaceName,bool Show);
 };
