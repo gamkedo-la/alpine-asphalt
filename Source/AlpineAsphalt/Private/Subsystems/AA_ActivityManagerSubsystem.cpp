@@ -3,6 +3,7 @@
 #include "Controllers/AA_PlayerController.h"
 #include "Activity/AA_BaseActivity.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/AA_BaseUI.h"
 #include "UI/AA_VehicleUI.h"
 
 DEFINE_LOG_CATEGORY(ActivityManagerSubsystem);
@@ -29,7 +30,7 @@ void UAA_ActivityManagerSubsystem::LaunchActivity(UAA_BaseActivity* Activity)
 	CurrentActivity = Activity;
 	
 	//Show Load Screen
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->ShowLoadingScreen();
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->ShowLoadingScreen();
 
 	//Show Load Screen for minimum time
 	FTimerHandle TimerHandle;
@@ -65,7 +66,7 @@ bool UAA_ActivityManagerSubsystem::CanLaunchActivity() const
 void UAA_ActivityManagerSubsystem::DestroyActivity()
 {
 	//Show Loading Screen
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->ShowLoadingScreen();
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->ShowLoadingScreen();
 
 	//Show Load Screen for minimum time
 	FTimerHandle TimerHandle;
@@ -92,7 +93,7 @@ void UAA_ActivityManagerSubsystem::StartActivity()
 		UE_LOG(ActivityManagerSubsystem,Error,TEXT("Can't Start CurrentActivity: CurrentActivity was nullptr"))
 		return;
 	}
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideLoadingScreen();
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->HideLoadingScreen();
 	
 	CurrentActivity->StartActivity();
 }
@@ -102,7 +103,7 @@ void UAA_ActivityManagerSubsystem::RestartActivity()
 
 	//Destroy/////////////////////////////////
 	//Show Loading Screen
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->ShowLoadingScreen();
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->ShowLoadingScreen();
 
 	//Show Load Screen for minimum time
 	FTimerHandle TimerHandle;
@@ -128,7 +129,7 @@ void UAA_ActivityManagerSubsystem::DestroyActivityFinished()
 	if(!LoadScreenFinished || ActivityLoaded){return;}
 
 	//End Loading Screen
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideLoadingScreen();
+	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->HideLoadingScreen();
 	
 	//Set current activity back to nullptr
 	CurrentActivity = nullptr;

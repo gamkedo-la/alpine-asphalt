@@ -25,12 +25,6 @@ public:
 	void HideTimer();
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
-	void ShowLoadingScreen();
-
-	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
-	void HideLoadingScreen();
-
-	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void UpdateSpeed(float NewSpeed);
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)

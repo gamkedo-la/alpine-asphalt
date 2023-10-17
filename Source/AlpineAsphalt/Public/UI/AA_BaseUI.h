@@ -23,4 +23,11 @@ public:
 	UAA_ExtendedCommonActivatableWidget* PushPopup(TSubclassOf<UAA_ExtendedCommonActivatableWidget> PopupClass);
 	virtual UAA_ExtendedCommonActivatableWidget* PushPopup_Implementation(TSubclassOf<UAA_ExtendedCommonActivatableWidget> HUDClass);
 
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void ShowLoadingScreen();
+	virtual void ShowLoadingScreen_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void HideLoadingScreen();
+	virtual void HideLoadingScreen_Implementation();
 };
