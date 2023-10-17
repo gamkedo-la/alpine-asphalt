@@ -227,4 +227,5 @@ void AAA_AIRacerController::SetVehicleParameters()
 	VehiclePawn->SetTractionControlState(bEnableTractionControl);
 	VehiclePawn->SetABSState(bEnableABS);
 	VehiclePawn->BoostBrakingForce(BrakingForceBoostMultiplier);
+	VehiclePawn->SetWheelLoadRatio(WheelLoadRatio);
 }

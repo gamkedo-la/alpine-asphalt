@@ -83,6 +83,12 @@ private:
 
 	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
 	float BrakingForceBoostMultiplier{ 1.0f };
+
+	/*
+	* Setting to 0 makes it easier for the AI to drive and 1 makes it harder.
+	*/
+	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
+	float WheelLoadRatio{ 0.0f };
 };
 
 #pragma region Inline Definitions

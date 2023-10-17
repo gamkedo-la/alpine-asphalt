@@ -150,6 +150,17 @@ void AAA_WheeledVehiclePawn::BoostBrakingForce(float BrakeForceMultiplier)
 	}
 }
 
+void AAA_WheeledVehiclePawn::SetWheelLoadRatio(float WheelLoadRatio)
+{
+	ensure(VehicleMovementComponent);
+	auto Wheels = VehicleMovementComponent->Wheels;
+
+	for (auto Wheel : Wheels)
+	{
+		Wheel->WheelLoadRatio = WheelLoadRatio;
+	}
+}
+
 float AAA_WheeledVehiclePawn::GetVehicleSpeed() const
 {
 	if (!VehicleMovementComponent)
