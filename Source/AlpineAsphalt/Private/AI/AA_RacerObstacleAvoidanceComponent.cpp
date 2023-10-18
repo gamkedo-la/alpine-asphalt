@@ -7,6 +7,7 @@
 #include "Logging/AlpineAsphaltLogger.h"
 #include "Logging/LoggingUtils.h"
 #include "AI/AA_RacerContextProvider.h"
+#include "AI/AA_AIRacerContext.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Util/UnitConversions.h"
 
@@ -19,8 +20,8 @@ struct UAA_RacerObstacleAvoidanceComponent::FThreatContext
 	FVector ReferencePosition;
 	FVector ToMovementTargetNormalized;
 	const FAA_AIRacerContext* RacerContext;
+	const AAA_WheeledVehiclePawn* VehiclePawn;
 	float DistanceToTarget;
-	float VehicleSpeed;
 	float MinThreatSpeedConsiderationDistance;
 };
 
@@ -120,6 +121,7 @@ bool UAA_RacerObstacleAvoidanceComponent::PopulateThreatContext(FThreatContext& 
 		return false;
 	}
 
+	ThreatContext.VehiclePawn = MyVehicle;
 	ThreatContext.RacerContext = &Context;
 	ThreatContext.ReferencePosition = MyVehicle->GetFrontWorldLocation();
 
@@ -132,10 +134,91 @@ bool UAA_RacerObstacleAvoidanceComponent::PopulateThreatContext(FThreatContext& 
 		return false;
 	}
 
-	ThreatContext.VehicleSpeed = MyVehicle->GetVehicleSpeed();
 	ThreatContext.MinThreatSpeedConsiderationDistance = MinThreatSpeedCarLengthsDistance * MyVehicle->GetVehicleLength();
 
 	return true;
+}
+
+const FAA_AIRacerContext* UAA_RacerObstacleAvoidanceComponent::GetRacerAIContext(const AAA_WheeledVehiclePawn& CandidateVehicle)
+{
+	const auto Controller = CandidateVehicle.GetController();
+	if (!Controller || Controller->IsPlayerController())
+	{
+		return nullptr;
+	}
+
+	const auto RacerContextProvider = Cast<IAA_RacerContextProvider>(Controller);
+	if (!RacerContextProvider)
+	{
+		return nullptr;
+	}
+
+	return &RacerContextProvider->GetRacerContext();
+}
+
+bool UAA_RacerObstacleAvoidanceComponent::WillBeAccelerating(const AAA_WheeledVehiclePawn& CandidateVehicle, const FAA_AIRacerContext* AIContext)
+{
+	if (AIContext)
+	{
+		return AIContext->DesiredSpeedMph > CandidateVehicle.GetVehicleSpeedMph();
+	}
+
+	return CandidateVehicle.IsAccelerating();
+}
+
+bool UAA_RacerObstacleAvoidanceComponent::WillBeBraking(const AAA_WheeledVehiclePawn& CandidateVehicle, const FAA_AIRacerContext* AIContext)
+{
+	if (AIContext)
+	{
+		return AIContext->DesiredSpeedMph < CandidateVehicle.GetVehicleSpeedMph();
+	}
+
+	return CandidateVehicle.IsBraking();
+}
+
+float UAA_RacerObstacleAvoidanceComponent::GetAverageSpeed(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle, float ThreatDistance) const
+{
+	const auto* AIContext = GetRacerAIContext(CandidateVehicle);
+	const auto InitialVehicleSpeed = CandidateVehicle.GetVehicleSpeed();
+
+	float Acceleration;
+
+	if (WillBeAccelerating(CandidateVehicle, AIContext))
+	{
+		Acceleration = AverageAcceleration;
+	}
+	else if (WillBeBraking(CandidateVehicle, AIContext))
+	{
+		Acceleration = -AverageDeceleration;
+	}
+	else
+	{
+		// Just return the current speed
+		return InitialVehicleSpeed;
+	}
+
+	// V^2 = Vo^2 + 2*a*x
+	float RawFinalSpeed = FMath::Sqrt(FMath::Max(0.0f, FMath::Square(InitialVehicleSpeed) + 2 * Acceleration * ThreatDistance));
+	float FinalSpeed;
+
+	if (AIContext)
+	{
+		// Clamp final velocity to target speed
+		const auto DesiredSpeed = AIContext->DesiredSpeedMph * UnitConversions::MphToCms;
+
+		if (DesiredSpeed > InitialVehicleSpeed)
+		{
+			FinalSpeed = FMath::Min(RawFinalSpeed, DesiredSpeed);
+		}
+
+		FinalSpeed = FMath::Max(RawFinalSpeed, DesiredSpeed);
+	}
+	else
+	{
+		FinalSpeed = RawFinalSpeed;
+	}
+	
+	return (InitialVehicleSpeed + FinalSpeed) * 0.5f;
 }
 
 std::optional<UAA_RacerObstacleAvoidanceComponent::FThreatResult> UAA_RacerObstacleAvoidanceComponent::ComputeThreatResult(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const
@@ -143,7 +226,6 @@ std::optional<UAA_RacerObstacleAvoidanceComponent::FThreatResult> UAA_RacerObsta
 	const auto& MyReferencePosition = ThreatContext.ReferencePosition;
 	const auto& CandidateReferencePosition = CandidateVehicle.GetBackWorldLocation();
 	const auto& ToThreat = CandidateReferencePosition - MyReferencePosition;
-	const auto CandidateVehicleSpeed = CandidateVehicle.GetVehicleSpeed();
 
 	if (ToThreat.IsNearlyZero())
 	{
@@ -156,7 +238,10 @@ std::optional<UAA_RacerObstacleAvoidanceComponent::FThreatResult> UAA_RacerObsta
 
 	const auto DistanceToThreat = ToThreat.Size();
 	const bool bIsNearThreat = DistanceToThreat <= ThreatContext.MinThreatSpeedConsiderationDistance;
-	const auto InterceptTime = (ThreatContext.VehicleSpeed - CandidateVehicleSpeed) / DistanceToThreat;
+	const auto CandidateVehicleSpeed = GetAverageSpeed(ThreatContext, CandidateVehicle, DistanceToThreat);
+	const auto MyVehicleSpeed = GetAverageSpeed(ThreatContext, *ThreatContext.VehiclePawn, DistanceToThreat);
+
+	const auto InterceptTime = (MyVehicleSpeed - CandidateVehicleSpeed) / DistanceToThreat;
 
 	// TODO: Compiler will probably optimize these since they are const but if this strategy works consider explicitly skipping these calculations that aren't used if bIsNearThreat is true
 

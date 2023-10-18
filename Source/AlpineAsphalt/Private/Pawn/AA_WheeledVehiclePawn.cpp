@@ -348,6 +348,20 @@ float AAA_WheeledVehiclePawn::GetTraction() const
 	return TractionFraction;
 }
 
+bool AAA_WheeledVehiclePawn::IsAccelerating() const
+{
+	ensure(VehicleMovementComponent);
+
+	return VehicleMovementComponent->GetThrottleInput() > 0;
+}
+
+bool AAA_WheeledVehiclePawn::IsBraking() const
+{
+	ensure(VehicleMovementComponent);
+
+	return VehicleMovementComponent->GetBrakeInput() > 0 || VehicleMovementComponent->GetHandbrakeInput();
+}
+
 FBox AAA_WheeledVehiclePawn::GetAABB() const
 {
 	FVector ActorOrigin, BoxExtent;

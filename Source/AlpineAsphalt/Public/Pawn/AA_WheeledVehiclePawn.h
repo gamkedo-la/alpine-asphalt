@@ -150,6 +150,12 @@ public:
 	UFUNCTION(BlueprintPure)
 	float GetTraction() const;
 
+	UFUNCTION(BlueprintPure)
+	bool IsAccelerating() const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsBraking() const;
+
 // Used for visual logger debug tool to display attributes about the actor - only enabled in non-shipping builds
 #if ENABLE_VISUAL_LOG
 	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;
