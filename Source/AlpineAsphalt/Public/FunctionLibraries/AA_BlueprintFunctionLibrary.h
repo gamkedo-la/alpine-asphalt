@@ -59,7 +59,7 @@ T UAA_BlueprintFunctionLibrary::WrapEx(T Value, T Min, T Max)
 {
 	if (Min == Max)
 	{
-		return Value;
+		return Min;
 	}
 
 	const auto Size = Max - Min + 1;
