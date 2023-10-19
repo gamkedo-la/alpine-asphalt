@@ -11,6 +11,7 @@
 #include "VisualLogger/VisualLogger.h"
 #include "Logging/AlpineAsphaltLogger.h"
 #include "Logging/LoggingUtils.h"
+#include "FunctionLibraries/AA_BlueprintFunctionLibrary.h"
 
 #include "Pawn/AA_WheeledVehiclePawn.h"
 
@@ -281,7 +282,7 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + State.LookaheadDistance;
 
 	// If at end of spline, then wrap around
-	const auto NextDistanceAlongSpline = FMath::Wrap(NextIdealDistanceAlongSpline, 0.0f, Spline->GetSplineLength());
+	const auto NextDistanceAlongSpline = UAA_BlueprintFunctionLibrary::WrapEx(NextIdealDistanceAlongSpline, 0.0f, Spline->GetSplineLength());
 
 	const auto Key = State.SplineKey = Spline->GetInputKeyValueAtDistanceAlongSpline(NextDistanceAlongSpline);
 	State.DistanceAlongSpline = NextDistanceAlongSpline;
