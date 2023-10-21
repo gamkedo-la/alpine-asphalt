@@ -30,7 +30,20 @@ UAA_AIGetUnstuckComponent::UAA_AIGetUnstuckComponent()
 #if ENABLE_VISUAL_LOG
 void UAA_AIGetUnstuckComponent::DescribeSelfToVisLog(FVisualLogEntry* Snapshot) const
 {
+	FVisualLogStatusCategory Category;
+	Category.Category = TEXT("Get Unstuck Component");
 
+	Category.Add(TEXT("MinStuckTime"), FString::Printf(TEXT("%.1fs"), MinStuckTime));
+	Category.Add(TEXT("MinAverageSpeed"), FString::Printf(TEXT("%.1f cm/s"), MinAverageSpeed));
+	Category.Add(TEXT("UnstuckSeekOffset"), FString::Printf(TEXT("%.1f cm"), UnstuckSeekOffset));
+	Category.Add(TEXT("MaxOffsets"), FString::Printf(TEXT("%d"), MaxOffsets));
+	Category.Add(TEXT("ConsecutiveStuckCount"), FString::Printf(TEXT("%d"), ConsecutiveStuckCount));
+	Category.Add(TEXT("LastStuckTime"), FString::Printf(TEXT("%.1fs"), LastStuckTime));
+	Category.Add(TEXT("NextBufferIndex"), FString::Printf(TEXT("%d"), NextBufferIndex));
+	Category.Add(TEXT("SufficientSamples"), FString::Printf(TEXT("%s"), LoggingUtils::GetBoolString(bSufficientSamples)));
+	Category.Add(TEXT("HasStarted"), FString::Printf(TEXT("%s"), LoggingUtils::GetBoolString(bHasStarted)));
+
+	Snapshot->Status.Add(Category);
 }
 #endif
 

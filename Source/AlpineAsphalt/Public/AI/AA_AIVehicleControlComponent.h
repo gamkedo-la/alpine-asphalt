@@ -116,7 +116,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	float RawFactorSwitchoverThreshold{ 0.1f };
 
-	UPROPERTY(VisibleInstanceOnly)
+	UPROPERTY(Transient, VisibleInstanceOnly)
 	bool bTurningAround{ false };
 
 	UPROPERTY(EditAnywhere)
@@ -134,10 +134,10 @@ private:
 	/*
 	* Current movement target.
 	*/
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Transient, EditAnywhere)
 	FVector CurrentMovementTarget{ EForceInit::ForceInitToZero };
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Transient, VisibleAnywhere)
 	bool bTargetReached{ };
 
 	bool bTargetSet{};

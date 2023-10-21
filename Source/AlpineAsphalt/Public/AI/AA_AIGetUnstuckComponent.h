@@ -56,6 +56,9 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float UnstuckSeekOffset{ 1000.0f };
 
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	int32 MaxOffsets{ 5 };
+
 	int32 ConsecutiveStuckCount{};
 	float LastStuckTime{ -1.0f };
 

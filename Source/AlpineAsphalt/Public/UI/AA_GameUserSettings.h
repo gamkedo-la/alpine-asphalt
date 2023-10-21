@@ -8,6 +8,7 @@
 
 #include "AA_GameUserSettings.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameUserSettingsUpdated);
 
 /**
  * 
@@ -21,11 +22,17 @@ public:
 	UFUNCTION(BlueprintCallable, DisplayName = "Get AA GameUserSettings", Category = GameUserSettings)
 	static UAA_GameUserSettings* GetInstance();
 
+	virtual void ApplySettings(bool bCheckForCommandLineOverrides) override;
+
 	UFUNCTION(BlueprintCallable)
 	void SetAIDifficulty(EAA_AIDifficulty Difficulty);
 
 	UFUNCTION(BlueprintPure)
 	EAA_AIDifficulty GetAIDifficulty() const;
+
+public:
+	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
+	mutable FOnGameUserSettingsUpdated OnGameUserSettingsUpdated {};
 
 private:
 	

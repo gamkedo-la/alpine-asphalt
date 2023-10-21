@@ -32,6 +32,9 @@ public:
 	UFUNCTION()
 	void SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition);
 
+	UFUNCTION(BlueprintCallable, Category = "Racer AI")
+	void SetMaxSpeedMph(float SpeedMph);
+
 #if ENABLE_VISUAL_LOG
 	virtual void DescribeSelfToVisLog(struct FVisualLogEntry* Snapshot) const;
 #endif // ENABLE_VISUAL_LOG
@@ -92,7 +95,7 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float MinSpeedMph{ 20.0f };
 
-	UPROPERTY(Category = "Movement", EditAnywhere)
+	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
 	float MaxSpeedMph{ 80.0f };
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
@@ -116,10 +119,10 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float CurvatureRoadOffsetBlendFactor{ 0.5f };
 
-	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
+	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
 	float LastCurvature{ 0.0f };
 
-	UPROPERTY(Category = "Movement", VisibleInstanceOnly)
+	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
 	float CurrentAvoidanceOffset{ 0.0f };
 };
 
@@ -128,6 +131,11 @@ private:
 inline float UAA_RacerSplineFollowingComponent::ClampSpeed(float Speed) const
 {
 	return FMath::Clamp(Speed, MinSpeedMph, MaxSpeedMph);
+}
+
+inline void UAA_RacerSplineFollowingComponent::SetMaxSpeedMph(float SpeedMph)
+{
+	MaxSpeedMph = SpeedMph;
 }
 
 #pragma endregion

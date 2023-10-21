@@ -7,6 +7,9 @@
 
 #include "AI/AA_RacerContextProvider.h"
 #include "AI/AA_AIRacerContext.h"
+#include "AI/AA_AIDifficulty.h"
+
+#include <optional>
 
 #include "AA_AIRacerController.generated.h"
 
@@ -18,6 +21,36 @@ class UAA_AIGetUnstuckComponent;
 
 class AAA_WheeledVehiclePawn;
 class ALandscape;
+
+
+USTRUCT(BlueprintType)
+struct ALPINEASPHALT_API FAA_RacerAISettings
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	EAA_AIDifficulty Difficulty{ EAA_AIDifficulty::Easy };
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float MaxSpeedMph{ 50.0f };
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool bEnableABS{ false };
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	bool bEnableTractionControl{ false };
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, meta = (ClampMin = 1.0f))
+	float BrakingForceBoostMultiplier{ 1.0f };
+
+	/*
+	* Setting to 0 makes it easier for the AI to drive and 1 makes it harder.
+	*/
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float WheelLoadRatio{ 1.0f };
+
+	FString ToString() const;
+};
 
 /**
  * 
@@ -51,7 +84,12 @@ protected:
 private:
 	void SetupComponentEventBindings();
 	void SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn);
-	void SetVehicleParameters();
+	void SetVehicleParameters(const FAA_RacerAISettings& RacerAISettings);
+
+	FAA_RacerAISettings GetCurrentRacerAISettings() const;
+
+	UFUNCTION()
+	void OnRacerSettingsUpdated();
 
 private:
 
@@ -75,20 +113,10 @@ private:
 	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
 	TObjectPtr<UAA_AIGetUnstuckComponent> GetUnstuckComponent{};
 
-	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
-	bool bEnableABS{ true };
+	UPROPERTY(Category = "Difficulty", EditDefaultsOnly, EditFixedSize, meta = (TitleProperty = "Difficulty"))
+	TArray<FAA_RacerAISettings> DifficultySettings{};
 
-	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
-	bool bEnableTractionControl{ true };
-
-	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
-	float BrakingForceBoostMultiplier{ 1.0f };
-
-	/*
-	* Setting to 0 makes it easier for the AI to drive and 1 makes it harder.
-	*/
-	UPROPERTY(Category = "Cheats", EditDefaultsOnly)
-	float WheelLoadRatio{ 0.0f };
+	std::optional<EAA_AIDifficulty> CurrentDifficulty{};
 };
 
 #pragma region Inline Definitions

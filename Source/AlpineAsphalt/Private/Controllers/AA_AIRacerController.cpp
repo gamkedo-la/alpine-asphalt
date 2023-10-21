@@ -18,6 +18,7 @@
 
 #include "Actors/AA_TrackInfoActor.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
+#include "UI/AA_GameUserSettings.h"
 
 #include <limits>
 
@@ -35,6 +36,14 @@ AAA_AIRacerController::AAA_AIRacerController()
 	ObstacleDetectionComponent = CreateDefaultSubobject<UAA_ObstacleDetectionComponent>(TEXT("Obstacle Detection"));
 	RacerObstacleAvoidanceComponent = CreateDefaultSubobject<UAA_RacerObstacleAvoidanceComponent>(TEXT("Racer Obstacle Avoidance"));
 	GetUnstuckComponent = CreateDefaultSubobject<UAA_AIGetUnstuckComponent>(TEXT("Get Unstuck"));
+
+	const auto NumDifficulties = static_cast<int32>(EAA_AIDifficulty::Hard) + 1;
+	DifficultySettings.Reset(NumDifficulties);
+
+	for (int32 i = 0; i < NumDifficulties; ++i)
+	{
+		DifficultySettings.Add(FAA_RacerAISettings{ .Difficulty = static_cast<EAA_AIDifficulty>(i) });
+	}
 }
 
 void AAA_AIRacerController::SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor)
@@ -48,7 +57,9 @@ void AAA_AIRacerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 	Super::GrabDebugSnapshot(Snapshot);
 
 	auto& Category = Snapshot->Status[0];
-	Category.Add(TEXT("Race Track"), *LoggingUtils::GetName(RacerContext.RaceTrack));
+
+	Category.Add(TEXT("Race Track"), LoggingUtils::GetName(RacerContext.RaceTrack));
+	Category.Add(TEXT("Difficulty"), CurrentDifficulty ? UEnum::GetDisplayValueAsText(*CurrentDifficulty).ToString(): TEXT("N/A"));
 
 	if (VehicleControlComponent)
 	{
@@ -101,10 +112,26 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 		return;
 	}
 
+	auto GameUserSettings = UAA_GameUserSettings::GetInstance();
+	if (GameUserSettings)
+	{
+		GameUserSettings->OnGameUserSettingsUpdated.AddDynamic(this, &ThisClass::OnRacerSettingsUpdated);
+	}
+	else
+	{
+		UE_VLOG_UELOG(this, LogAlpineAsphalt, Error, TEXT("%s: OnPossess: %s (%s) GameUserSettings are NULL!"),
+			*GetName(), *LoggingUtils::GetName(InPawn), InPawn ? *LoggingUtils::GetName(InPawn->GetClass()) : TEXT("NULL"));
+	}
+
 	// The vehicle changes parameters on start so defer setting these 
 	FTimerHandle OneShotTimer;
 	
-	GetWorldTimerManager().SetTimer(OneShotTimer, this, &ThisClass::SetVehicleParameters, AIRacerControllerOneShotTimerDelay);
+	GetWorldTimerManager().SetTimer(OneShotTimer,
+		FTimerDelegate::CreateWeakLambda(this, [this]()
+		{
+			SetVehicleParameters(GetCurrentRacerAISettings());
+		}),
+		AIRacerControllerOneShotTimerDelay, false);
 
 	if(!RacerContext.RaceTrack)
 	{
@@ -215,7 +242,7 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 	}
 }
 
-void AAA_AIRacerController::SetVehicleParameters()
+void AAA_AIRacerController::SetVehicleParameters(const FAA_RacerAISettings& RacerAISettings)
 {
 	auto VehiclePawn = RacerContext.VehiclePawn;
 
@@ -224,8 +251,66 @@ void AAA_AIRacerController::SetVehicleParameters()
 		return;
 	}
 
-	VehiclePawn->SetTractionControlState(bEnableTractionControl);
-	VehiclePawn->SetABSState(bEnableABS);
-	VehiclePawn->BoostBrakingForce(BrakingForceBoostMultiplier);
-	VehiclePawn->SetWheelLoadRatio(WheelLoadRatio);
+	CurrentDifficulty = RacerAISettings.Difficulty;
+
+	VehiclePawn->SetTractionControlState(RacerAISettings.bEnableTractionControl);
+	VehiclePawn->SetABSState(RacerAISettings.bEnableABS);
+	VehiclePawn->BoostBrakingForce(RacerAISettings.BrakingForceBoostMultiplier);
+	VehiclePawn->SetWheelLoadRatio(RacerAISettings.WheelLoadRatio);
+
+	RacerSplineFollowingComponent->SetMaxSpeedMph(RacerAISettings.MaxSpeedMph);
+}
+
+FAA_RacerAISettings AAA_AIRacerController::GetCurrentRacerAISettings() const
+{
+	const auto GameUserSettings = UAA_GameUserSettings::GetInstance();
+	if (!GameUserSettings)
+	{
+		UE_VLOG_UELOG(this, LogAlpineAsphalt, Error, TEXT("%s: GetCurrentRacerAISettings: GameUserSettings is NULL - using a default value"),
+			*GetName());
+
+		return {};
+	}
+
+	const auto Difficulty = GameUserSettings->GetAIDifficulty();
+	if (static_cast<int32>(Difficulty) >= DifficultySettings.Num())
+	{
+		UE_VLOG_UELOG(this, LogAlpineAsphalt, Error, TEXT("%s: GetCurrentRacerAISettings: Difficulty=%s is out of bounds of current DifficultySettings with size=%d - using a default value"),
+			*GetName(), *UEnum::GetDisplayValueAsText(Difficulty).ToString(), DifficultySettings.Num());
+
+		return {};
+	}
+
+	const auto& ChosenSettings = DifficultySettings[static_cast<int32>(Difficulty)];
+
+	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: GetCurrentRacerAISettings: %s"),
+		*GetName(), *ChosenSettings.ToString());
+
+	return ChosenSettings;
+}
+
+void AAA_AIRacerController::OnRacerSettingsUpdated()
+{
+	const auto& RacerAISettings = GetCurrentRacerAISettings();
+	const bool bChanged = !CurrentDifficulty.has_value() || RacerAISettings.Difficulty != *CurrentDifficulty;
+
+	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnRacerSettingsUpdated; Changed=%s"),
+		*GetName(), LoggingUtils::GetBoolString(bChanged));
+
+	if (bChanged)
+	{
+		SetVehicleParameters(RacerAISettings);
+	}
+}
+
+FString FAA_RacerAISettings::ToString() const
+{
+	return FString::Printf(TEXT("Difficulty=%s; MaxSpeedMph=%f; bEnableABS=%s; bEnableTractionControl=%s; BrakingForceBoostMultiplier=%f; WheelLoadRatio=%f"),
+		*UEnum::GetDisplayValueAsText(Difficulty).ToString(),
+		MaxSpeedMph,
+		LoggingUtils::GetBoolString(bEnableABS),
+		LoggingUtils::GetBoolString(bEnableTractionControl),
+		BrakingForceBoostMultiplier,
+		WheelLoadRatio
+	);
 }

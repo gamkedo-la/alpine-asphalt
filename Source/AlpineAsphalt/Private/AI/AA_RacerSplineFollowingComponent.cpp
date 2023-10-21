@@ -457,6 +457,7 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 	FVisualLogStatusCategory Category;
 	Category.Category = TEXT("Racer Spline Following Component");
 	
+	Category.Add(TEXT("MaxSpeed"), FString::Printf(TEXT("%.1f mph"), MaxSpeedMph));
 	Category.Add(TEXT("LastCurvature"), FString::Printf(TEXT("%.1f"), LastCurvature));
 	Category.Add(TEXT("CurrentAvoidanceOffset"), FString::Printf(TEXT("%.1f"), CurrentAvoidanceOffset));
 
