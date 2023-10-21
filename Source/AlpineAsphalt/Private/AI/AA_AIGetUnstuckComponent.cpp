@@ -164,7 +164,7 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	}
 
 	const auto CurrentTimeSeconds = GetWorld()->GetTimeSeconds();
-	if (CurrentTimeSeconds - LastStuckTime > 2 * MinStuckTime)
+	if (CurrentTimeSeconds - LastStuckTime > 2 * MinStuckTime || ConsecutiveStuckCount >= MaxOffsets)
 	{
 		// new stuck event - reset counter
 		ConsecutiveStuckCount = 1;
