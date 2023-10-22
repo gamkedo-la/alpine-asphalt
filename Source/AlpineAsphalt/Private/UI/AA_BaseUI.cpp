@@ -21,3 +21,7 @@ UAA_ExtendedCommonActivatableWidget* UAA_BaseUI::PushPopup_Implementation(
 void UAA_BaseUI::ShowLoadingScreen_Implementation(){}
 
 void UAA_BaseUI::HideLoadingScreen_Implementation(){}
+
+void UAA_BaseUI::ShowPauseOverlay_Implementation(){}
+
+void UAA_BaseUI::HidePauseOverlay_Implementation(){}

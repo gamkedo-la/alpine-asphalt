@@ -30,4 +30,12 @@ public:
 	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
 	void HideLoadingScreen();
 	virtual void HideLoadingScreen_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void ShowPauseOverlay();
+	virtual void ShowPauseOverlay_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	void HidePauseOverlay();
+	virtual void HidePauseOverlay_Implementation();
 };
