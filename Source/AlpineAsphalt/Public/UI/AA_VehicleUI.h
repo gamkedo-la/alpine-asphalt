@@ -32,4 +32,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void ShowRaceInteraction(const FString& RaceName,bool Show);
+
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void SetSpeedUnitKPH(bool SpeedUnitIsKPH);
 };

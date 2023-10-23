@@ -14,6 +14,8 @@
 
 #include <numbers>
 
+#include "UI/AA_GameUserSettings.h"
+
 FName AAA_WheeledVehiclePawn::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
 FName AAA_WheeledVehiclePawn::VehicleMeshComponentName(TEXT("VehicleMesh"));
 
@@ -156,6 +158,10 @@ void AAA_WheeledVehiclePawn::BoostBrakingForce(float BrakeForceMultiplier)
 	}
 }
 
+void AAA_WheeledVehiclePawn::SetAutomaticShifting(bool Enabled)
+{
+}
+
 void AAA_WheeledVehiclePawn::SetWheelLoadRatio(float WheelLoadRatio)
 {
 	ensure(VehicleMovementComponent);
@@ -288,7 +294,7 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 	//TODO: Don't set things like Automatic vs Manual Transmission
 	VehicleMovementComponent->TransmissionSetup = NewVehicleData->TransmissionSetup;
 	VehicleMovementComponent->SteeringSetup = NewVehicleData->SteeringSetup;
-
+	
 	//Restart the vehicle
 	VehicleMovementComponent->ResetVehicleState();
 

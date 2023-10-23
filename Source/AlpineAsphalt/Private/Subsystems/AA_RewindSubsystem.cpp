@@ -79,8 +79,12 @@ void UAA_RewindSubsystem::FastForward(float AmountToFastForward)
 
 }
 
-void UAA_RewindSubsystem::EnterRewindMode()
+bool UAA_RewindSubsystem::EnterRewindMode()
 {
+	if(!CanEnterRewindMode())
+	{
+		return false;
+	}
 	for (const auto Actor : RewindableActors)
 	{
 		Actor->PauseRecordingSnapshots();
@@ -91,6 +95,8 @@ void UAA_RewindSubsystem::EnterRewindMode()
 	RewindModeActive = true;
 
 	ActivatedDelegate.Broadcast();
+
+	return true;
 }
 
 void UAA_RewindSubsystem::CancelRewindMode()
@@ -142,4 +148,14 @@ void UAA_RewindSubsystem::ResetRewindHistory()
 bool UAA_RewindSubsystem::IsRewindModeActive()
 {
 	return RewindModeActive;
+}
+
+bool UAA_RewindSubsystem::CanEnterRewindMode()
+{
+	return RewindModeEnabled && !RewindModeActive;
+}
+
+void UAA_RewindSubsystem::EnableRewindMode(bool bisEnabled)
+{
+	RewindModeEnabled = bisEnabled;
 }

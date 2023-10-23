@@ -24,7 +24,7 @@ class ALPINEASPHALT_API UAA_RewindSubsystem : public UTickableWorldSubsystem
 public:
 
 private:
-
+	bool RewindModeEnabled = true;
 	//whether or not player is currently rewinding time
 	bool RewindModeActive = false;
 
@@ -48,11 +48,17 @@ public:
 	void UnregisterRewindable(IAA_RewindableInterface* Rewindable);
 	void Rewind(float AmountToRewind);
 	void FastForward(float AmountToFastForward);
-	void EnterRewindMode();
+	bool EnterRewindMode();
 	void CancelRewindMode();
 	void ConfirmRewind();
 	void ResetRewindHistory();
 	bool IsRewindModeActive();
+
+	UFUNCTION(BlueprintCallable)
+	bool CanEnterRewindMode();
+	
+	UFUNCTION(BlueprintCallable)
+	void EnableRewindMode(bool bisEnabled);
 
 	UPROPERTY(BlueprintAssignable)
 	FRewindModeActivated ActivatedDelegate;

@@ -11,9 +11,30 @@
 #include "UI/AA_BaseUI.h"
 
 #include "Logging/AlpineAsphaltLogger.h"
+#include "UI/AA_GameUserSettings.h"
 #include "VisualLogger/VisualLogger.h"
 
 DEFINE_LOG_CATEGORY(PlayerControllerLog);
+
+void AAA_PlayerController::OnRacerSettingsUpdated()
+{
+	if (const auto GameUserSettings = UAA_GameUserSettings::GetInstance())
+	{
+		VehiclePawn->SetAutomaticShifting(GameUserSettings->GetAutomaticShifting());
+		VehiclePawn->SetABSState(GameUserSettings->GetABSBrakesEnabled());
+		VehiclePawn->SetTractionControlState(GameUserSettings->GetTractionControlEnabled());
+
+		VehicleUI->SetSpeedUnitKPH(GameUserSettings->GetSpeedUnitKPH());
+
+		//TODO probably bind this in RewindSubsystem itself?
+		GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->EnableRewindMode(GameUserSettings->GetRewindTimeEnabled());
+	}
+	else
+	{
+		UE_VLOG_UELOG(this, LogAlpineAsphalt, Error, TEXT("%s: %hs: GameUserSettings is NULL - using a default value"),
+		              *GetName(),__FUNCTION__);
+	}
+}
 
 void AAA_PlayerController::OnPossess(APawn* InPawn)
 {
@@ -30,6 +51,11 @@ void AAA_PlayerController::OnPossess(APawn* InPawn)
 	BaseUI->AddToViewport(0);
 
 	VehicleUI = Cast<UAA_VehicleUI>(BaseUI->PushHUD(VehicleUIClass));
+
+	OnRacerSettingsUpdated();
+
+	const auto GameUserSettings = UAA_GameUserSettings::GetInstance();
+	GameUserSettings->OnGameUserSettingsUpdated.AddDynamic(this, &ThisClass::OnRacerSettingsUpdated);
 }
 
 void AAA_PlayerController::SetupInputComponent()
@@ -190,15 +216,14 @@ void AAA_PlayerController::EnterRewindMode(const FInputActionValue& Value)
 	
 	if(UAA_RewindSubsystem* RewindSystem = GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
-		//don't do anything if already active
-		if(RewindSystem->IsRewindModeActive()){return;}
-
 		//set active
-		RewindSystem->EnterRewindMode();
-		//Setup Input
-		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
-		Subsystem->ClearAllMappings();
-		Subsystem->AddMappingContext(RewindInputMapping, 0);
+		if(RewindSystem->EnterRewindMode())
+		{
+			//Setup Input
+			UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+			Subsystem->ClearAllMappings();
+			Subsystem->AddMappingContext(RewindInputMapping, 0);
+		}
 	}else
 	{
 		UE_LOG(PlayerControllerLog,Error,TEXT("Rewind Subsystem Unavailable"))

@@ -90,6 +90,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	TSubclassOf<UAA_BaseUI> BaseUIClass;
+
+	UFUNCTION()
+	void OnRacerSettingsUpdated();
 	
 	virtual void OnPossess(APawn* InPawn) override;
 
