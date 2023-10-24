@@ -122,6 +122,7 @@ void AAA_WheeledVehiclePawn::SetColorFour(FColor ColorToSet)
 void AAA_WheeledVehiclePawn::SetABSState(bool Enabled)
 {
 	ensure(VehicleMovementComponent);
+	ABSEnabled = Enabled;
 	auto Wheels = 	VehicleMovementComponent->Wheels;
 	for(int i = 0; i < Wheels.Num(); i++)
 	{
@@ -132,6 +133,7 @@ void AAA_WheeledVehiclePawn::SetABSState(bool Enabled)
 void AAA_WheeledVehiclePawn::SetTractionControlState(bool Enabled)
 {
 	ensure(VehicleMovementComponent);
+	TractionControlEnabled = Enabled;
 	auto Wheels = 	VehicleMovementComponent->Wheels;
 	for(int i = 0; i < Wheels.Num(); i++)
 	{
@@ -160,6 +162,8 @@ void AAA_WheeledVehiclePawn::BoostBrakingForce(float BrakeForceMultiplier)
 
 void AAA_WheeledVehiclePawn::SetAutomaticShifting(bool Enabled)
 {
+	AutomaticShiftingEnabled = Enabled;
+	VehicleMovementComponent->SetUseAutomaticGears(Enabled);
 }
 
 void AAA_WheeledVehiclePawn::SetWheelLoadRatio(float WheelLoadRatio)
@@ -291,13 +295,15 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 	VehicleMovementComponent-> bMechanicalSimEnabled = NewVehicleData->bMechanicalSimEnabled;
 	VehicleMovementComponent->EngineSetup = NewVehicleData->EngineSetup;
 	VehicleMovementComponent->DifferentialSetup = NewVehicleData->DifferentialSetup;
-	//TODO: Don't set things like Automatic vs Manual Transmission
 	VehicleMovementComponent->TransmissionSetup = NewVehicleData->TransmissionSetup;
 	VehicleMovementComponent->SteeringSetup = NewVehicleData->SteeringSetup;
 	
 	//Restart the vehicle
 	VehicleMovementComponent->ResetVehicleState();
 
+	SetABSState(ABSEnabled);
+	SetTractionControlState(TractionControlEnabled);
+	SetAutomaticShifting(AutomaticShiftingEnabled);
 
 }
 

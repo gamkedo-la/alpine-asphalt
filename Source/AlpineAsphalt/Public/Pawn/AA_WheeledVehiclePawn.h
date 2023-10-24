@@ -109,6 +109,19 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = VehicleControlSettings)
 	void SetAutomaticShifting(bool Enabled);
+
+private:
+	
+	UPROPERTY()
+	bool ABSEnabled = true;
+	
+	UPROPERTY()
+	bool TractionControlEnabled = true;
+	
+	UPROPERTY()
+	bool AutomaticShiftingEnabled = true;
+	
+public:
 	/*
 	* Sets realism for how much the current normal force on the car wheels affects steering and braking. 
 	* If the value is 0 then the current normal force does not affect handling, and if it is 1 it takes full effect.
