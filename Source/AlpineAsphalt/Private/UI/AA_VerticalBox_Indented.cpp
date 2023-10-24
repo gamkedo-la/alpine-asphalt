@@ -44,9 +44,11 @@ TSharedRef<SWidget> UAA_VerticalBox_Indented::RebuildWidget()
 	return Super::RebuildWidget();
 }
 
+#if WITH_EDITOR
 void UAA_VerticalBox_Indented::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	SetIndentForAllChildren();
 	RebuildWidget();
 }
+#endif
