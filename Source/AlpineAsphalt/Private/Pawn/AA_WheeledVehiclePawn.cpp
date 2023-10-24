@@ -65,7 +65,14 @@ void AAA_WheeledVehiclePawn::BeginPlay()
 void AAA_WheeledVehiclePawn::Destroyed()
 {
 	Super::Destroyed();
+#if WITH_EDITOR
+	if(GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
+	{
+		GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->UnregisterRewindable(this);
+	}
+#elif 
 	GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->UnregisterRewindable(this);
+#endif
 }
 
 UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovementComponent() const
