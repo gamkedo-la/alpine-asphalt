@@ -105,13 +105,13 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	UPROPERTY()
+	UPROPERTY(Transient)
 	UEnhancedInputComponent* EInputComponent;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	AAA_WheeledVehiclePawn* VehiclePawn;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TArray<IAA_InteractableInterface*> Interactables;
 
 	/** Driver Control Functions**/
