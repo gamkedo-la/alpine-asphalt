@@ -35,6 +35,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Racer AI")
 	void SetMaxSpeedMph(float SpeedMph);
 
+	UFUNCTION(BlueprintCallable, Category = "Racer AI")
+	void SetMinSpeedMph(float SpeedMph);
+
 #if ENABLE_VISUAL_LOG
 	virtual void DescribeSelfToVisLog(struct FVisualLogEntry* Snapshot) const;
 #endif // ENABLE_VISUAL_LOG
@@ -94,7 +97,7 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float MinLookaheadDistance{ 300.0f };
 
-	UPROPERTY(Category = "Movement", EditAnywhere)
+	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
 	float MinSpeedMph{ 20.0f };
 
 	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
@@ -141,6 +144,11 @@ inline float UAA_RacerSplineFollowingComponent::ClampSpeed(float Speed) const
 inline void UAA_RacerSplineFollowingComponent::SetMaxSpeedMph(float SpeedMph)
 {
 	MaxSpeedMph = SpeedMph;
+}
+
+inline void UAA_RacerSplineFollowingComponent::SetMinSpeedMph(float SpeedMph)
+{
+	MinSpeedMph = SpeedMph;
 }
 
 #pragma endregion

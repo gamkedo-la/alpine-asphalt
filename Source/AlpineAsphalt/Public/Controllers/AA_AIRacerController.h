@@ -32,6 +32,9 @@ struct ALPINEASPHALT_API FAA_RacerAISettings
 	EAA_AIDifficulty Difficulty{ EAA_AIDifficulty::Easy };
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
+	float MinSpeedMph{ 15.0f };
+
+	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)
 	float MaxSpeedMph{ 50.0f };
 
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly)

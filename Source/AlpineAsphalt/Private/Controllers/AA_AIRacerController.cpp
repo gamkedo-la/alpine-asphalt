@@ -258,6 +258,7 @@ void AAA_AIRacerController::SetVehicleParameters(const FAA_RacerAISettings& Race
 	VehiclePawn->BoostBrakingForce(RacerAISettings.BrakingForceBoostMultiplier);
 	VehiclePawn->SetWheelLoadRatio(RacerAISettings.WheelLoadRatio);
 
+	RacerSplineFollowingComponent->SetMinSpeedMph(RacerAISettings.MinSpeedMph);
 	RacerSplineFollowingComponent->SetMaxSpeedMph(RacerAISettings.MaxSpeedMph);
 }
 
@@ -305,8 +306,9 @@ void AAA_AIRacerController::OnRacerSettingsUpdated()
 
 FString FAA_RacerAISettings::ToString() const
 {
-	return FString::Printf(TEXT("Difficulty=%s; MaxSpeedMph=%f; bEnableABS=%s; bEnableTractionControl=%s; BrakingForceBoostMultiplier=%f; WheelLoadRatio=%f"),
+	return FString::Printf(TEXT("Difficulty=%s; MinSpeedMph=%f; MaxSpeedMph=%f; bEnableABS=%s; bEnableTractionControl=%s; BrakingForceBoostMultiplier=%f; WheelLoadRatio=%f"),
 		*UEnum::GetDisplayValueAsText(Difficulty).ToString(),
+		MinSpeedMph,
 		MaxSpeedMph,
 		LoggingUtils::GetBoolString(bEnableABS),
 		LoggingUtils::GetBoolString(bEnableTractionControl),
