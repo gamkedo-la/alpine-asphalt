@@ -221,12 +221,9 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 
 	check(Context.VehiclePawn);
 
-	// This isn't perfect as the road could curve but should be an okay approximation and it's just the start which is usually mostly straight anyway
-	const auto CurrentDistance = FVector::Distance(LastSplineState->WorldLocation, Context.VehiclePawn->GetFrontWorldLocation());
-	// check the distance to the first point, if it is >= NextDistanceAlongSpline then just return; otherwise increase up to that point
-	if (CurrentDistance < LastSplineState->LookaheadDistance)
+	if (!IsSplineStateASufficientTarget(*Context.VehiclePawn, *LastSplineState))
 	{
-		LastSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance - CurrentDistance);
+		LastSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance);
 		if (!LastSplineState)
 		{
 			return;
@@ -234,6 +231,22 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 	}
 
 	UpdateMovementFromLastSplineState(Context);
+}
+
+bool UAA_RacerSplineFollowingComponent::IsSplineStateASufficientTarget(const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& SplineState) const
+{
+	const auto ToTargetDirection = (LastSplineState->WorldLocation - VehiclePawn.GetFrontWorldLocation()).GetSafeNormal();
+
+	// Make sure target is far enough in front that we aren't backing up right at the start 
+	if ((ToTargetDirection | VehiclePawn.GetActorForwardVector()) < MinInitialTargetAlignment)
+	{
+		return false;
+	}
+
+	// This isn't perfect as the road could curve but should be an okay approximation and it's just the start which is usually mostly straight anyway
+	const auto CurrentDistance = FVector::Distance(LastSplineState->WorldLocation, VehiclePawn.GetFrontWorldLocation());
+	// check the distance to the first point, if it is >= NextDistanceAlongSpline then just return; otherwise look to the next lookahead increment
+	return CurrentDistance >= LastSplineState->LookaheadDistance;
 }
 
 std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFollowingComponent::GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const

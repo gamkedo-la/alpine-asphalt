@@ -76,6 +76,8 @@ private:
 
 	float ClampSpeed(float Speed) const;
 
+	bool IsSplineStateASufficientTarget(const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& SplineState) const;
+
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleTargetUpdated OnVehicleTargetUpdated {};
@@ -124,6 +126,9 @@ private:
 
 	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
 	float CurrentAvoidanceOffset{ 0.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float MinInitialTargetAlignment{ 0.2f };
 };
 
 #pragma region Inline Definitions
