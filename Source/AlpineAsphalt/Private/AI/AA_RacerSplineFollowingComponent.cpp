@@ -42,6 +42,7 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 	}
 
 	LastCurvature = 0.0f;
+	MaxApproachAngleCosine = FMath::Cos(FMath::DegreesToRadians(MaxApproachAngle));
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::SetInitialMovementTarget);
 }
@@ -79,6 +80,24 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 			TEXT("%s-%s: SetInitialMovementTarget - RaceTrack=%s Completed!"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *Context.RaceTrack->GetName());
 		return;
+	}
+
+	const auto ToMovementDirection = (LastSplineState->WorldLocation - VehiclePawn->GetFrontWorldLocation()).GetSafeNormal();
+
+	if ((ToMovementDirection | VehiclePawn->GetActorForwardVector()) < MaxApproachAngleCosine)
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("%s-%s: SetInitialMovementTarget - Approach angle too steep: %.1f > %.1f - select target further ahead"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()),
+			FMath::RadiansToDegrees(FMath::Acos(ToMovementDirection | VehiclePawn->GetActorForwardVector())),
+			MaxApproachAngle
+		);
+
+		// calculate further ahead
+		if (const auto NextSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + MaxLookaheadDistance); NextSplineState)
+		{
+			LastSplineState = NextSplineState;
+		}
 	}
 
 	UpdateMovementFromLastSplineState(Context);
@@ -149,21 +168,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	auto Spline = RacerContext.RaceTrack->Spline;
 	check(Spline);
 
-	const auto& ForwardVector = VehiclePawn->GetActorForwardVector();
-	for (int32 i = 0; i < 2; ++i)
-	{
-		UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentAvoidanceOffset);
-		const auto NewCandidateLocation = LastSplineState->WorldLocation;
-
-		const auto ToNewCandidateLocation = NewCandidateLocation - RacerReferencePosition;
-		// If the new location is behind us due to highly curved spline, then select a new target and offset again - only due this one additional time
-		if ((ToNewCandidateLocation | ForwardVector) > 0)
-		{
-			break;
-		}
-
-		LastSplineState = GetNextSplineState(RacerContext);
-	}
+	UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentAvoidanceOffset);
 
 	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerReferencePosition + FVector(0, 0, 50.0f) + AvoidanceContext.ThreatVector * LastSplineState->LookaheadDistance, FColor::Orange,
 		TEXT("%s - ThreatVector - Score=%s"), *VehiclePawn->GetName(), *FString::Printf(TEXT("%.3f"), AvoidanceContext.NormalizedThreatScore));

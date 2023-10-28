@@ -134,6 +134,11 @@ private:
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float MinInitialTargetAlignment{ 0.2f };
+
+	UPROPERTY(Category = "Movement", EditDefaultsOnly)
+	float MaxApproachAngle{ 22.5f };
+
+	float MaxApproachAngleCosine{};
 };
 
 #pragma region Inline Definitions
