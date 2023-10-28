@@ -301,7 +301,31 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 
 	State.LookaheadDistance = FMath::Lerp(MinLookaheadDistance, MaxLookaheadDistance, LookaheadAlpha);
 
-	const auto NextIdealDistanceAlongSpline = NextDistanceAlongSplineOverride ? *NextDistanceAlongSplineOverride : LastSplineState->DistanceAlongSpline + State.LookaheadDistance;
+	float NextIdealDistanceAlongSpline;
+
+	if (NextDistanceAlongSplineOverride)
+	{
+		NextIdealDistanceAlongSpline = *NextDistanceAlongSplineOverride;
+	}
+	else
+	{
+		// add distance that we are behind the spline
+		const auto& CurrentPosition = Vehicle->GetFrontWorldLocation();
+		const auto& ForwardVector = Vehicle->GetActorForwardVector();
+		const auto ToLastSplineState = LastSplineState->WorldLocation - CurrentPosition;
+
+		float DistanceBehind;
+		if ((ToLastSplineState | ForwardVector) <= 0)
+		{
+			DistanceBehind = ToLastSplineState.Size();
+		}
+		else
+		{
+			DistanceBehind = 0;
+		}
+
+		NextIdealDistanceAlongSpline = LastSplineState->DistanceAlongSpline + DistanceBehind + State.LookaheadDistance;
+	}
 
 	// If at end of spline, then wrap around
 	const auto NextDistanceAlongSpline = UAA_BlueprintFunctionLibrary::WrapEx(NextIdealDistanceAlongSpline, 0.0f, Spline->GetSplineLength());
