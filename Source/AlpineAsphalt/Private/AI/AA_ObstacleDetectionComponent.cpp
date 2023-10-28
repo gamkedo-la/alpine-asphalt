@@ -16,6 +16,7 @@ using namespace AA;
 struct UAA_ObstacleDetectionComponent::FThreatContext
 {
 	FVector ReferencePosition;
+	FVector BackReferencePosition;
 	const FAA_AIRacerContext* RacerContext;
 	FVector ToMovementTarget;
 	AController* MyController;
@@ -127,6 +128,7 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 
 	ThreatContext.RacerContext = &Context;
 	ThreatContext.ReferencePosition = MyVehicle->GetFrontWorldLocation();
+	ThreatContext.BackReferencePosition = MyVehicle->GetBackWorldLocation();
 	ThreatContext.ToMovementTarget = Context.MovementTarget - ThreatContext.ReferencePosition;
 	ThreatContext.MyController = MyVehicle->GetController();
 
@@ -177,11 +179,15 @@ bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FAA_AIRacerContext&
 	// Right now only consider those along side vehicle or in front
 	const auto& MyReferencePosition = ThreatContext.ReferencePosition;
 	const auto& CandidateReferencePosition = CandidateVehicle.GetBackWorldLocation();
-	const auto ToCandidate = CandidateReferencePosition - MyReferencePosition;
+	const auto ToCandidateBack = CandidateReferencePosition - MyReferencePosition;
+	const auto ToCandidateFront = CandidateVehicle.GetFrontWorldLocation() - ThreatContext.BackReferencePosition;
 
-	const auto DotProduct = ToCandidate | ThreatContext.ToMovementTarget;
+	// Make sure we aren't alongside the vehicle
 
-	if (DotProduct < 0)
+	const auto DotProductFront = ToCandidateBack | ThreatContext.ToMovementTarget;
+	const auto DotProductBack = ToCandidateFront | ThreatContext.ToMovementTarget;
+
+	if (DotProductFront < 0 && DotProductBack < 0)
 	{
 		return false;
 	}
@@ -189,7 +195,7 @@ bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FAA_AIRacerContext&
 	// Quick straight-line distance check
 	const auto MaxDistanceThreshold = MaxDistanceThresholdMeters * 100;
 
-	if (ToCandidate.SizeSquared() > FMath::Square(MaxDistanceThreshold))
+	if (ToCandidateBack.SizeSquared() > FMath::Square(MaxDistanceThreshold))
 	{
 		return false;
 	}
