@@ -53,8 +53,9 @@ void UAA_AIVehicleControlComponent::OnVehicleTargetUpdated(AAA_WheeledVehiclePaw
 
 void UAA_AIVehicleControlComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	PrimaryComponentTick.TickInterval = CalculateNextTickInterval();
 
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	if (!bTargetSet || !VehiclePawn)
 	{
@@ -316,6 +317,26 @@ bool UAA_AIVehicleControlComponent::IsTargetBehind() const
 	return (ToTarget | VehiclePawn->GetActorForwardVector()) < 0;
 }
 
+float UAA_AIVehicleControlComponent::CalculateNextTickInterval() const
+{
+	if (!bVariableTick || !bTargetSet || !VehiclePawn)
+	{
+		return PrimaryComponentTick.TickInterval;
+	}
+
+	const auto ToTarget = CurrentMovementTarget - VehiclePawn->GetFrontWorldLocation();
+
+	// Use Abs on vehicle speed in case reversing as that counts for "look ahead" as well
+	// Use max of the speeds as it won't change much in the next time step but also want to tick faster if we will increase speed
+	const auto TargetSpeed = FMath::Max(FMath::Abs(VehiclePawn->GetVehicleSpeed()), DesiredSpeedMph * UnitConversions::MphToCms);
+
+	const auto TargetReachedTime = ToTarget.Size() / FMath::Max(TargetSpeed, 1.0f);
+
+	const auto AdjustedReachTime = TargetReachedTime * TargetTickCompletionFraction;
+
+	return FMath::Clamp(AdjustedReachTime, MinTickInterval, MaxTickInterval);
+}
+
 void UAA_AIVehicleControlComponent::SetDesiredSpeedMph(float SpeedMph)
 {
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: SetDesiredSpeedMph: %fmph"),
@@ -352,6 +373,7 @@ void UAA_AIVehicleControlComponent::DescribeSelfToVisLog(FVisualLogEntry* Snapsh
 	Category.Add(TEXT("Turning Around"), LoggingUtils::GetBoolString(bTurningAround));
 	Category.Add(TEXT("CurrentMovementTarget"), bTargetSet ? *CurrentMovementTarget.ToCompactString() : TEXT("N/A"));
 	Category.Add(TEXT("TargetReached"), bTargetSet ? LoggingUtils::GetBoolString(bTargetReached) : TEXT("N/A"));
+	Category.Add(TEXT("TickRate"), PrimaryComponentTick.TickInterval > 0 ? FString::Printf(TEXT("%.1f"), 1 / PrimaryComponentTick.TickInterval) : TEXT("(frame rate)"));
 
 	Snapshot->Status.Add(Category);
 }

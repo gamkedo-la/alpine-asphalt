@@ -67,6 +67,8 @@ private:
 	void CheckIfReachedTarget();
 	bool IsTargetBehind() const;
 
+	float CalculateNextTickInterval() const;
+
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleReachedTarget OnVehicleReachedTarget;
@@ -142,10 +144,22 @@ private:
 
 	bool bTargetSet{};
 	bool bTargetStartedBehind{};
+
+	UPROPERTY(EditDefaultsOnly, Category = Tick)
+	bool bVariableTick{ true };
+
+	UPROPERTY(EditDefaultsOnly, Category = Tick)
+	float MinTickInterval { 1 / 30.0f };
+
+	UPROPERTY(EditDefaultsOnly, Category = Tick)
+	float MaxTickInterval { 1.0f };
+
+	UPROPERTY(EditDefaultsOnly, Category = Tick)
+	float TargetTickCompletionFraction{ 1 / 3.0f };
 };
 
-#pragma region Inline Definitions
 
+#pragma region Inline Definitions
 
 inline float UAA_AIVehicleControlComponent::GetDesiredSpeedMph() const
 {
