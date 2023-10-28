@@ -120,23 +120,29 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 
 	auto& RacerContext = RacerContextProvider->GetRacerContext();
 	const auto& RacerReferencePosition = VehiclePawn->GetFrontWorldLocation();
-	const auto MovementVector = (RacerContext.MovementTarget - RacerReferencePosition).GetSafeNormal();
+	const auto MovementDirection = (RacerContext.MovementTarget - RacerReferencePosition).GetSafeNormal();
 
 	// parallel choose max delta
-	if (FMath::IsNearlyEqual(AvoidanceContext.ThreatVector | MovementVector, 1.0f))
+	if (FMath::IsNearlyEqual(AvoidanceContext.ThreatVector | MovementDirection, 1.0f))
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentAvoidanceOffset=%f"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentAvoidanceOffset);
+			*GetName(), *LoggingUtils::GetName(GetOwner()), MaxDelta);
 
-		CurrentAvoidanceOffset = MaxDelta;
+		// TODO: Break tie with race position - for now just use the memory address oddness
+		CurrentAvoidanceOffset = MaxDelta * (reinterpret_cast<std::size_t>(VehiclePawn) % 2 == 0 ? 1 : -1);
 	}
 	else
 	{
-		const auto AvoidanceTargetVector = FMath::GetReflectionVector(AvoidanceContext.ThreatVector, MovementVector);
-		// cross product of reflection vector to choose which side of road to go on -
-		//  Unreal uses Left hand rule since it is a left handed coordinate system so need to invert the order of cross product
-		const auto CrossProduct = AvoidanceTargetVector ^ MovementVector;
+		const auto AvoidanceTargetVector = FMath::GetReflectionVector(-AvoidanceContext.ThreatVector, MovementDirection);
+		// cross product of reflection vector to choose which side of road to go on
+		// Unreal uses Left hand rule since it is a left handed coordinate system so need to invert the order of cross product
+		const auto CrossProduct = MovementDirection ^ AvoidanceTargetVector;
 		CurrentAvoidanceOffset = MaxDelta * FMath::Sign(CrossProduct.Z) * AvoidanceContext.NormalizedThreatScore;
+
+		UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log,
+			RacerReferencePosition + FVector(0, 0, 50.0f), 
+			RacerReferencePosition + FVector(0, 0, 50.0f) + LastSplineState->LookaheadDistance * AvoidanceTargetVector.GetSafeNormal(), 
+			FColor::Red, TEXT("%s - AvoidanceTargetVector"), *VehiclePawn->GetName());
 	}
 
 	// Apply Offset immediately
@@ -151,7 +157,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 
 		const auto ToNewCandidateLocation = NewCandidateLocation - RacerReferencePosition;
 		// If the new location is behind us due to highly curved spline, then select a new target and offset again - only due this one additional time
-		if ((LastSplineState->WorldLocation | ForwardVector) > 0)
+		if ((ToNewCandidateLocation | ForwardVector) > 0)
 		{
 			break;
 		}

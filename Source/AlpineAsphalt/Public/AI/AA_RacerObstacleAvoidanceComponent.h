@@ -80,5 +80,7 @@ private:
 	*/
 	UPROPERTY(Category = "Avoidance", EditAnywhere, meta = (ClampMin = "0.0"))
 	float AverageDeceleration { 1200 };
+
+	float LastUpdateGameTime{};
 };
 
