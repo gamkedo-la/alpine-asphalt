@@ -230,6 +230,9 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 		}
 	}
 
+	// Initialize to current position for curvature calculation
+	LastMovementTarget = Context.VehiclePawn->GetFrontWorldLocation();
+
 	UpdateMovementFromLastSplineState(Context);
 }
 
@@ -359,6 +362,8 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 	RacerContext.MovementTarget = LastSplineState->WorldLocation;
 	RacerContext.DistanceAlongSpline = LastSplineState->DistanceAlongSpline;
 
+	LastMovementTarget = RacerContext.MovementTarget;
+
 	OnVehicleTargetUpdated.Broadcast(RacerContext.VehiclePawn, RacerContext.MovementTarget, RacerContext.DesiredSpeedMph);
 }
 
@@ -419,7 +424,7 @@ float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 		return 0.0f;
 	}
 
-	const auto ToCurrentTargetNormalized = (LastSplineState->WorldLocation - MyVehicle->GetFrontWorldLocation()).GetSafeNormal();
+	const auto ToCurrentTargetNormalized = (LastSplineState->WorldLocation - LastMovementTarget).GetSafeNormal();
 	const auto CurrentTargetToNextNormalized = (LookaheadState->WorldLocation - LastSplineState->WorldLocation).GetSafeNormal();
 	const auto DotProduct = ToCurrentTargetNormalized | CurrentTargetToNextNormalized;
 

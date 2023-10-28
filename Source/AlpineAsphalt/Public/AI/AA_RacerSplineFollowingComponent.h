@@ -127,6 +127,8 @@ private:
 	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
 	float LastCurvature{ 0.0f };
 
+	FVector LastMovementTarget{ EForceInit::ForceInitToZero };
+
 	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
 	float CurrentAvoidanceOffset{ 0.0f };
 
