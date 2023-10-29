@@ -87,18 +87,25 @@ void AAA_WheeledVehiclePawn::SetVehiclePaint(int PaintIndex)
 	ensure(PaintMaterial);
 	if(VehicleData->PaintStyles.Num() > PaintIndex)
 	{
-		PaintMaterial->SetTextureParameterValue(FName("PaintTexture"),VehicleData->PaintStyles[PaintIndex]);
+		PaintMaterial->SetTextureParameterValue(FName("PaintTexture"),VehicleData->PaintStyles[PaintIndex].PaintTexture);
 		PaintTextureIndex = PaintIndex;
 	}
 }
-
+int AAA_WheeledVehiclePawn::GetPaintIndex()
+{
+	return PaintTextureIndex;
+}
+int AAA_WheeledVehiclePawn::GetDecalIndex()
+{
+	return DecalTextureIndex;
+}
 void AAA_WheeledVehiclePawn::SetVehicleDecal(int DecalIndex)
 {
 	ensure(VehicleData);
 	ensure(PaintMaterial);
 	if(VehicleData->Decals.Num() > DecalIndex)
 	{
-		PaintMaterial->SetTextureParameterValue(FName("DecalTexture"),VehicleData->Decals[DecalIndex]);
+		PaintMaterial->SetTextureParameterValue(FName("DecalTexture"),VehicleData->Decals[DecalIndex].DecalTexture);
 		DecalTextureIndex = DecalIndex;
 	}
 }

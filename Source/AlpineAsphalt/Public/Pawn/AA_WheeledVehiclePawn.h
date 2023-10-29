@@ -87,6 +87,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetVehiclePaint(int PaintIndex);
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
+	int GetPaintIndex();
+	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
+	int GetDecalIndex();
+	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetVehicleDecal(int DecalIndex);
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorOne(FColor ColorToSet);

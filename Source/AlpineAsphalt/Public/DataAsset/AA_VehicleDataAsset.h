@@ -7,6 +7,33 @@
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "AA_VehicleDataAsset.generated.h"
 
+USTRUCT(BlueprintType)
+struct FPaintStyleInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	UTexture2D* PaintTexture;
+
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	UTexture2D* PaintIconTexture;
+	
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	int NumberOfColors;
+};
+
+USTRUCT(BlueprintType)
+struct FDecalInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	UTexture2D* DecalTexture;
+
+	UPROPERTY(BlueprintReadWrite,EditAnywhere)
+	UTexture2D* DecalIconTexture;
+	
+};
 /**
  * Data used to instantiate a Wheeled Vehicle Pawn
  */
@@ -31,10 +58,10 @@ public:
 	UAnimBlueprint* AnimationInstance;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
-	TArray<UTexture2D*> PaintStyles;
+	TArray<FPaintStyleInfo> PaintStyles;
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
-	TArray<UTexture2D*> Decals;
+	TArray<FDecalInfo> Decals;
 
 	UPROPERTY(EditAnywhere, Category = WheelSetup)
 	bool bSuspensionEnabled = true;
