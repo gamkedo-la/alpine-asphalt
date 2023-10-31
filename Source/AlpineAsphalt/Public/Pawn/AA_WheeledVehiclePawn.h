@@ -94,12 +94,22 @@ public:
 	void SetVehicleDecal(int DecalIndex);
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorOne(FColor ColorToSet);
+	UFUNCTION(BlueprintCallable, BlueprintPure,Category = VehicleVisuals)
+	FColor GetColorOne() const;
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorTwo(FColor ColorToSet);
+	UFUNCTION(BlueprintCallable, BlueprintPure,Category = VehicleVisuals)
+	FColor GetColorTwo() const;
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorThree(FColor ColorToSet);
+	UFUNCTION(BlueprintCallable, BlueprintPure,Category = VehicleVisuals)
+	FColor GetColorThree() const;
 	UFUNCTION(BlueprintCallable, Category = VehicleVisuals)
 	void SetColorFour(FColor ColorToSet);
+	UFUNCTION(BlueprintCallable, BlueprintPure,Category = VehicleVisuals)
+	FColor GetColorFour() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure,Category = VehicleVisuals)
+	FColor GetColor(int Index) const;
 
 	//Set Vehicle Properties
 	UFUNCTION(BlueprintCallable, Category = VehicleControlSettings)

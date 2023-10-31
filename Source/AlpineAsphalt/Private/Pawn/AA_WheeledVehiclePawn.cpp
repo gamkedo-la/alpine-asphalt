@@ -115,11 +115,19 @@ void AAA_WheeledVehiclePawn::SetColorOne(FColor ColorToSet)
 	PaintMaterial->SetVectorParameterValue(FName("ColorOne"),ColorToSet);
 	ColorOne = ColorToSet;
 }
-
+FColor AAA_WheeledVehiclePawn::GetColorOne() const
+{
+	return ColorOne;
+}
 void AAA_WheeledVehiclePawn::SetColorTwo(FColor ColorToSet)
 {
 	PaintMaterial->SetVectorParameterValue(FName("ColorTwo"),ColorToSet);
 	ColorTwo = ColorToSet;
+}
+
+FColor AAA_WheeledVehiclePawn::GetColorTwo() const
+{
+	return ColorTwo;
 }
 
 void AAA_WheeledVehiclePawn::SetColorThree(FColor ColorToSet)
@@ -128,10 +136,38 @@ void AAA_WheeledVehiclePawn::SetColorThree(FColor ColorToSet)
 	ColorThree = ColorToSet;
 }
 
+FColor AAA_WheeledVehiclePawn::GetColorThree() const
+{
+	return ColorThree;
+}
+
 void AAA_WheeledVehiclePawn::SetColorFour(FColor ColorToSet)
 {
 	PaintMaterial->SetVectorParameterValue(FName("ColorFour"),ColorToSet);
 	ColorFour = ColorToSet;
+}
+
+FColor AAA_WheeledVehiclePawn::GetColorFour() const
+{
+	return ColorFour;
+}
+
+FColor AAA_WheeledVehiclePawn::GetColor(int Index) const
+{
+	switch(Index)
+	{
+	case 1:
+		return GetColorOne();
+	case 2:
+		return GetColorTwo();
+	case 3:
+		return GetColorThree();
+	case 4:
+		return GetColorFour();
+	default:
+		UE_LOG(LogAAVehicle,Warning,TEXT("Tried to get Color out of range using index: %d, Returning magenta"),Index);
+		return FColor::Magenta;
+	}
 }
 
 void AAA_WheeledVehiclePawn::SetABSState(bool Enabled)
