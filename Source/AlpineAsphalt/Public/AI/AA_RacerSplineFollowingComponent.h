@@ -14,6 +14,7 @@
 
 class AAA_WheeledVehiclePawn;
 class IAA_RacerContextProvider;
+class ALandscape;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ALPINEASPHALT_API UAA_RacerSplineFollowingComponent : public UActorComponent
@@ -61,7 +62,7 @@ private:
 	};
 
 	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
-	std::optional<FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride = {}) const;
+	std::optional<FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride = {}, std::optional<float> LookaheadDistanceOverride = {}) const;
 	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, FSplineState& SplineState, float RoadOffset) const;
 
 	void UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext);
@@ -81,6 +82,8 @@ private:
 
 	bool IsSplineStateASufficientTarget(const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& SplineState) const;
 
+	ALandscape* GetLandscapeActor() const;
+	bool IsCurrentPathOccluded(const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& SplineState) const;
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleTargetUpdated OnVehicleTargetUpdated {};
@@ -139,6 +142,9 @@ private:
 	float MaxApproachAngle{ 22.5f };
 
 	float MaxApproachAngleCosine{};
+
+	UPROPERTY(Transient)
+	ALandscape* Landscape{};
 };
 
 #pragma region Inline Definitions

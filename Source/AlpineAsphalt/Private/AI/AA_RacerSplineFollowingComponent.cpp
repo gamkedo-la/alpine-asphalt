@@ -12,9 +12,10 @@
 #include "Logging/AlpineAsphaltLogger.h"
 #include "Logging/LoggingUtils.h"
 #include "FunctionLibraries/AA_BlueprintFunctionLibrary.h"
+#include "Landscape.h"
+#include "Components/SplineMeshComponent.h"
 
 #include "Pawn/AA_WheeledVehiclePawn.h"
-
 
 using namespace AA;
 
@@ -41,6 +42,11 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 		return;
 	}
 
+	Landscape = GetLandscapeActor();
+
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: BeginPlay: Landscape=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(Landscape));
+
 	LastCurvature = 0.0f;
 	MaxApproachAngleCosine = FMath::Cos(FMath::DegreesToRadians(MaxApproachAngle));
 
@@ -60,34 +66,34 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 	if (!Context.RaceTrack)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning,
-			TEXT("%s-%s: SetInitialMovementTarget - RaceTrack not set!"),
+			TEXT("%s-%s: SelectNewMovementTarget - RaceTrack not set!"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 		return;
 	}
 	if (!Context.RaceTrack->Spline)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Error,
-			TEXT("%s-%s: SetInitialMovementTarget - RaceTrack=%s does not have a Spline set!"),
+			TEXT("%s-%s: SelectNewMovementTarget - RaceTrack=%s does not have a Spline set!"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *Context.RaceTrack->GetName());
 		return;
 	}
 
+	const auto OriginalSplineState = LastSplineState;
 	LastSplineState = GetNextSplineState(Context);
 
 	if (!LastSplineState)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Display,
-			TEXT("%s-%s: SetInitialMovementTarget - RaceTrack=%s Completed!"),
+			TEXT("%s-%s: SelectNewMovementTarget - RaceTrack=%s Completed!"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *Context.RaceTrack->GetName());
 		return;
 	}
-
 	const auto ToMovementDirection = (LastSplineState->WorldLocation - VehiclePawn->GetFrontWorldLocation()).GetSafeNormal();
 
 	if ((ToMovementDirection | VehiclePawn->GetActorForwardVector()) < MaxApproachAngleCosine)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
-			TEXT("%s-%s: SetInitialMovementTarget - Approach angle too steep: %.1f > %.1f - select target further ahead"),
+			TEXT("%s-%s: SelectNewMovementTarget - Approach angle too steep: %.1f > %.1f - select target further ahead"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()),
 			FMath::RadiansToDegrees(FMath::Acos(ToMovementDirection | VehiclePawn->GetActorForwardVector())),
 			MaxApproachAngle
@@ -98,6 +104,26 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 		{
 			LastSplineState = NextSplineState;
 		}
+	}
+
+	const auto NextTargetSplineDistanceDelta = LastSplineState->DistanceAlongSpline - OriginalSplineState->DistanceAlongSpline;
+
+	// Make sure that our desired target doesn't result in a collision with a static world object from "cutting the corner"
+	if (NextTargetSplineDistanceDelta > MinLookaheadDistance && IsCurrentPathOccluded(*VehiclePawn, *LastSplineState))
+	{
+		// Walk it back to a minimum lookahead distance
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("%s-%s: SelectNewMovementTarget - Suggested path is occluded - recalculating closer to vehicle"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()));
+
+		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0, 0, 50.0f), 100.0f, FColor::Purple,
+			TEXT("%s - Original Target Collision"), *VehiclePawn->GetName());
+
+		LastSplineState = OriginalSplineState;
+		LastSplineState = GetNextSplineState(Context, std::nullopt, MinLookaheadDistance);
+
+		// should be able to recalculate
+		check(LastSplineState);
 	}
 
 	UpdateMovementFromLastSplineState(Context);
@@ -147,11 +173,13 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentAvoidanceOffset=%f"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), MaxDelta);
 
-		// TODO: Break tie with race position - for now just use the memory address oddness
+		// TODO: This isn't actually what we want to do - we want to push them to the opposite side of road where the threat vector is!
 		CurrentAvoidanceOffset = MaxDelta * (reinterpret_cast<std::size_t>(VehiclePawn) % 2 == 0 ? 1 : -1);
 	}
 	else
 	{
+		// TODO: The strength of the offset should also be based on the length of the projection of the threat vector onto the movement vector
+		// as this alignment indicates how direct the threat is
 		const auto AvoidanceTargetVector = FMath::GetReflectionVector(-AvoidanceContext.ThreatVector, MovementDirection);
 		// cross product of reflection vector to choose which side of road to go on
 		// Unreal uses Left hand rule since it is a left handed coordinate system so need to invert the order of cross product
@@ -263,6 +291,79 @@ bool UAA_RacerSplineFollowingComponent::IsSplineStateASufficientTarget(const AAA
 	return CurrentDistance >= LastSplineState->LookaheadDistance;
 }
 
+bool UAA_RacerSplineFollowingComponent::IsCurrentPathOccluded(const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& SplineState) const
+{
+	auto World = GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	FCollisionQueryParams CollisionQueryParams;
+	CollisionQueryParams.AddIgnoredActor(&VehiclePawn);
+	CollisionQueryParams.AddIgnoredActor(Landscape);
+	
+	// Position at front of vehicle in middle
+	const auto TraceStartLocation = VehiclePawn.GetFrontWorldLocation() + 
+		VehiclePawn.GetActorUpVector() * VehiclePawn.GetVehicleHeight() * 0.5f;
+	const auto& TraceEndLocation = SplineState.WorldLocation;
+
+	// TODO: Ignoring the landscape actor is not working as it is hitting one of the streaming proxies instead
+	// Need to use multihit and manually ignore the landscape/road collisions (USplineMeshComponent)
+	TArray<FHitResult> HitResults;
+	World->LineTraceMultiByChannel(HitResults, TraceStartLocation, TraceEndLocation, ECollisionChannel::ECC_WorldStatic, CollisionQueryParams);
+	
+	const auto NonLandscapeCollisionPredicate = [](const auto& HitResult)
+	{
+		if (!HitResult.Component.IsValid()) return true;
+
+		auto Actor = HitResult.Component->GetOwner();
+		if (!Actor) return true;
+
+		const auto& ActorName = Actor->GetName();
+
+		return Cast<USplineMeshComponent>(HitResult.Component) == nullptr &&
+			Cast<AAA_TrackInfoActor>(Actor) == nullptr &&
+			!ActorName.Contains("Vehicle") &&
+			!ActorName.Contains("Checkpoint") &&
+			!ActorName.Contains("LandscapeSpline");
+	};
+
+	const bool bOccluded = HitResults.ContainsByPredicate(NonLandscapeCollisionPredicate);
+
+#if ENABLE_VISUAL_LOG
+
+	if (bOccluded && FVisualLogger::IsRecording())
+	{
+		FHitResult* HitResultMatch = HitResults.FindByPredicate(NonLandscapeCollisionPredicate);
+		check(HitResultMatch);
+
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("%s-%s: IsCurrentPathOccluded - TRUE - Actor=%s; Component=%s"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()),
+			HitResultMatch->Component.IsValid() ? *LoggingUtils::GetName(HitResultMatch->Component->GetOwner()) : TEXT("NULL"),
+			*LoggingUtils::GetName(HitResultMatch->Component.Get())
+		);
+	}
+#endif
+
+	return bOccluded;
+}
+
+ALandscape* UAA_RacerSplineFollowingComponent::GetLandscapeActor() const
+{
+	const auto GameWorld = GetWorld();
+
+	for (TObjectIterator<ALandscape> It; It; ++It)
+	{
+		if (GameWorld == It->GetWorld())
+		{
+			return *It;
+		}
+	}
+	return nullptr;
+}
+
 std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFollowingComponent::GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const
 {
 	check(RacerContext.RaceTrack);
@@ -285,7 +386,8 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	return State;
 }
 
-std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFollowingComponent::GetNextSplineState(const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride) const
+std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFollowingComponent::GetNextSplineState(
+	const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride, std::optional<float> LookaheadDistanceOverride) const
 {
 	check(RacerContext.RaceTrack);
 	check(RacerContext.RaceTrack->Spline);
@@ -300,11 +402,18 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	// Adjust lookahead based on current curvature and speed of car
 	// We need to actually lookahead further as curvature increases so that we can adjust for the car turning
 	// Alpha of 1 is max distance and 0 is min distance lookahead
-	const auto LookaheadSpeedAlpha = FMath::Max(0, Vehicle->GetVehicleSpeedMph() - MinSpeedMph) / (MaxSpeedMph - MinSpeedMph);
-	const auto LookaheadCurvatureAlpha = FMath::Abs(LastCurvature);
-	const auto LookaheadAlpha = LookaheadCurvatureAlpha * LookaheadCurvatureAlphaWeight + LookaheadSpeedAlpha * (1 - LookaheadCurvatureAlphaWeight);
+	if (!LookaheadDistanceOverride)
+	{
+		const auto LookaheadSpeedAlpha = FMath::Max(0, Vehicle->GetVehicleSpeedMph() - MinSpeedMph) / (MaxSpeedMph - MinSpeedMph);
+		const auto LookaheadCurvatureAlpha = FMath::Abs(LastCurvature);
+		const auto LookaheadAlpha = LookaheadCurvatureAlpha * LookaheadCurvatureAlphaWeight + LookaheadSpeedAlpha * (1 - LookaheadCurvatureAlphaWeight);
 
-	State.LookaheadDistance = FMath::Lerp(MinLookaheadDistance, MaxLookaheadDistance, LookaheadAlpha);
+		State.LookaheadDistance = FMath::Lerp(MinLookaheadDistance, MaxLookaheadDistance, LookaheadAlpha);
+	}
+	else
+	{
+		State.LookaheadDistance = *LookaheadDistanceOverride;
+	}
 
 	float NextIdealDistanceAlongSpline;
 
