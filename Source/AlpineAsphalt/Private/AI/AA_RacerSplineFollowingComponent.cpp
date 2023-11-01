@@ -309,9 +309,11 @@ bool UAA_RacerSplineFollowingComponent::IsCurrentPathOccluded(const AAA_WheeledV
 	const auto& TraceEndLocation = SplineState.WorldLocation;
 
 	// TODO: Ignoring the landscape actor is not working as it is hitting one of the streaming proxies instead
-	// Need to use multihit and manually ignore the landscape/road collisions (USplineMeshComponent)
+	// Also lots of hacky exclusions by name
+	// Need to use multihit and manually ignore the landscape/road collisions and other random things that shouldn't match (USplineMeshComponent)
+	// Ideally need a dedicated channel for trees, rocks, etc that could be static collision targets along the track
 	TArray<FHitResult> HitResults;
-	World->LineTraceMultiByChannel(HitResults, TraceStartLocation, TraceEndLocation, ECollisionChannel::ECC_WorldStatic, CollisionQueryParams);
+	World->LineTraceMultiByChannel(HitResults, TraceStartLocation, TraceEndLocation, ECollisionChannel::ECC_Visibility, CollisionQueryParams);
 	
 	const auto NonLandscapeCollisionPredicate = [](const auto& HitResult)
 	{
@@ -326,7 +328,8 @@ bool UAA_RacerSplineFollowingComponent::IsCurrentPathOccluded(const AAA_WheeledV
 			Cast<AAA_TrackInfoActor>(Actor) == nullptr &&
 			!ActorName.Contains("Vehicle") &&
 			!ActorName.Contains("Checkpoint") &&
-			!ActorName.Contains("LandscapeSpline");
+			!ActorName.Contains("LandscapeSpline") &&
+			!ActorName.Contains("Tire");
 	};
 
 	const bool bOccluded = HitResults.ContainsByPredicate(NonLandscapeCollisionPredicate);
