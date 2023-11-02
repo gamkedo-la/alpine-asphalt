@@ -166,20 +166,25 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	auto& RacerContext = RacerContextProvider->GetRacerContext();
 	const auto& RacerReferencePosition = VehiclePawn->GetFrontWorldLocation();
 	const auto MovementDirection = (RacerContext.MovementTarget - RacerReferencePosition).GetSafeNormal();
+	const auto ThreatAlignmentFactor = AvoidanceContext.ThreatVector | MovementDirection;
 
-	// parallel choose max delta
-	if (FMath::IsNearlyEqual(AvoidanceContext.ThreatVector | MovementDirection, 1.0f))
+	// parallel - either pick opposite side of current road offset or deterministically pick left or right side of road
+	if (FMath::IsNearlyEqual(ThreatAlignmentFactor, 1.0f))
 	{
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentAvoidanceOffset=%f"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), MaxDelta);
+		if (FMath::IsNearlyZero(LastSplineState->RoadOffset))
+		{
+			CurrentAvoidanceOffset = MaxDelta * (reinterpret_cast<std::size_t>(VehiclePawn) % 2 == 0 ? 1 : -1) * AvoidanceContext.NormalizedThreatScore;
+		}
+		else
+		{
+			CurrentAvoidanceOffset = -MaxDelta * FMath::Sign(LastSplineState->RoadOffset) * AvoidanceContext.NormalizedThreatScore;
+		}
 
-		// TODO: This isn't actually what we want to do - we want to push them to the opposite side of road where the threat vector is!
-		CurrentAvoidanceOffset = MaxDelta * (reinterpret_cast<std::size_t>(VehiclePawn) % 2 == 0 ? 1 : -1);
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentAvoidanceOffset=%f"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentAvoidanceOffset);
 	}
 	else
 	{
-		// TODO: The strength of the offset should also be based on the length of the projection of the threat vector onto the movement vector
-		// as this alignment indicates how direct the threat is
 		const auto AvoidanceTargetVector = FMath::GetReflectionVector(-AvoidanceContext.ThreatVector, MovementDirection);
 		// cross product of reflection vector to choose which side of road to go on
 		// Unreal uses Left hand rule since it is a left handed coordinate system so need to invert the order of cross product
