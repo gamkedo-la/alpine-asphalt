@@ -1,0 +1,31 @@
+(As you pass the AI)
+"Hey! Wait for me!"
+"Slow down! You'll live longer!"
+"Just you wait...I'm gonna catch ya!"
+
+(As the AI passes you)
+"Get out of the way, pokie!"
+"Told ya, I would catch ya!"
+"So long!"
+
+(As you hit the AI)
+"Owwwww!"
+"You maniac!"
+"Hey! You hit me!"
+"Learn to drive!"
+"Hey! This was supposed to be a friendly race!"
+"You made me spill my cocoa!"
+"I hope you have insurance!"
+"Hey, I just got this car!"
+
+(AI stuck and having problems)
+"Oh, I'm stuck!"
+"I can't drive!"
+"Going siiiiiiidewaaaaays!"
+"I think the gearshift is broken!"
+
+(AI hits a prop)
+"I need to get my eyes checked!
+"Where did that come from?"
+"Crap!"
+"That wasn't there on the last lap!"
