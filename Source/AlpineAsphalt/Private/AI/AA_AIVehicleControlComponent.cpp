@@ -312,9 +312,9 @@ bool UAA_AIVehicleControlComponent::IsTargetBehind() const
 		return false;
 	}
 
-	const auto ToTarget = CurrentMovementTarget - VehiclePawn->GetFrontWorldLocation();
+	const auto ToTargetDirection = (CurrentMovementTarget - VehiclePawn->GetFrontWorldLocation()).GetSafeNormal();
 
-	return (ToTarget | VehiclePawn->GetActorForwardVector()) < 0;
+	return (ToTargetDirection | VehiclePawn->GetActorForwardVector()) < TargetBehindDotThreshold;
 }
 
 float UAA_AIVehicleControlComponent::CalculateNextTickInterval() const

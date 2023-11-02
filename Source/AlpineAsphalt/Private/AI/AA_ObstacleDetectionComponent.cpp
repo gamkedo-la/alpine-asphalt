@@ -30,7 +30,6 @@ UAA_ObstacleDetectionComponent::UAA_ObstacleDetectionComponent()
 	PrimaryComponentTick.TickInterval = 0.5f;
 }
 
-
 void UAA_ObstacleDetectionComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -126,10 +125,6 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 		return false;
 	}
 
-	ThreatContext.RacerContext = &Context;
-	ThreatContext.ReferencePosition = MyVehicle->GetFrontWorldLocation();
-	ThreatContext.BackReferencePosition = MyVehicle->GetBackWorldLocation();
-	ThreatContext.ToMovementTarget = Context.MovementTarget - ThreatContext.ReferencePosition;
 	ThreatContext.MyController = MyVehicle->GetController();
 
 	if (!ThreatContext.MyController)
@@ -137,6 +132,22 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 		return false;
 	}
 
+	ThreatContext.RacerContext = &Context;
+	ThreatContext.ReferencePosition = MyVehicle->GetFrontWorldLocation();
+	ThreatContext.BackReferencePosition = MyVehicle->GetBackWorldLocation();
+
+	const auto& ForwardVector = MyVehicle->GetActorForwardVector();
+	const auto ToMovementTarget = Context.MovementTarget - ThreatContext.ReferencePosition;
+	// if the current movement target is behind us and we are not reversing,
+	//  then use the forward vector as the "MovementTarget" as doing avoidance behind us doesn't make sense
+	if ((ForwardVector | ToMovementTarget) >= 0 || MyVehicle->IsReversing())
+	{
+		ThreatContext.ToMovementTarget = ToMovementTarget;
+	}
+	else
+	{
+		ThreatContext.ToMovementTarget = ForwardVector;
+	}
 	// Use current location since AIContext.DistanceAlongSpline is the target position and not the current
 	ThreatContext.DistanceAlongSpline = GetDistanceAlongSplineAtLocation(*Spline, ThreatContext.ReferencePosition);
 

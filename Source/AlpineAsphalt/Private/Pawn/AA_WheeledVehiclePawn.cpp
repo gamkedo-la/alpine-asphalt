@@ -440,6 +440,13 @@ bool AAA_WheeledVehiclePawn::IsBraking() const
 	return VehicleMovementComponent->GetBrakeInput() > 0 || VehicleMovementComponent->GetHandbrakeInput();
 }
 
+bool AAA_WheeledVehiclePawn::IsReversing() const
+{
+	ensure(VehicleMovementComponent);
+
+	return VehicleMovementComponent->GetCurrentGear() < 0;
+}
+
 FBox AAA_WheeledVehiclePawn::GetAABB() const
 {
 	FVector ActorOrigin, BoxExtent;

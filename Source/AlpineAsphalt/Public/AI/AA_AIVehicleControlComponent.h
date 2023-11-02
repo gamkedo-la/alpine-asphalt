@@ -133,6 +133,9 @@ private:
 	UPROPERTY(EditAnywhere)
 	float ReverseSpeedThresholdMph{ 5.0f };
 
+	UPROPERTY(EditAnywhere)
+	float TargetBehindDotThreshold{ 0.1f };
+
 	/*
 	* Current movement target.
 	*/

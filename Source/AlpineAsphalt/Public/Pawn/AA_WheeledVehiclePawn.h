@@ -186,6 +186,9 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool IsBraking() const;
 
+	UFUNCTION(BlueprintPure)
+	bool IsReversing() const;
+
 // Used for visual logger debug tool to display attributes about the actor - only enabled in non-shipping builds
 #if ENABLE_VISUAL_LOG
 	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;
