@@ -300,8 +300,10 @@ bool UAA_RacerSplineFollowingComponent::IsCurrentPathOccluded(const AAA_WheeledV
 	}
 
 	FCollisionQueryParams CollisionQueryParams;
-	CollisionQueryParams.AddIgnoredActor(&VehiclePawn);
-	CollisionQueryParams.AddIgnoredActor(Landscape);
+	// Landscape ignore doesn't work as it comes in as a streaming proxy at runtime
+	//CollisionQueryParams.AddIgnoredActor(Landscape);
+	// Get all the overlaps with AIPath channel (ECC_GameTraceChannel1)
+	CollisionQueryParams.bIgnoreBlocks = true;
 	
 	// Position at front of vehicle in middle
 	const auto TraceStartLocation = VehiclePawn.GetFrontWorldLocation() + 
@@ -313,7 +315,8 @@ bool UAA_RacerSplineFollowingComponent::IsCurrentPathOccluded(const AAA_WheeledV
 	// Need to use multihit and manually ignore the landscape/road collisions and other random things that shouldn't match (USplineMeshComponent)
 	// Ideally need a dedicated channel for trees, rocks, etc that could be static collision targets along the track
 	TArray<FHitResult> HitResults;
-	World->LineTraceMultiByChannel(HitResults, TraceStartLocation, TraceEndLocation, ECollisionChannel::ECC_Visibility, CollisionQueryParams);
+	// AIPath channel
+	World->LineTraceMultiByChannel(HitResults, TraceStartLocation, TraceEndLocation, ECollisionChannel::ECC_GameTraceChannel1, CollisionQueryParams);
 	
 	const auto NonLandscapeCollisionPredicate = [](const auto& HitResult)
 	{
@@ -326,9 +329,8 @@ bool UAA_RacerSplineFollowingComponent::IsCurrentPathOccluded(const AAA_WheeledV
 
 		return Cast<USplineMeshComponent>(HitResult.Component) == nullptr &&
 			Cast<AAA_TrackInfoActor>(Actor) == nullptr &&
-			!ActorName.Contains("Vehicle") &&
 			!ActorName.Contains("Checkpoint") &&
-			!ActorName.Contains("LandscapeSpline") &&
+			!ActorName.Contains("Landscape") &&
 			!ActorName.Contains("Tire");
 	};
 
