@@ -78,6 +78,8 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 		return;
 	}
 
+	check(LastSplineState);
+
 	const auto OriginalSplineState = LastSplineState;
 	LastSplineState = GetNextSplineState(Context);
 
@@ -88,28 +90,36 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 			*GetName(), *LoggingUtils::GetName(GetOwner()), *Context.RaceTrack->GetName());
 		return;
 	}
-	const auto ToMovementDirection = (LastSplineState->WorldLocation - VehiclePawn->GetFrontWorldLocation()).GetSafeNormal();
+	
+	UpdateLastSplineStateIfTooCloseToVehicle(Context, *VehiclePawn, *OriginalSplineState);
+	UpdateMovementFromLastSplineState(Context);
+}
 
-	if ((ToMovementDirection | VehiclePawn->GetActorForwardVector()) < MaxApproachAngleCosine)
+void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfTooCloseToVehicle(
+	const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& OriginalSplineState)
+{
+	const auto ToMovementDirection = (LastSplineState->WorldLocation - VehiclePawn.GetFrontWorldLocation()).GetSafeNormal();
+
+	if ((ToMovementDirection | VehiclePawn.GetActorForwardVector()) < MaxApproachAngleCosine)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 			TEXT("%s-%s: SelectNewMovementTarget - Approach angle too steep: %.1f > %.1f - select target further ahead"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()),
-			FMath::RadiansToDegrees(FMath::Acos(ToMovementDirection | VehiclePawn->GetActorForwardVector())),
+			FMath::RadiansToDegrees(FMath::Acos(ToMovementDirection | VehiclePawn.GetActorForwardVector())),
 			MaxApproachAngle
 		);
 
 		// calculate further ahead
-		if (const auto NextSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + MaxLookaheadDistance); NextSplineState)
+		if (const auto NextSplineState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + MaxLookaheadDistance); NextSplineState)
 		{
 			LastSplineState = NextSplineState;
 		}
 	}
 
-	const auto NextTargetSplineDistanceDelta = LastSplineState->DistanceAlongSpline - OriginalSplineState->DistanceAlongSpline;
+	const auto NextTargetSplineDistanceDelta = LastSplineState->DistanceAlongSpline - OriginalSplineState.DistanceAlongSpline;
 
 	// Make sure that our desired target doesn't result in a collision with a static world object from "cutting the corner"
-	if (NextTargetSplineDistanceDelta > MinLookaheadDistance && IsCurrentPathOccluded(*VehiclePawn, *LastSplineState))
+	if (NextTargetSplineDistanceDelta > MinLookaheadDistance && IsCurrentPathOccluded(VehiclePawn, *LastSplineState))
 	{
 		// Walk it back to a minimum lookahead distance
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
@@ -117,16 +127,14 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 
 		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0, 0, 50.0f), 100.0f, FColor::Purple,
-			TEXT("%s - Original Target Collision"), *VehiclePawn->GetName());
+			TEXT("%s - Original Target Collision"), *VehiclePawn.GetName());
 
 		LastSplineState = OriginalSplineState;
-		LastSplineState = GetNextSplineState(Context, std::nullopt, MinLookaheadDistance);
+		LastSplineState = GetNextSplineState(RacerContext, std::nullopt, MinLookaheadDistance);
 
 		// should be able to recalculate
 		check(LastSplineState);
 	}
-
-	UpdateMovementFromLastSplineState(Context);
 }
 
 void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_WheeledVehiclePawn* VehiclePawn, const FAA_AIRacerAvoidanceContext& AvoidanceContext)
@@ -197,11 +205,10 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 			FColor::Red, TEXT("%s - AvoidanceTargetVector"), *VehiclePawn->GetName());
 	}
 
-	// Apply Offset immediately
-	auto Spline = RacerContext.RaceTrack->Spline;
-	check(Spline);
+	LastAvoidanceContext = AvoidanceContext;
 
 	UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentAvoidanceOffset);
+	UpdateLastSplineStateIfTooCloseToVehicle(RacerContext, *VehiclePawn, FSplineState { *LastSplineState } );
 
 	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerReferencePosition + FVector(0, 0, 50.0f) + AvoidanceContext.ThreatVector * LastSplineState->LookaheadDistance, FColor::Orange,
 		TEXT("%s - ThreatVector - Score=%s"), *VehiclePawn->GetName(), *FString::Printf(TEXT("%.3f"), AvoidanceContext.NormalizedThreatScore));
@@ -212,7 +219,6 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0,0,50.0f), 100.0f, FColor::Red,
 		TEXT("%s - Avoidance Target; CurrentAvoidanceOffset=%f"), *VehiclePawn->GetName(), CurrentAvoidanceOffset);
 
-	LastAvoidanceContext = LastAvoidanceContext;
 
 	UpdateMovementFromLastSplineState(RacerContext);
 }

@@ -66,6 +66,7 @@ private:
 	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, FSplineState& SplineState, float RoadOffset) const;
 
 	void UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext);
+	void UpdateLastSplineStateIfTooCloseToVehicle(const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& OriginalSplineState);
 
 	/*
 	* Curvature between [0,1] indicating how steep the upcoming road is for speed adjustment purposes.
