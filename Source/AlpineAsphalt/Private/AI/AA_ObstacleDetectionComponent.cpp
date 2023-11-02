@@ -18,8 +18,8 @@ struct UAA_ObstacleDetectionComponent::FThreatContext
 	FVector ReferencePosition;
 	FVector BackReferencePosition;
 	const FAA_AIRacerContext* RacerContext;
-	FVector ToMovementTarget;
 	AController* MyController;
+	FVector MovementDirection;
 	float DistanceAlongSpline;
 };
 
@@ -137,16 +137,13 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 	ThreatContext.BackReferencePosition = MyVehicle->GetBackWorldLocation();
 
 	const auto& ForwardVector = MyVehicle->GetActorForwardVector();
-	const auto ToMovementTarget = Context.MovementTarget - ThreatContext.ReferencePosition;
-	// if the current movement target is behind us and we are not reversing,
-	//  then use the forward vector as the "MovementTarget" as doing avoidance behind us doesn't make sense
-	if ((ForwardVector | ToMovementTarget) >= 0 || MyVehicle->IsReversing())
+	if (MyVehicle->IsReversing())
 	{
-		ThreatContext.ToMovementTarget = ToMovementTarget;
+		ThreatContext.MovementDirection = -ForwardVector;
 	}
 	else
 	{
-		ThreatContext.ToMovementTarget = ForwardVector;
+		ThreatContext.MovementDirection = ForwardVector;
 	}
 	// Use current location since AIContext.DistanceAlongSpline is the target position and not the current
 	ThreatContext.DistanceAlongSpline = GetDistanceAlongSplineAtLocation(*Spline, ThreatContext.ReferencePosition);
@@ -195,8 +192,8 @@ bool UAA_ObstacleDetectionComponent::IsPotentialThreat(const FAA_AIRacerContext&
 
 	// Make sure we aren't alongside the vehicle
 
-	const auto DotProductFront = ToCandidateBack | ThreatContext.ToMovementTarget;
-	const auto DotProductBack = ToCandidateFront | ThreatContext.ToMovementTarget;
+	const auto DotProductFront = ToCandidateBack | ThreatContext.MovementDirection;
+	const auto DotProductBack = ToCandidateFront | ThreatContext.MovementDirection;
 
 	if (DotProductFront < 0 && DotProductBack < 0)
 	{
