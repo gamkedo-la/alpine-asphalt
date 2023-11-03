@@ -91,11 +91,11 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 		return;
 	}
 	
-	UpdateLastSplineStateIfTooCloseToVehicle(Context, *VehiclePawn, *OriginalSplineState);
+	UpdateLastSplineStateIfApproachTooSteep(Context, *VehiclePawn, *OriginalSplineState);
 	UpdateMovementFromLastSplineState(Context);
 }
 
-void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfTooCloseToVehicle(
+void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfApproachTooSteep(
 	const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& OriginalSplineState)
 {
 	const auto ToMovementDirection = (LastSplineState->WorldLocation - VehiclePawn.GetFrontWorldLocation()).GetSafeNormal();
@@ -208,7 +208,7 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	LastAvoidanceContext = AvoidanceContext;
 
 	UpdateSplineStateWithRoadOffset(RacerContext, *LastSplineState, CurrentAvoidanceOffset);
-	UpdateLastSplineStateIfTooCloseToVehicle(RacerContext, *VehiclePawn, FSplineState { *LastSplineState } );
+	UpdateLastSplineStateIfApproachTooSteep(RacerContext, *VehiclePawn, FSplineState { *LastSplineState } );
 
 	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, RacerReferencePosition + FVector(0, 0, 50.0f), RacerReferencePosition + FVector(0, 0, 50.0f) + AvoidanceContext.ThreatVector * LastSplineState->LookaheadDistance, FColor::Orange,
 		TEXT("%s - ThreatVector - Score=%s"), *VehiclePawn->GetName(), *FString::Printf(TEXT("%.3f"), AvoidanceContext.NormalizedThreatScore));
