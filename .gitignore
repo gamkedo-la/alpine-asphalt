@@ -75,3 +75,9 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Audacity temp files
+*.aup3-*
+
+# Blender backup files
+*.blend[0-9]
