@@ -6,22 +6,37 @@
 #include "InputAction.h"
 #include "GameFramework/PlayerController.h"
 #include "Interface/AA_InteractableInterface.h"
+#include "VisualLogger/VisualLoggerDebugSnapshotInterface.h"
+
+#include "Components/AA_PlayerRaceSplineInfoComponent.h"
+
 #include "AA_PlayerController.generated.h"
 
 class UAA_BaseUI;
 class UAA_VehicleUI;
 class AAA_WheeledVehiclePawn;
+class AAA_TrackInfoActor;
 
 DECLARE_LOG_CATEGORY_EXTERN(PlayerControllerLog, Log, All);
 /**
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_PlayerController : public APlayerController
+class ALPINEASPHALT_API AAA_PlayerController : public APlayerController, public IVisualLoggerDebugSnapshotInterface
 {
 	GENERATED_BODY()
 
 public:
+
+	AAA_PlayerController();
+
+	void SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor);
+
+	std::optional<FPlayerSplineInfo> GetPlayerSplineInfo() const;
+
+#if ENABLE_VISUAL_LOG
+	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;
+#endif
 
 	/** Driving Controls **/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -91,6 +106,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	TSubclassOf<UAA_BaseUI> BaseUIClass;
 
+	UPROPERTY(Category = "Activity", VisibleDefaultsOnly)
+	TObjectPtr<UAA_PlayerRaceSplineInfoComponent> PlayerRaceSplineInfoComponent{};
+
 	UFUNCTION()
 	void OnRacerSettingsUpdated();
 	
@@ -103,6 +121,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnUnPossess() override;
 
 private:
 	UPROPERTY(Transient)

@@ -9,12 +9,18 @@
 #include "Subsystems/AA_RewindSubsystem.h"
 #include "UI/AA_VehicleUI.h"
 #include "UI/AA_BaseUI.h"
+#include "Components/AA_PlayerRaceSplineInfoComponent.h"
 
 #include "Logging/AlpineAsphaltLogger.h"
 #include "UI/AA_GameUserSettings.h"
 #include "VisualLogger/VisualLogger.h"
 
 DEFINE_LOG_CATEGORY(PlayerControllerLog);
+
+AAA_PlayerController::AAA_PlayerController()
+{
+	PlayerRaceSplineInfoComponent = CreateDefaultSubobject<UAA_PlayerRaceSplineInfoComponent>(TEXT("Player Race Spline Info"));
+}
 
 void AAA_PlayerController::OnRacerSettingsUpdated()
 {
@@ -47,6 +53,9 @@ void AAA_PlayerController::OnPossess(APawn* InPawn)
 		UE_LOG(PlayerControllerLog,Error,TEXT("%hs: Pawn was not an AA_WheeledVehiclePawn_CPP"),__FUNCSIG__);
 	}
 
+	check(PlayerRaceSplineInfoComponent);
+	PlayerRaceSplineInfoComponent->SetVehicle(VehiclePawn);
+
 	BaseUI = CreateWidget<UAA_BaseUI>(GetGameInstance(),BaseUIClass);
 	BaseUI->AddToViewport(0);
 
@@ -56,6 +65,14 @@ void AAA_PlayerController::OnPossess(APawn* InPawn)
 
 	const auto GameUserSettings = UAA_GameUserSettings::GetInstance();
 	GameUserSettings->OnGameUserSettingsUpdated.AddDynamic(this, &ThisClass::OnRacerSettingsUpdated);
+}
+
+void AAA_PlayerController::OnUnPossess()
+{
+	Super::OnUnPossess();
+
+	check(PlayerRaceSplineInfoComponent);
+	PlayerRaceSplineInfoComponent->SetVehicle(nullptr);
 }
 
 void AAA_PlayerController::SetupInputComponent()
@@ -127,6 +144,18 @@ void AAA_PlayerController::SetupInputComponent()
 	EInputComponent->BindAction(InputFastForwardTime,ETriggerEvent::Completed, this, &AAA_PlayerController::FastForwardTime);
 
 	
+}
+
+void AAA_PlayerController::SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor)
+{
+	check(PlayerRaceSplineInfoComponent);
+	PlayerRaceSplineInfoComponent->SetTrackInfo(TrackInfoActor);
+}
+
+std::optional<FPlayerSplineInfo> AAA_PlayerController::GetPlayerSplineInfo() const
+{
+	check(PlayerRaceSplineInfoComponent);
+	return PlayerRaceSplineInfoComponent->GetPlayerSplineInfo();
 }
 
 void AAA_PlayerController::AddInteractables(IAA_InteractableInterface* Interactable)
@@ -312,3 +341,15 @@ void AAA_PlayerController::DestroyDebugDraw()
 
 #endif
 }
+
+#if ENABLE_VISUAL_LOG
+
+void AAA_PlayerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
+{
+	if (PlayerRaceSplineInfoComponent)
+	{
+		PlayerRaceSplineInfoComponent->DescribeSelfToVisLog(Snapshot);
+	}
+}
+
+#endif

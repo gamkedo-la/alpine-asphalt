@@ -43,11 +43,17 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	
 	//Move Player Vehicle to Start Position
 	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+	check(PlayerVehicle);
+
 	FRotator Rotation = Track->StartLocations[LastStartingPosition].Rotator() + Track->GetActorRotation();
 	FVector Location = Track->GetActorRotation().RotateVector(Track->StartLocations[LastStartingPosition].GetLocation());
 	Location += Track->GetActorLocation();
 	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
 	PlayerVehicle->ResetVehicle();
+
+	auto PlayerController = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	check(PlayerController);
+	PlayerController->SetTrackInfo(Track);
 
 	AAA_AIRacerController* AI;
 	AAA_WheeledVehiclePawn* AIVehicle;

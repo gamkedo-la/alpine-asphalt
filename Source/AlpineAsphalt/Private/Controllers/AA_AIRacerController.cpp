@@ -8,6 +8,7 @@
 #include "AI/AA_ObstacleDetectionComponent.h"
 #include "AI/AA_RacerObstacleAvoidanceComponent.h"
 #include "AI/AA_AIGetUnstuckComponent.h"
+#include "AI/AA_RacerVerbalBarksComponent.h"
 
 #include "VisualLogger/VisualLogger.h"
 #include "Logging/AlpineAsphaltLogger.h"
@@ -36,6 +37,7 @@ AAA_AIRacerController::AAA_AIRacerController()
 	ObstacleDetectionComponent = CreateDefaultSubobject<UAA_ObstacleDetectionComponent>(TEXT("Obstacle Detection"));
 	RacerObstacleAvoidanceComponent = CreateDefaultSubobject<UAA_RacerObstacleAvoidanceComponent>(TEXT("Racer Obstacle Avoidance"));
 	GetUnstuckComponent = CreateDefaultSubobject<UAA_AIGetUnstuckComponent>(TEXT("Get Unstuck"));
+	RacerVerbalBarksComponent = CreateDefaultSubobject<UAA_RacerVerbalBarksComponent>(TEXT("Racer Verbal Barks"));
 
 	const auto NumDifficulties = static_cast<int32>(EAA_AIDifficulty::Hard) + 1;
 	DifficultySettings.Reset(NumDifficulties);
@@ -178,6 +180,8 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 	ObstacleDetectionComponent->OnVehicleObstaclesUpdated.AddDynamic(RacerObstacleAvoidanceComponent, &UAA_RacerObstacleAvoidanceComponent::OnVehicleObstaclesUpdated);
 	RacerObstacleAvoidanceComponent->OnVehicleAvoidancePositionUpdated.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated);
 	GetUnstuckComponent->OnVehicleStuck.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::SelectUnstuckTarget);
+
+	GetUnstuckComponent->OnVehicleStuck.AddDynamic(RacerVerbalBarksComponent, &UAA_RacerVerbalBarksComponent::OnStuck);
 }
 
 void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn)

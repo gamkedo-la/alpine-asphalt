@@ -20,17 +20,23 @@ struct ALPINEASPHALT_API FAA_AIRacerContext
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	TObjectPtr<AAA_WheeledVehiclePawn> VehiclePawn{};
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	float DesiredSpeedMph{};
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	FVector MovementTarget{ EForceInit::ForceInitToZero };
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	TObjectPtr<AAA_TrackInfoActor> RaceTrack{};
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
-	float DistanceAlongSpline {};
+	float CurrentDistanceAlongSpline{};
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
+	float TargetDistanceAlongSpline {};
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
+	float SplineLength{};
 };
 
 /**

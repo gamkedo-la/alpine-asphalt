@@ -18,6 +18,7 @@ class UAA_RacerSplineFollowingComponent;
 class UAA_ObstacleDetectionComponent;
 class UAA_RacerObstacleAvoidanceComponent;
 class UAA_AIGetUnstuckComponent;
+class UAA_RacerVerbalBarksComponent;
 
 class AAA_WheeledVehiclePawn;
 class ALandscape;
@@ -71,6 +72,7 @@ public:
 
 	// Inherited via IAA_RacerContextProvider
 	virtual FAA_AIRacerContext& GetRacerContext() override;
+
 	void SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor);
 
 #if ENABLE_VISUAL_LOG
@@ -115,6 +117,9 @@ private:
 
 	UPROPERTY(Category = "Movement", VisibleDefaultsOnly)
 	TObjectPtr<UAA_AIGetUnstuckComponent> GetUnstuckComponent{};
+
+	UPROPERTY(Category = "Audio", VisibleDefaultsOnly)
+	TObjectPtr<UAA_RacerVerbalBarksComponent> RacerVerbalBarksComponent{};
 
 	UPROPERTY(Category = "Difficulty", EditDefaultsOnly, EditFixedSize, meta = (TitleProperty = "Difficulty"))
 	TArray<FAA_RacerAISettings> DifficultySettings{};

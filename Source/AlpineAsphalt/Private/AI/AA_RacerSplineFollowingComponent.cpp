@@ -16,13 +16,16 @@
 #include "Components/SplineMeshComponent.h"
 
 #include "Pawn/AA_WheeledVehiclePawn.h"
+#include "Util/SplineUtils.h"
 
 using namespace AA;
 
 // Sets default values for this component's properties
 UAA_RacerSplineFollowingComponent::UAA_RacerSplineFollowingComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bStartWithTickEnabled = true;
+	PrimaryComponentTick.TickInterval = 0.2f;
 }
 
 void UAA_RacerSplineFollowingComponent::BeginPlay()
@@ -39,6 +42,8 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Error,
 			TEXT("%s-%s: BeginPlay - Owner does not implement IAA_RacerContextProvider"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
+
+		SetComponentTickEnabled(false);
 		return;
 	}
 
@@ -51,6 +56,33 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 	MaxApproachAngleCosine = FMath::Cos(FMath::DegreesToRadians(MaxApproachAngle));
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::SetInitialMovementTarget);
+}
+
+void UAA_RacerSplineFollowingComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (!RacerContextProvider)
+	{
+		return;
+	}
+
+	auto& Context = RacerContextProvider->GetRacerContext();
+	const auto RaceTrack = Context.RaceTrack;
+	const auto Vehicle = Context.VehiclePawn;
+
+	if (!RaceTrack || !Vehicle)
+	{
+		return;
+	}
+
+	const auto Spline = RaceTrack->Spline;
+	if (!Spline)
+	{
+		return;
+	}
+
+	SplineUtils::TryUpdateSplineDistance(*Spline, *Vehicle, Context.CurrentDistanceAlongSpline, Context.CurrentDistanceAlongSpline);
 }
 
 void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& PreviousMovementTarget)
@@ -282,6 +314,7 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 
 	// Initialize to current position for curvature calculation
 	LastMovementTarget = Context.VehiclePawn->GetFrontWorldLocation();
+	Context.SplineLength = Context.RaceTrack->Spline->GetSplineLength();
 
 	UpdateMovementFromLastSplineState(Context);
 }
@@ -520,7 +553,7 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 
 	RacerContext.DesiredSpeedMph = CalculateNewSpeed(RacerContext);
 	RacerContext.MovementTarget = LastSplineState->WorldLocation;
-	RacerContext.DistanceAlongSpline = LastSplineState->DistanceAlongSpline;
+	RacerContext.TargetDistanceAlongSpline = LastSplineState->DistanceAlongSpline;
 
 	LastMovementTarget = RacerContext.MovementTarget;
 
