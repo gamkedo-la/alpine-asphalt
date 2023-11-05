@@ -124,6 +124,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = VehicleControlSettings)
 	void SetAutomaticShifting(bool Enabled);
 
+	USkeletalMeshComponent* GetMesh() const { return Mesh; }
+
 private:
 	
 	UPROPERTY()

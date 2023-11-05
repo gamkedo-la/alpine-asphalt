@@ -182,6 +182,7 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 	GetUnstuckComponent->OnVehicleStuck.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::SelectUnstuckTarget);
 
 	GetUnstuckComponent->OnVehicleStuck.AddDynamic(RacerVerbalBarksComponent, &UAA_RacerVerbalBarksComponent::OnStuck);
+	RacerVerbalBarksComponent->OnPossessedVehiclePawn(RacerContext.VehiclePawn);
 }
 
 void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn)
