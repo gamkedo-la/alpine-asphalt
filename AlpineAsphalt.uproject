@@ -44,6 +44,10 @@
 		{
 			"Name": "ConsoleVariables",
 			"Enabled": true
+		},
+		{
+			"Name": "PCG",
+			"Enabled": true
 		}
 	]
 }
