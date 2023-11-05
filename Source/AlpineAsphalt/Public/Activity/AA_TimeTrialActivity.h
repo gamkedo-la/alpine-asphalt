@@ -49,7 +49,7 @@ public:
 	virtual UWorld* GetWorld() const override;
 protected:
 	UFUNCTION()
-	void CheckpointHit(int IndexCheckpointHit);
+	void CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle);
 
 private:
 	UPROPERTY()

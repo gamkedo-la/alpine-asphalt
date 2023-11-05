@@ -46,9 +46,6 @@ void AAA_Checkpoint::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor*
 {
 	if(auto HitVehicle = Cast<AAA_WheeledVehiclePawn>(OtherActor))
 	{
-		if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
-		{
-			CheckpointHit.Broadcast(Index);
-		}
+		CheckpointHit.Broadcast(Index,HitVehicle);
 	}
 }

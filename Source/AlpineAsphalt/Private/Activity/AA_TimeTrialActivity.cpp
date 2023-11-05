@@ -84,19 +84,22 @@ void UAA_TimeTrialActivity::CountdownEnded()
 
 }
 
-void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit)
+void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
 {
 	if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
 	{
-		LastCheckpointHitIndex = IndexCheckpointHit;
-		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
-		if(LastCheckpointHitIndex == NumCheckpoints-1)
+		if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 		{
-			FinishTime = UGameplayStatics::GetTimeSeconds(this);
-			UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::RaceEnded,FinishDelay,false);
-			UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+			LastCheckpointHitIndex = IndexCheckpointHit;
+			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
+			if(LastCheckpointHitIndex == NumCheckpoints-1)
+			{
+				FinishTime = UGameplayStatics::GetTimeSeconds(this);
+				UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::RaceEnded,FinishDelay,false);
+				UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+			}
 		}
 	}else
 	{

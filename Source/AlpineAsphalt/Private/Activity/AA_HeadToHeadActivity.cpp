@@ -124,19 +124,27 @@ void UAA_HeadToHeadActivity::CountdownEnded()
 
 }
 
-void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit)
+void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
 {
 	if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
 	{
-		LastCheckpointHitIndex = IndexCheckpointHit;
-		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
-		if(LastCheckpointHitIndex == NumCheckpoints-1)
+		if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 		{
-			FinishTime = UGameplayStatics::GetTimeSeconds(this);
-			UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::RaceEnded,FinishDelay,false);
-			UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+			LastCheckpointHitIndex = IndexCheckpointHit;
+			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
+			if(LastCheckpointHitIndex == NumCheckpoints-1) // Player finished race
+			{
+				FinishTime = UGameplayStatics::GetTimeSeconds(this);
+				UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::RaceEnded,FinishDelay,false);
+				UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+				//TODO: Add to Scrore Screen
+			}
+		}else if(LastCheckpointHitIndex == NumCheckpoints-1) // Non-Player finished race
+		{
+			//TODO: Add to Score Screen
+			UE_LOG(LogTemp,Log,TEXT("AI Finished Race"))
 		}
 	}else
 	{

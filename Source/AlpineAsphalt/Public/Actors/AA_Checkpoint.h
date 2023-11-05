@@ -1,10 +1,10 @@
 ﻿#pragma once
-
+#include "Pawn/AA_WheeledVehiclePawn.h"
 #include "AA_Checkpoint.generated.h"
 
 class UBoxComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCheckpointHitDelegate,int,CheckpointIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCheckpointHitSignature, int,CheckpointIndex,AAA_WheeledVehiclePawn*,VehicleHit);
 
 UCLASS(Blueprintable,BlueprintType)
 class ALPINEASPHALT_API AAA_Checkpoint : public AActor
@@ -22,7 +22,7 @@ public:
 	void SetIndex(int Index);
 
 	UPROPERTY(BlueprintAssignable)
-	FCheckpointHitDelegate CheckpointHit;
+	FCheckpointHitSignature CheckpointHit;
 	
 private:
 	UFUNCTION()
