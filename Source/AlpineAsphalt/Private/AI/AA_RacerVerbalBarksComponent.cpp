@@ -386,7 +386,9 @@ const AAA_WheeledVehiclePawn* UAA_RacerVerbalBarksComponent::DetermineInstigator
 
 	const AAA_WheeledVehiclePawn* InstigatorVehicle{};
 
-	if (OwnerProjection > HitDirectionThreshold && OtherProjection > HitDirectionThreshold)
+	// Determine by speed if both in direction of impulse or both not in direction of impulse
+	if ((OwnerProjection >= 0 && OtherProjection >= 0) ||
+		OwnerProjection < 0 && OtherProjection < 0)
 	{
 		auto OwnerSpeed = OwnerVelocity.Size();
 		auto OtherSpeed = OtherVelocity.Size();
@@ -412,40 +414,22 @@ const AAA_WheeledVehiclePawn* UAA_RacerVerbalBarksComponent::DetermineInstigator
 			OtherSpeed
 		);
 	}
-	else if (OwnerProjection >= OtherProjection && OwnerProjection > 0)
-	{
-		InstigatorVehicle = MyVehicle;
-
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
-			TEXT("%s-%s: Hit Vehicle %s InstigatorVehicle=%s: OwnerProjection=%f; OtherProjection=%f; OwnerVelocity=%s; OtherVelocity=%s; HitLocation=%s"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), *OtherVehicle->GetName(), *InstigatorVehicle->GetName(),
-			OwnerProjection,
-			OtherProjection,
-			*OwnerVelocity.ToCompactString(),
-			*OtherVelocity.ToCompactString(),
-			*HitLocation.ToCompactString()
-		);
-	}
-	else if (OtherProjection > OwnerProjection && OtherProjection > 0)
-	{
-		InstigatorVehicle = OtherVehicle;
-
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
-			TEXT("%s-%s: Hit Vehicle %s InstigatorVehicle=%s: OwnerProjection=%f; OtherProjection=%f; OwnerVelocity=%s; OtherVelocity=%s; HitLocation=%s"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), *OtherVehicle->GetName(), *InstigatorVehicle->GetName(),
-			OwnerProjection,
-			OtherProjection,
-			*OwnerVelocity.ToCompactString(),
-			*OtherVelocity.ToCompactString(),
-			*HitLocation.ToCompactString()
-		);
-	}
 	else
 	{
-		// shouldn't happen
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning,
-			TEXT("%s-%s: Hit Vehicle %s but could not determine instigator as both velocities not in direction of impulse: OwnerProjection=%f; OtherProjection=%f; OwnerVelocity=%s; OtherVelocity=%s; HitLocation=%s"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), *OtherVehicle->GetName(),
+		// Choose instigator vehicle to be one most aligned with collision impulse
+		// This could be buggy but only using it to determine if audio should play
+		if (OtherProjection >= OwnerProjection)
+		{
+			InstigatorVehicle = OtherVehicle;
+		}
+		else
+		{
+			InstigatorVehicle = MyVehicle;
+		}
+
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
+			TEXT("%s-%s: Hit Vehicle %s InstigatorVehicle=%s: OwnerProjection=%f; OtherProjection=%f; OwnerVelocity=%s; OtherVelocity=%s; HitLocation=%s"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), *OtherVehicle->GetName(), *InstigatorVehicle->GetName(),
 			OwnerProjection,
 			OtherProjection,
 			*OwnerVelocity.ToCompactString(),

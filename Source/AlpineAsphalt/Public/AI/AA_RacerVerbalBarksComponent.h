@@ -48,8 +48,6 @@ private:
 private:
 
 	static const FName PitchSoundParameterName;
-	static constexpr float HitDirectionThreshold = 0.5f;
-
 
 	struct FAudioState
 	{
