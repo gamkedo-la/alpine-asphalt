@@ -111,14 +111,13 @@ void UAA_PlayerRaceSplineInfoComponent::UpdateSplineInfo()
 		return;
 	}
 
-	SplineUtils::TryUpdateSplineDistance(*Spline, *Vehicle, PlayerSplineInfo->RaceState.DistanceAlongSpline, PlayerSplineInfo->RaceState.DistanceAlongSpline);
+	SplineUtils::TryUpdateRaceState(*Spline, PlayerSplineInfo->RaceState);
 }
 
 #if ENABLE_VISUAL_LOG
 
 void UAA_PlayerRaceSplineInfoComponent::DescribeSelfToVisLog(FVisualLogEntry* Snapshot) const
 {
-
 	FVisualLogStatusCategory Category;
 	Category.Category = TEXT("Player Race Spline Info Component");
 

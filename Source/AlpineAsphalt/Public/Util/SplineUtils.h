@@ -6,8 +6,9 @@
 
 class AAA_WheeledVehiclePawn;
 class USplineComponent;
+struct FAA_RaceState;
 
 namespace AA::SplineUtils
 {
-	ALPINEASPHALT_API bool TryUpdateSplineDistance(const USplineComponent& Spline, const AAA_WheeledVehiclePawn& Vehicle, float LastDistanceAlongSpline, float& NewDistanceAlongSpline);
+	ALPINEASPHALT_API bool TryUpdateRaceState(const USplineComponent& Spline, FAA_RaceState& RaceState);
 }

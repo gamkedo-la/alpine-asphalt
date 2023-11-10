@@ -127,7 +127,7 @@ bool UAA_RacerVerbalBarksComponent::CheckRelativePlayerPosition()
 		return false;
 	}
 
-	const auto DistanceDelta = Context.RaceState.DistanceAlongSpline - PlayerSplineInfo->RaceState.DistanceAlongSpline;
+	const auto DistanceDelta = Context.RaceState.GetTotalDistance() - PlayerSplineInfo->RaceState.GetTotalDistance();
 	const bool bAheadOfPlayer = DistanceDelta >= 0;
 
 	if (PlayerPositionChanges.IsEmpty())

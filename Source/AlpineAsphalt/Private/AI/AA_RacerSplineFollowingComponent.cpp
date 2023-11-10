@@ -82,7 +82,7 @@ void UAA_RacerSplineFollowingComponent::TickComponent(float DeltaTime, ELevelTic
 		return;
 	}
 
-	SplineUtils::TryUpdateSplineDistance(*Spline, *Vehicle, Context.RaceState.DistanceAlongSpline, Context.RaceState.DistanceAlongSpline);
+	SplineUtils::TryUpdateRaceState(*Spline, Context.RaceState);
 }
 
 void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& PreviousMovementTarget)

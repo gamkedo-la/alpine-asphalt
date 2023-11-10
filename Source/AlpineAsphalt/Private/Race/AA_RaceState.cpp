@@ -5,6 +5,6 @@
 
 FString FAA_RaceState::ToString() const
 {
-	return FString::Printf(TEXT("VehiclePawn=%s; DistanceAlongSpline=%f; SplineLength=%f; LapCount=%d"),
-		*AA::LoggingUtils::GetName(VehiclePawn), DistanceAlongSpline, SplineLength, LapCount);
+	return FString::Printf(TEXT("VehiclePawn=%s; DistanceAlongSpline=%f; SplineLength=%f; LapCount=%d; CurrentLapMaxCompletionFraction=%f"),
+		*AA::LoggingUtils::GetName(VehiclePawn), DistanceAlongSpline, SplineLength, LapCount, CurrentLapMaxCompletionFraction);
 }
