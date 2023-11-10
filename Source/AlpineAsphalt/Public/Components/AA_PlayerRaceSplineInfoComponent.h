@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "Race/AA_RaceState.h"
 
 #include <optional>
 
@@ -18,10 +19,7 @@ struct FPlayerSplineInfo
 	GENERATED_BODY()
 
 	UPROPERTY(Transient, BlueprintReadOnly)
-	float DistanceAlongSpline{};
-
-	UPROPERTY(Transient, BlueprintReadOnly)
-	float SplineLength{};
+	FAA_RaceState RaceState{};
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )

@@ -82,7 +82,7 @@ void UAA_RacerSplineFollowingComponent::TickComponent(float DeltaTime, ELevelTic
 		return;
 	}
 
-	SplineUtils::TryUpdateSplineDistance(*Spline, *Vehicle, Context.CurrentDistanceAlongSpline, Context.CurrentDistanceAlongSpline);
+	SplineUtils::TryUpdateSplineDistance(*Spline, *Vehicle, Context.RaceState.DistanceAlongSpline, Context.RaceState.DistanceAlongSpline);
 }
 
 void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& PreviousMovementTarget)
@@ -314,7 +314,7 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 
 	// Initialize to current position for curvature calculation
 	LastMovementTarget = Context.VehiclePawn->GetFrontWorldLocation();
-	Context.SplineLength = Context.RaceTrack->Spline->GetSplineLength();
+	Context.RaceState.SplineLength = Context.RaceTrack->Spline->GetSplineLength();
 
 	UpdateMovementFromLastSplineState(Context);
 }

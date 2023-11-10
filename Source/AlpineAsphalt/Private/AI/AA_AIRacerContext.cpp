@@ -8,3 +8,8 @@ FString FAA_AIRacerAvoidanceContext::ToString() const
 	return FString::Printf(TEXT("NormalizedThreatScore=%f; ThreatCount=%d; ThreatVector=%s; NormalizedThreatSpeedMph=%f"),
 		NormalizedThreatScore, ThreatCount, *ThreatVector.ToCompactString(), NormalizedThreatSpeedMph);
 }
+
+void FAA_AIRacerContext::SetVehiclePawn(AAA_WheeledVehiclePawn* InVehiclePawn)
+{
+	RaceState.VehiclePawn = VehiclePawn = InVehiclePawn;
+}

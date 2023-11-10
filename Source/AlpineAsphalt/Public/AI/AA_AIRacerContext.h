@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+#include "Race/AA_RaceState.h"
+
 #include "AA_AIRacerContext.generated.h"
 
 class AAA_WheeledVehiclePawn;
@@ -30,13 +32,12 @@ struct ALPINEASPHALT_API FAA_AIRacerContext
 	TObjectPtr<AAA_TrackInfoActor> RaceTrack{};
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
-	float CurrentDistanceAlongSpline{};
+	FAA_RaceState RaceState{};
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	float TargetDistanceAlongSpline {};
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
-	float SplineLength{};
+	void SetVehiclePawn(AAA_WheeledVehiclePawn* InVehiclePawn);
 };
 
 /**

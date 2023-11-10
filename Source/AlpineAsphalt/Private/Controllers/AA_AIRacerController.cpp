@@ -143,7 +143,7 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 	check(VehicleControlComponent);
 	VehicleControlComponent->SetVehiclePawn(VehiclePawn);
 
-	RacerContext.VehiclePawn = VehiclePawn;
+	RacerContext.SetVehiclePawn(VehiclePawn);
 	RacerContext.DesiredSpeedMph = VehicleControlComponent->GetDesiredSpeedMph();
 
 	// TODO: Plan to use AI State Tree to manage AI behavior.  Since this is new to UE 5.1 and haven't used it, 

@@ -101,13 +101,17 @@ void UAA_PlayerRaceSplineInfoComponent::UpdateSplineInfo()
 		// start of race - start behind the line
 		PlayerSplineInfo = FPlayerSplineInfo
 		{
-			.DistanceAlongSpline = 0,
-			.SplineLength = Spline->GetSplineLength()
+			.RaceState = FAA_RaceState
+			{
+				.VehiclePawn = Vehicle,
+				.DistanceAlongSpline = 0,
+				.SplineLength = Spline->GetSplineLength()
+			}
 		};
 		return;
 	}
 
-	SplineUtils::TryUpdateSplineDistance(*Spline, *Vehicle, PlayerSplineInfo->DistanceAlongSpline, PlayerSplineInfo->DistanceAlongSpline);
+	SplineUtils::TryUpdateSplineDistance(*Spline, *Vehicle, PlayerSplineInfo->RaceState.DistanceAlongSpline, PlayerSplineInfo->RaceState.DistanceAlongSpline);
 }
 
 #if ENABLE_VISUAL_LOG
@@ -124,7 +128,7 @@ void UAA_PlayerRaceSplineInfoComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 
 		if (PlayerSplineInfo)
 		{
-			Category.Add(TEXT("DistanceAlongSpline"), PlayerSplineInfo ? FString::Printf(TEXT("%.1f"), PlayerSplineInfo->DistanceAlongSpline) : TEXT("?"));
+			Category.Add(TEXT("DistanceAlongSpline"), PlayerSplineInfo ? FString::Printf(TEXT("%.1f"), PlayerSplineInfo->RaceState.DistanceAlongSpline) : TEXT("?"));
 		}
 	}
 
