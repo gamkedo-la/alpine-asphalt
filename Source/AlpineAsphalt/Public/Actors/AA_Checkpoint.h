@@ -3,6 +3,7 @@
 #include "AA_Checkpoint.generated.h"
 
 class UBoxComponent;
+class UPaperSpriteComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FCheckpointHitSignature, int,CheckpointIndex,AAA_WheeledVehiclePawn*,VehicleHit);
 
@@ -20,6 +21,7 @@ public:
 	void SetDepth(float Depth) const;
 	void SetSize(FVector Size)const;
 	void SetIndex(int Index);
+	void SetIndicatorVisibleInMap(bool bVisible);
 
 	UPROPERTY(BlueprintAssignable)
 	FCheckpointHitSignature CheckpointHit;
@@ -30,6 +32,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* Collision;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPaperSpriteComponent> MapIndicator{};
 
 	int Index = -1;
 	

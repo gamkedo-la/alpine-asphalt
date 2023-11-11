@@ -87,6 +87,9 @@ public:
 	
 	UFUNCTION(CallInEditor,BlueprintCallable, Category=Checkpoints)
 	void DestroyCheckpoints();
+
+	UFUNCTION(BlueprintCallable)
+	void ShowRaceFinish(bool bShow);
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TSubclassOf<AAA_Checkpoint> DefaultCheckpoint;

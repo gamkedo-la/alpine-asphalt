@@ -126,6 +126,12 @@ void UAA_HeadToHeadActivity::CountdownEnded()
 
 void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
 {
+	// Show race finish on map and mini-map after hitting second checkpoint
+	if (IndexCheckpointHit >= 1)
+	{
+		Track->CheckpointComponent->ShowRaceFinish(true);
+	}
+
 	if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
 	{
 		if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))

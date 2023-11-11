@@ -90,6 +90,7 @@ void UAA_CheckpointComponent::SpawnCheckpoints()
 		NewCheckpoint->SetHeight(CheckpointPositionData[i].Height);
 		NewCheckpoint->SetDepth(CheckpointPositionData[i].Depth);
 		NewCheckpoint->SetIndex(i);
+
 		SpawnedCheckpoints.Add(NewCheckpoint);
 	}
 }
@@ -101,6 +102,18 @@ void UAA_CheckpointComponent::DestroyCheckpoints()
 		Checkpoint->Destroy();
 	}
 	SpawnedCheckpoints.Empty();
+}
+
+void UAA_CheckpointComponent::ShowRaceFinish(bool bShow)
+{
+	if (SpawnedCheckpoints.IsEmpty())
+	{
+		return;
+	}
+
+	// TODO: We might also want to have a different asset visible for non-finish checkpoints
+	// Also may not want to show the checkered flag at the end of a lap - just at end of race
+	SpawnedCheckpoints.Last()->SetIndicatorVisibleInMap(true);
 }
 
 
