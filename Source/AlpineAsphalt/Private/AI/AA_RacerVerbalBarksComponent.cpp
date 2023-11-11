@@ -110,6 +110,24 @@ void UAA_RacerVerbalBarksComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	}
 }
 
+void UAA_RacerVerbalBarksComponent::Deactivate()
+{
+	Super::Deactivate();
+
+	if (!RacerContextProvider)
+	{
+		return;
+	}
+
+	const auto& Context = RacerContextProvider->GetRacerContext();
+
+	if (auto Vehicle = Context.VehiclePawn; Vehicle && Vehicle->GetMesh())
+	{
+		// Ensure that we can register hit events
+		Vehicle->GetMesh()->OnComponentHit.RemoveDynamic(this, &ThisClass::OnVehicleHit);
+	}
+}
+
 bool UAA_RacerVerbalBarksComponent::CheckRelativePlayerPosition()
 {
 	check(RacerContextProvider);

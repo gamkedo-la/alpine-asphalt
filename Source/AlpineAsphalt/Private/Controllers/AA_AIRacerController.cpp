@@ -53,6 +53,54 @@ void AAA_AIRacerController::SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor)
 	RacerContext.RaceTrack = TrackInfoActor;
 }
 
+void AAA_AIRacerController::StopRacing()
+{
+	UE_VLOG_UELOG(this, LogAlpineAsphalt, Display, TEXT("%s: StopRacing"), *GetName());
+
+	if (GetUnstuckComponent)
+	{
+		GetUnstuckComponent->Deactivate();
+	}
+	if (RacerSplineFollowingComponent)
+	{
+		RacerSplineFollowingComponent->Deactivate();
+	}
+	if (RacerVerbalBarksComponent)
+	{
+		RacerVerbalBarksComponent->Deactivate();
+	}
+	if (RacerObstacleAvoidanceComponent)
+	{
+		RacerObstacleAvoidanceComponent->Deactivate();
+	}
+	if (ObstacleDetectionComponent)
+	{
+		ObstacleDetectionComponent->Deactivate();
+	}
+	if (VehicleControlComponent)
+	{
+		VehicleControlComponent->Deactivate();
+	}
+
+	if (auto VehiclePawn = Cast<AAA_WheeledVehiclePawn>(GetPawn()); VehiclePawn)
+	{
+		// TODO: For some reason the current tick cannot be aborted on VehicleControlComponent even with an active check so schedule for next tick
+		// Slow down to a stop
+		GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this, WeakVehicle = TWeakObjectPtr<AAA_WheeledVehiclePawn>(VehiclePawn)]()
+		{
+			if (auto VehiclePawn = WeakVehicle.Get(); VehiclePawn)
+			{
+				VehiclePawn->SetSteering(FMath::RandBool() ? RaceEndSteeringDeviation : -RaceEndSteeringDeviation);
+				VehiclePawn->SetBrake(RaceEndBrakeAmount);
+				VehiclePawn->SetThrottle(0);
+				VehiclePawn->SetHandbrake(false);
+
+				UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: Race End parameters applied"), *GetName());
+			}
+		}));
+	}
+}
+
 #if ENABLE_VISUAL_LOG
 void AAA_AIRacerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 {
@@ -174,6 +222,8 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 	check(VehicleControlComponent);
 	check(RacerObstacleAvoidanceComponent);
 	check(RacerSplineFollowingComponent);
+	check(GetUnstuckComponent);
+	check(RacerVerbalBarksComponent);
 
 	VehicleControlComponent->OnVehicleReachedTarget.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::SelectNewMovementTarget);
 	RacerSplineFollowingComponent->OnVehicleTargetUpdated.AddDynamic(VehicleControlComponent, &UAA_AIVehicleControlComponent::OnVehicleTargetUpdated);
@@ -183,6 +233,8 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 
 	GetUnstuckComponent->OnVehicleStuck.AddDynamic(RacerVerbalBarksComponent, &UAA_RacerVerbalBarksComponent::OnStuck);
 	RacerVerbalBarksComponent->OnPossessedVehiclePawn(RacerContext.VehiclePawn);
+
+	RacerSplineFollowingComponent->OnRaceCompleted.AddDynamic(this, &ThisClass::OnRaceCompleted);
 }
 
 void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn)
@@ -307,6 +359,13 @@ void AAA_AIRacerController::OnRacerSettingsUpdated()
 	{
 		SetVehicleParameters(RacerAISettings);
 	}
+}
+
+void AAA_AIRacerController::OnRaceCompleted(AAA_WheeledVehiclePawn* VehiclePawn)
+{
+	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnRaceCompleted: %s"), *GetName(), *LoggingUtils::GetName(VehiclePawn));
+
+	StopRacing();
 }
 
 FString FAA_RacerAISettings::ToString() const

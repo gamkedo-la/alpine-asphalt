@@ -57,7 +57,7 @@ void UAA_AIVehicleControlComponent::TickComponent(float DeltaTime, ELevelTick Ti
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!bTargetSet || !VehiclePawn)
+	if (!bTargetSet || !VehiclePawn || !IsActive())
 	{
 		return;
 	}
@@ -105,7 +105,7 @@ float UAA_AIVehicleControlComponent::SmoothThrottle(float CurrentSpeedMph) const
 	const auto Delta = DesiredSpeedMph - CurrentSpeedMph;
 	const auto Sign = FMath::Sign(Delta);
 
-	const auto RawFactor = Delta / DesiredSpeedMph;
+	const auto RawFactor = Delta / FMath::Max(1, DesiredSpeedMph);
 	const auto Factor = FMath::Pow(Sign * RawFactor, DeltaSpeedExponent);
 
 	if (RawFactor >= RawFactorSwitchoverThreshold)

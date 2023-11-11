@@ -96,6 +96,11 @@ private:
 	UFUNCTION()
 	void OnRacerSettingsUpdated();
 
+	UFUNCTION()
+	void OnRaceCompleted(AAA_WheeledVehiclePawn* VehiclePawn);
+
+	void StopRacing();
+
 private:
 
 	static constexpr double MaxRaceDistance = 500 * 100;
@@ -125,6 +130,12 @@ private:
 	TArray<FAA_RacerAISettings> DifficultySettings{};
 
 	std::optional<EAA_AIDifficulty> CurrentDifficulty{};
+
+	UPROPERTY(Category = "Finish", EditDefaultsOnly)
+	float RaceEndBrakeAmount{ 0.25f };
+
+	UPROPERTY(Category = "Finish", EditDefaultsOnly)
+	float RaceEndSteeringDeviation{ 0.1f };
 };
 
 #pragma region Inline Definitions

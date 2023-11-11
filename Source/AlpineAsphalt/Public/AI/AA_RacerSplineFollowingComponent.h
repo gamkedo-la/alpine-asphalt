@@ -90,6 +90,9 @@ public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleTargetUpdated OnVehicleTargetUpdated {};
 
+	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
+	mutable FOnRaceCompleted OnRaceCompleted {};
+
 private:
 	IAA_RacerContextProvider* RacerContextProvider{};
 

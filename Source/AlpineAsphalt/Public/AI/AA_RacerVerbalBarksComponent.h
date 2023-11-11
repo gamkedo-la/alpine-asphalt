@@ -26,6 +26,8 @@ public:
 
 	void OnPossessedVehiclePawn(AAA_WheeledVehiclePawn* VehiclePawn);
 
+	virtual void Deactivate() override;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
