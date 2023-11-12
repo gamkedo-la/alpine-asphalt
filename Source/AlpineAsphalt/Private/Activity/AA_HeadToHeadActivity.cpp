@@ -90,9 +90,18 @@ void UAA_HeadToHeadActivity::LoadActivity()
 			}
 		}
 	}
-	
+	//Park
 	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
 
+	//Load Driver Names
+	//Get Driver Names
+	TArray<FDriverName*> DriverNamesOut;
+	DriverTable->GetAllRows("", DriverNamesOut);
+	for (const auto NamesOut : DriverNamesOut)
+	{
+		DriverNames.Add(*NamesOut);
+	}
+	
 	//Listen to Checkpoints
 	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
 	{
@@ -180,10 +189,24 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 			if(LapsCompletedMap[HitVehicle] == Track->LapsToComplete+1) // AI Finished Race
 			{
 				float TimeToFinish = UGameplayStatics::GetTimeSeconds(this)-StartTime;
-				FinishTimes.Add(TimeToFinish);
+				if(ScoreScreen) //if UI already exists add the score, otherwise save it for later in array
+				{
+					AddAIDriverScore(TimeToFinish);
+				}else
+				{
+					FinishTimes.Add(TimeToFinish);
+				}
 			}
 		}
 	}
+}
+
+void UAA_HeadToHeadActivity::AddAIDriverScore(float TimeScore)
+{
+	
+	int NameIndex = FMath::RandRange(0,DriverNames.Num()-1);
+	ScoreScreen->AddDriverScore(DriverNames[NameIndex].DriverName,TimeScore);
+	DriverNames.RemoveAt(NameIndex); // dont reuse name
 }
 
 void UAA_HeadToHeadActivity::RaceEnded()
@@ -203,11 +226,7 @@ void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
 
 	//Show Score Screen
 	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
-	UAA_TimeTrialScoreScreenUI* ScoreScreen = Cast<UAA_TimeTrialScoreScreenUI>(PC->BaseUI->PushMenu(ScoreScreenClass));
-
-	//Get Driver Names
-	TArray<FDriverName*> DriverNames;
-	DriverTable->GetAllRows("", DriverNames);
+	ScoreScreen = Cast<UAA_TimeTrialScoreScreenUI>(PC->BaseUI->PushMenu(ScoreScreenClass));
 
 	bool PlayerTimeAdded = false;
 	
@@ -220,9 +239,7 @@ void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
 				PlayerTimeAdded = true;
 				ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
 			}
-			int NameIndex = FMath::RandRange(0,DriverNames.Num()-1);
-			ScoreScreen->AddDriverScore(DriverNames[NameIndex]->DriverName,FinishTimes[i]);
-			DriverNames.RemoveAt(NameIndex); // dont reuse name
+			AddAIDriverScore(FinishTimes[i]);
 		}
 	}
 	if(!PlayerTimeAdded)//if the player was last to finish
@@ -254,6 +271,8 @@ void UAA_HeadToHeadActivity::DestroyActivity()
 
 	//Hide Timer (May be redundant, but we might leave before the race is over)
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
+
+	ScoreScreen = nullptr;
 
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
 }

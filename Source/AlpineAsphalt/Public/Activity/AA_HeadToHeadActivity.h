@@ -1,5 +1,6 @@
 #pragma once
 #include "AA_BaseActivity.h"
+#include "AA_TimeTrialActivity.h"
 #include "Engine/DataTable.h"
 #include "AA_HeadToHeadActivity.generated.h"
 
@@ -45,7 +46,12 @@ protected:
 	void CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle);
 
 private:
+	UFUNCTION()
+	void AddAIDriverScore(float TimeScore);
 
+	UPROPERTY()
+	TArray<FDriverName> DriverNames;
+	
 	UPROPERTY()
 	TMap<AAA_WheeledVehiclePawn*,int> LapsCompletedMap;
 	
@@ -66,6 +72,9 @@ private:
 
 	UPROPERTY()
 	TArray<AAA_WheeledVehiclePawn*> AIRacers;
+
+	UPROPERTY()
+	UAA_TimeTrialScoreScreenUI* ScoreScreen;
 
 	UPROPERTY()
 	TArray<float> FinishTimes;
