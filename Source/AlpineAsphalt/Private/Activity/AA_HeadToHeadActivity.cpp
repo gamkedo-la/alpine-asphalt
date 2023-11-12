@@ -1,8 +1,10 @@
 #include "Activity/AA_HeadToHeadActivity.h"
 
 #include "ChaosWheeledVehicleMovementComponent.h"
+#include "Activity/AA_TimeTrialActivity.h"
 #include "Actors/AA_Checkpoint.h"
 #include "Actors/AA_TrackInfoActor.h"
+#include "Algo/RandomShuffle.h"
 #include "Components/AA_CheckpointComponent.h"
 #include "Controllers/AA_AIRacerController.h"
 #include "Controllers/AA_PlayerController.h"
@@ -33,12 +35,6 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	//Spawn DataLayers, Despawn DataLayers, Spawn Checkpoints
 	Track->LoadRace();
 
-	//Listen to Checkpoints
-	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
-	{
-		Checkpoint->CheckpointHit.AddDynamic(this, &UAA_HeadToHeadActivity::CheckpointHit);
-	}
-
 	int LastStartingPosition = Track->StartLocations.Num() - 1;
 	
 	//Move Player Vehicle to Start Position
@@ -50,6 +46,8 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	Location += Track->GetActorLocation();
 	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
 	PlayerVehicle->ResetVehicle();
+	LapsCompletedMap.Reset();
+	LapsCompletedMap.Add(PlayerVehicle,0);
 
 	auto PlayerController = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	check(PlayerController);
@@ -58,6 +56,7 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	AAA_AIRacerController* AI;
 	AAA_WheeledVehiclePawn* AIVehicle;
 	int RandomIndex;
+	
 	//Spawn an AI for every other Starting Position and Park
 	for(int i = 0; i < Track->StartLocations.Num() - 1; i++)
 	{
@@ -81,14 +80,27 @@ void UAA_HeadToHeadActivity::LoadActivity()
 				AI->SetTrackInfo(Track);
 			}
 			AIRacers.Add(AIVehicle);
+			//AI need to hit the finish line twice in a circuit because they start behind the finish line
+			if(Track->IsCircuit)
+			{
+				LapsCompletedMap.Add(AIVehicle,0);
+			}else
+			{
+				LapsCompletedMap.Add(AIVehicle,1);
+			}
 		}
 	}
 	
 	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
+
+	//Listen to Checkpoints
+	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
+	{
+		Checkpoint->CheckpointHit.AddDynamic(this, &UAA_HeadToHeadActivity::CheckpointHit);
+	}
 	
 	GetWorld()->Exec(GetWorld(),TEXT("demo.MinRecordHz 60"));
 	GetWorld()->Exec(GetWorld(),TEXT("demo.RecordHz 120"));
-
 
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnLoadActivityCompleted.Broadcast();
 }
@@ -126,35 +138,51 @@ void UAA_HeadToHeadActivity::CountdownEnded()
 
 void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
 {
+	
 	// Show race finish on map and mini-map after hitting second checkpoint
 	if (IndexCheckpointHit >= 1)
 	{
 		Track->CheckpointComponent->ShowRaceFinish(true);
 	}
 
-	if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
+	if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 	{
-		if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
+		if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
 		{
 			LastCheckpointHitIndex = IndexCheckpointHit;
 			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
 			if(LastCheckpointHitIndex == NumCheckpoints-1) // Player finished race
 			{
-				FinishTime = UGameplayStatics::GetTimeSeconds(this);
-				UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
-				FTimerHandle TimerHandle;
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::RaceEnded,FinishDelay,false);
-				UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
-				//TODO: Add to Scrore Screen
+				LapsCompletedMap[HitVehicle]++;
+				if(LapsCompletedMap[HitVehicle] == Track->LapsToComplete)
+				{
+					FinishTime = UGameplayStatics::GetTimeSeconds(this);
+					UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
+					FTimerHandle TimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::RaceEnded,FinishDelay,false);
+					UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+					//TODO: Add to Score Screen
+				}else
+				{
+					//TODO: increment Laps display
+				}
 			}
-		}else if(LastCheckpointHitIndex == NumCheckpoints-1) // Non-Player finished race
+		}else
 		{
-			//TODO: Add to Score Screen
-			UE_LOG(LogTemp,Log,TEXT("AI Finished Race"))
+			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
 		}
 	}else
 	{
-		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
+		if(IndexCheckpointHit == NumCheckpoints-1) // Non-Player finished race
+		{
+			LapsCompletedMap[HitVehicle]++;
+			//AI need to hit the finish line twice for one lap because we assume they start behind it
+			if(LapsCompletedMap[HitVehicle] == Track->LapsToComplete+1) // AI Finished Race
+			{
+				float TimeToFinish = UGameplayStatics::GetTimeSeconds(this)-StartTime;
+				FinishTimes.Add(TimeToFinish);
+			}
+		}
 	}
 }
 
@@ -166,6 +194,7 @@ void UAA_HeadToHeadActivity::RaceEnded()
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::ReplayStartDelayEnded,ReplayStartDelay,false);
 }
+
 void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
 {
 	//Calculate Player Time
@@ -176,30 +205,34 @@ void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
 	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
 	UAA_TimeTrialScoreScreenUI* ScoreScreen = Cast<UAA_TimeTrialScoreScreenUI>(PC->BaseUI->PushMenu(ScoreScreenClass));
 
-	//TODO: Add results to score screen
-	/*
+	//Get Driver Names
 	TArray<FDriverName*> DriverNames;
 	DriverTable->GetAllRows("", DriverNames);
-	float Time =Track->FirstPlaceFinishTime;
-	bool PlayerAdded = false;
-	for(int i = 0; i < 10; i++)
+
+	bool PlayerTimeAdded = false;
+	
+	for(int i = 0; i < AIRacers.Num(); i++)
 	{
-		Time += FMath::RandRange(.1f,1.f);
-		if(!PlayerAdded &&Time > PlayerTime)
+		if(i < FinishTimes.Num()) //if there are finish times to display
 		{
-			ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
-			PlayerAdded = true;
+			if(!PlayerTimeAdded && PlayerTime < FinishTimes[i]) //if the player should be added first
+			{
+				PlayerTimeAdded = true;
+				ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
+			}
+			int NameIndex = FMath::RandRange(0,DriverNames.Num()-1);
+			ScoreScreen->AddDriverScore(DriverNames[NameIndex]->DriverName,FinishTimes[i]);
+			DriverNames.RemoveAt(NameIndex); // dont reuse name
 		}
-		ScoreScreen->AddDriverScore(DriverNames[i]->DriverName,Time);
 	}
-	if(!PlayerAdded)
+	if(!PlayerTimeAdded)//if the player was last to finish
 	{
 		ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
 	}
-	*/
 	
 	//Hide Time
 	PC->VehicleUI->HideTimer();
+	//TODO: Hide Laps, Hide Position
 }
 void UAA_HeadToHeadActivity::DestroyActivity()
 {

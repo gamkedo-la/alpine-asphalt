@@ -38,6 +38,12 @@ public:
 	
 	UPROPERTY(BlueprintReadOnly,EditInstanceOnly,Category=Race)
 	float FirstPlaceFinishTime;
+
+	UPROPERTY(BlueprintReadOnly,EditInstanceOnly,Category=Race)
+	bool IsCircuit = false;
+	
+	UPROPERTY(BlueprintReadOnly,EditInstanceOnly,Category=Race)
+	int LapsToComplete = 1;
 	
 	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = Race, Meta = (MakeEditWidget = true))
 	TArray<FTransform> StartLocations;

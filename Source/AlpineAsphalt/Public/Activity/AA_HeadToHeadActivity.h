@@ -46,6 +46,9 @@ protected:
 
 private:
 
+	UPROPERTY()
+	TMap<AAA_WheeledVehiclePawn*,int> LapsCompletedMap;
+	
 	UPROPERTY(EditDefaultsOnly)
 	TArray<UAA_VehicleDataAsset*> VehiclesToSpawn;
 	
@@ -63,6 +66,9 @@ private:
 
 	UPROPERTY()
 	TArray<AAA_WheeledVehiclePawn*> AIRacers;
+
+	UPROPERTY()
+	TArray<float> FinishTimes;
 	
 	UPROPERTY()
 	int LastCheckpointHitIndex = -1;

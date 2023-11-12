@@ -55,6 +55,9 @@ private:
 	UPROPERTY()
 	AAA_TrackInfoActor* Track;
 
+	UPROPERTY()
+	int PlayerLapCounter = 0;
+
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UAA_TimeTrialScoreScreenUI> ScoreScreenClass;
 

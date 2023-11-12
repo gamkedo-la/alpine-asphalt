@@ -94,11 +94,18 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
 			if(LastCheckpointHitIndex == NumCheckpoints-1)
 			{
-				FinishTime = UGameplayStatics::GetTimeSeconds(this);
-				UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
-				FTimerHandle TimerHandle;
-				GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::RaceEnded,FinishDelay,false);
-				UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+				PlayerLapCounter++;
+				if(PlayerLapCounter == Track->LapsToComplete)
+				{
+					FinishTime = UGameplayStatics::GetTimeSeconds(this);
+					UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
+					FTimerHandle TimerHandle;
+					GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::RaceEnded,FinishDelay,false);
+					UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+				}else
+				{
+					//TODO: Increase Lap Counter Display
+				}
 			}
 		}
 	}else
@@ -138,7 +145,9 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 			ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
 			PlayerAdded = true;
 		}
-		ScoreScreen->AddDriverScore(DriverNames[i]->DriverName,Time);
+		int NameIndex = FMath::RandRange(0,DriverNames.Num()-1);
+		ScoreScreen->AddDriverScore(DriverNames[NameIndex]->DriverName,Time);
+		DriverNames.RemoveAt(NameIndex); // don't reuse name
 	}
 	if(!PlayerAdded)
 	{
