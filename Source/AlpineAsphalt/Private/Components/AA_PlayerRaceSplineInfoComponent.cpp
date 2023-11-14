@@ -103,6 +103,7 @@ void UAA_PlayerRaceSplineInfoComponent::UpdateSplineInfo()
 		{
 			.RaceState = FAA_RaceState
 			{
+				.RaceTrack = TrackInfoActor,
 				.VehiclePawn = Vehicle,
 				.DistanceAlongSpline = 0,
 				.SplineLength = Spline->GetSplineLength()

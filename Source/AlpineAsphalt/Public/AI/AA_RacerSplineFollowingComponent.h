@@ -65,7 +65,8 @@ private:
 	};
 
 	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
-	std::optional<FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride = {}, std::optional<float> LookaheadDistanceOverride = {}) const;
+	std::optional<FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext,
+		std::optional<float> NextDistanceAlongSplineOverride = {}, std::optional<float> LookaheadDistanceOverride = {}, bool bIgnoreRaceEnd = false) const;
 	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, FSplineState& SplineState, float RoadOffset) const;
 
 	void UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext);

@@ -13,3 +13,8 @@ void FAA_AIRacerContext::SetVehiclePawn(AAA_WheeledVehiclePawn* InVehiclePawn)
 {
 	RaceState.VehiclePawn = VehiclePawn = InVehiclePawn;
 }
+
+void FAA_AIRacerContext::SetRaceTrack(AAA_TrackInfoActor* InRaceTrack)
+{
+	RaceState.RaceTrack = RaceTrack = InRaceTrack;
+}

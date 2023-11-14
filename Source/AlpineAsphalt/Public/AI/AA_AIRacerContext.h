@@ -38,6 +38,7 @@ struct ALPINEASPHALT_API FAA_AIRacerContext
 	float TargetDistanceAlongSpline {};
 
 	void SetVehiclePawn(AAA_WheeledVehiclePawn* InVehiclePawn);
+	void SetRaceTrack(AAA_TrackInfoActor* InRaceTrack);
 };
 
 /**

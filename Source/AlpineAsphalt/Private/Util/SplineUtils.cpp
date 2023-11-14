@@ -24,7 +24,7 @@ bool AA::SplineUtils::TryUpdateRaceState(const USplineComponent& Spline, FAA_Rac
 	const auto Key = Spline.FindInputKeyClosestToWorldLocation(VehiclePawn.GetFrontWorldLocation());
 	const auto CurrentDistanceAlongSpline = Spline.GetDistanceAlongSplineAtSplineInputKey(Key);
 	const auto LastDistanceAlongSpline = RaceState.DistanceAlongSpline;
-	const auto bIsLoop = Spline.IsClosedLoop();
+	const auto bIsLoop = RaceState.IsLooping();
 
 	// TODO: Should refactor the lap completion logic to rely on checkpoints 
 	// - would set the lap count and adjust completion percentage (for finish) on FRaceState outside this function

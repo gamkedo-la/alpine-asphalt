@@ -50,7 +50,7 @@ AAA_AIRacerController::AAA_AIRacerController()
 
 void AAA_AIRacerController::SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor)
 {
-	RacerContext.RaceTrack = TrackInfoActor;
+	RacerContext.SetRaceTrack(TrackInfoActor);
 }
 
 void AAA_AIRacerController::StopRacing()
@@ -285,7 +285,7 @@ void AAA_AIRacerController::SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePa
 		}
 	}
 
-	RacerContext.RaceTrack = NearestRaceTrack;
+	RacerContext.SetRaceTrack(NearestRaceTrack);
 	
 	if (NearestRaceTrack)
 	{

@@ -460,14 +460,15 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 }
 
 std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFollowingComponent::GetNextSplineState(
-	const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride, std::optional<float> LookaheadDistanceOverride) const
+	const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride, std::optional<float> LookaheadDistanceOverride, bool bIgnoreRaceEnd) const
 {
 	check(RacerContext.RaceTrack);
 	check(RacerContext.RaceTrack->Spline);
 	check(RacerContext.VehiclePawn);
 	check(LastSplineState);
 
-	auto Spline = RacerContext.RaceTrack->Spline;
+	const auto RaceTrack = RacerContext.RaceTrack;
+	auto Spline = RaceTrack->Spline;
 	auto Vehicle = RacerContext.VehiclePawn;
 
 	FSplineState State;
@@ -517,15 +518,18 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	float NextDistanceAlongSpline;
 
 	const auto SplineLength = RacerContext.RaceState.SplineLength;
-	// If at end of spline, then wrap around if a closed loop
-	// Don't detect this if behind the starting line
-	if (NextIdealDistanceAlongSpline >= SplineLength && !Spline->IsClosedLoop() && RacerContext.RaceState.GetTotalDistance() > 0)
+
+	// If at end of lap, then wrap around if a circuit
+	// Don't detect this if behind the starting line (GetTotalDistance() > 0)
+	if (NextIdealDistanceAlongSpline >= SplineLength 
+		&& ((!bIgnoreRaceEnd && RacerContext.RaceState.IsOnLastLap()) || (bIgnoreRaceEnd && !RacerContext.RaceState.IsLooping()))
+		&& RacerContext.RaceState.GetTotalDistance() > 0)
 	{
-		// If already at end then return nullopt as race is over
 		if (!FMath::IsNearlyEqual(LastSplineState->DistanceAlongSpline, SplineLength))
 		{
 			NextDistanceAlongSpline = SplineLength;
 		}
+		// If already at end then return nullopt as race is over
 		else
 		{
 			return std::nullopt;
@@ -656,21 +660,20 @@ float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 	check(RacerContext.RaceTrack);
 	check(RacerContext.RaceTrack->Spline);
 
-	const auto Spline = RacerContext.RaceTrack->Spline;
+	const auto RaceTrack = RacerContext.RaceTrack;
+	const auto Spline = RaceTrack->Spline;
+	const auto& RaceState = RacerContext.RaceState;
 
 	float LookaheadDistanceAlongSpline = LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance * RoadCurvatureLookaheadFactor;
 	const auto SplineLength = RacerContext.RaceState.SplineLength;
 
-	if (LookaheadDistanceAlongSpline >= SplineLength && !Spline->IsClosedLoop())
+	if (LookaheadDistanceAlongSpline >= SplineLength && !RaceState.IsLooping())
 	{
-		// FIXME: Curvature calculation isn't strong enough on the SmallTestLevel map and AI flies off road so temporarily put the wrapping logic in
-		// need to clamp to the end or GetNextSplineState returns nullopt
-		//LookaheadDistanceAlongSpline = SplineLength - 1;
-
-		LookaheadDistanceAlongSpline = UAA_BlueprintFunctionLibrary::WrapEx(LookaheadDistanceAlongSpline, 0.0f, SplineLength);
+		// need to clamp to the end or GetNextSplineState can return nullopt
+		LookaheadDistanceAlongSpline = SplineLength - 1;
 	}
 
-	const auto LookaheadState = GetNextSplineState(RacerContext, LookaheadDistanceAlongSpline);
+	const auto LookaheadState = GetNextSplineState(RacerContext, LookaheadDistanceAlongSpline, std::nullopt, true);
 
 	// Base curvature on direction vector to current target and direction from that target to one after it
 	if (!LookaheadState)
