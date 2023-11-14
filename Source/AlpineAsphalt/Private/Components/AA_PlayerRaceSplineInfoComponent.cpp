@@ -127,7 +127,12 @@ void UAA_PlayerRaceSplineInfoComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 
 		if (PlayerSplineInfo)
 		{
-			Category.Add(TEXT("DistanceAlongSpline"), PlayerSplineInfo ? FString::Printf(TEXT("%.1f"), PlayerSplineInfo->RaceState.DistanceAlongSpline) : TEXT("?"));
+			const auto& RaceState = PlayerSplineInfo->RaceState;
+
+			Category.Add(TEXT("Lap"), FString::Printf(TEXT("%d"), RaceState.LapCount + 1));
+			Category.Add(TEXT("Lap Completion %"), FString::Printf(TEXT("%.1f"), RaceState.GetCurrentLapCompletionFraction() * 100));
+			Category.Add(TEXT("Lap DistanceAlongSpline"), FString::Printf(TEXT("%.1f"), RaceState.DistanceAlongSpline));
+			Category.Add(TEXT("Total DistanceAlongSpline"), FString::Printf(TEXT("%.1f"), RaceState.GetTotalDistance()));
 		}
 	}
 

@@ -742,13 +742,16 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 
 		Category.Add(TEXT("RoadOffset"), FString::Printf(TEXT("%.1f"), LastSplineState->RoadOffset));
 		Category.Add(TEXT("Lookahead Distance"), FString::Printf(TEXT("%.1f"), LastSplineState->LookaheadDistance));
-		Category.Add(TEXT("DistanceAlongSpline"), FString::Printf(TEXT("%.1f"), LastSplineState->DistanceAlongSpline));
+		Category.Add(TEXT("TargetDistanceAlongSpline"), FString::Printf(TEXT("%.1f"), LastSplineState->DistanceAlongSpline));
 
-		const auto Key = Spline->FindInputKeyClosestToWorldLocation(Vehicle->GetFrontWorldLocation());
-		const auto DistanceAlongSpline = Spline->GetDistanceAlongSplineAtSplineInputKey(Key);
-
-		Category.Add(TEXT("Completion %"), FString::Printf(TEXT("%.1f"), DistanceAlongSpline / Spline->GetSplineLength() * 100.0f));
 		Category.Add(TEXT("Movement Target"), *LastSplineState->WorldLocation.ToCompactString());
+
+		const auto& RaceState = Context.RaceState;
+
+		Category.Add(TEXT("Lap"), FString::Printf(TEXT("%d"), RaceState.LapCount + 1));
+		Category.Add(TEXT("Lap Completion %"), FString::Printf(TEXT("%.1f"), RaceState.GetCurrentLapCompletionFraction() * 100));
+		Category.Add(TEXT("Lap DistanceAlongSpline"), FString::Printf(TEXT("%.1f"), RaceState.DistanceAlongSpline));
+		Category.Add(TEXT("Total DistanceAlongSpline"), FString::Printf(TEXT("%.1f"), RaceState.GetTotalDistance()));
 	}
 
 	Snapshot->Status.Add(Category);
