@@ -60,6 +60,8 @@ private:
 		float DistanceAlongSpline;
 		float RoadOffset{};
 		float LookaheadDistance;
+
+		FString ToString() const;
 	};
 
 	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;

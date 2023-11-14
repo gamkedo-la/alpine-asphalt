@@ -142,6 +142,24 @@ void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfApproachTooSteep(
 			MaxApproachAngle
 		);
 
+		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0, 0, 50.0f), 100.0f, FColor::Magenta,
+			TEXT("%s - Original Target (Too Steep)"), *VehiclePawn.GetName());
+
+		// Only calculate further ahead if haven't done previously - limit to 2 * MaxLookaheadDistance from current distance along spline
+		const auto CurrentLookaheadDelta = LastSplineState->DistanceAlongSpline - RacerContext.RaceState.DistanceAlongSpline;
+		if (CurrentLookaheadDelta >= 2 * MaxLookaheadDistance)
+		{
+			UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+				TEXT("%s-%s: SelectNewMovementTarget - Not selecting target further ahead as current target=%s is already more than 2 * %f spline distance ahead of current spline position=%f"),
+				*GetName(), *LoggingUtils::GetName(GetOwner()),
+				*LastSplineState->ToString(),
+				MaxLookaheadDistance,
+				RacerContext.RaceState.DistanceAlongSpline
+			);
+
+			return;
+		}
+
 		// calculate further ahead
 		if (const auto NextSplineState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + MaxLookaheadDistance); NextSplineState)
 		{
@@ -160,7 +178,7 @@ void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfApproachTooSteep(
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 
 		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0, 0, 50.0f), 100.0f, FColor::Purple,
-			TEXT("%s - Original Target Collision"), *VehiclePawn.GetName());
+			TEXT("%s - Original Target (Collision)"), *VehiclePawn.GetName());
 
 		LastSplineState = OriginalSplineState;
 		LastSplineState = GetNextSplineState(RacerContext, std::nullopt, MinLookaheadDistance);
@@ -540,8 +558,8 @@ void UAA_RacerSplineFollowingComponent::UpdateSplineStateWithRoadOffset(const FA
 	const auto& RightVector = Spline->GetRightVectorAtSplineInputKey(SplineState.SplineKey, ESplineCoordinateSpace::World);
 	SplineState.WorldLocation = SplineState.OriginalWorldLocation + RightVector * RoadOffset;
 
-	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: UpdateSplineStateWithRoadOffset: RoadOffset=%f"),
-		*GetName(), *LoggingUtils::GetName(GetOwner()), RoadOffset);
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: UpdateSplineStateWithRoadOffset: RoadOffset=%f; SplineState=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), RoadOffset, *SplineState.ToString());
 }
 
 void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext)
@@ -732,3 +750,11 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 }
 
 #endif
+
+FString UAA_RacerSplineFollowingComponent::FSplineState::ToString() const
+{
+	return FString::Printf(
+		TEXT("OriginalWorldLocation=%s; WorldLocation=%s; SplineDirection=%s; SplineKey=%f; DistanceAlongSpline=%f; RoadOffset=%f; LookaheadDistance=%f"),
+		*OriginalWorldLocation.ToCompactString(), *WorldLocation.ToCompactString(), *SplineDirection.ToCompactString(),
+		SplineKey, DistanceAlongSpline, RoadOffset, LookaheadDistance);
+}
