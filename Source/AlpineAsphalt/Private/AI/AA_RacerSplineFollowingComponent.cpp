@@ -142,18 +142,23 @@ void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfApproachTooSteep(
 			MaxApproachAngle
 		);
 
-		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0, 0, 50.0f), 100.0f, FColor::Magenta,
+		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0, 0, 100.0f), 100.0f, FColor::Magenta,
 			TEXT("%s - Original Target (Too Steep)"), *VehiclePawn.GetName());
 
-		// Only calculate further ahead if haven't done previously - limit to 2 * MaxLookaheadDistance from current distance along spline
+		// Only calculate further ahead if haven't done previously - limit to MaxLookaheadSteepnessAdditionalMultiplier * MaxLookaheadDistance from current distance along spline
 		const auto CurrentLookaheadDelta = LastSplineState->DistanceAlongSpline - RacerContext.RaceState.DistanceAlongSpline;
-		if (CurrentLookaheadDelta >= 2 * MaxLookaheadDistance)
+		// account for a possible MinLookaheadDistance initially
+		if (CurrentLookaheadDelta >= MaxLookaheadDistance * MaxLookaheadSteepnessAdditionalMultiplier + MinLookaheadDistance)
 		{
 			UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
-				TEXT("%s-%s: SelectNewMovementTarget - Not selecting target further ahead as current target=%s is already more than 2 * %f spline distance ahead of current spline position=%f"),
+				TEXT("%s-%s: SelectNewMovementTarget - Not selecting target further ahead as current target=%s with CurrentLookaheadDelta=%f is already more than %f * %f + %f = %f spline distance ahead of current spline position=%f"),
 				*GetName(), *LoggingUtils::GetName(GetOwner()),
 				*LastSplineState->ToString(),
+				CurrentLookaheadDelta,
+				MaxLookaheadSteepnessAdditionalMultiplier,
 				MaxLookaheadDistance,
+				MinLookaheadDistance,
+				CurrentLookaheadDelta,
 				RacerContext.RaceState.DistanceAlongSpline
 			);
 
@@ -161,7 +166,7 @@ void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfApproachTooSteep(
 		}
 
 		// calculate further ahead
-		if (const auto NextSplineState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + MaxLookaheadDistance); NextSplineState)
+		if (const auto NextSplineState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + MaxLookaheadDistance * MaxLookaheadSteepnessAdditionalMultiplier); NextSplineState)
 		{
 			LastSplineState = NextSplineState;
 		}

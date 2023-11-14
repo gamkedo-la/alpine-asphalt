@@ -102,6 +102,9 @@ private:
 	std::optional<FAA_AIRacerAvoidanceContext> LastAvoidanceContext{};
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
+	float MaxLookaheadSteepnessAdditionalMultiplier{ 4.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
 	float MaxLookaheadDistance{ 4000.0f };
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
