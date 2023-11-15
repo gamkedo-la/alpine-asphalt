@@ -9,6 +9,8 @@
 #include "AI/AA_AIRacerContext.h"
 #include "AI/AA_AIDifficulty.h"
 
+#include "Interface/AA_BaseRewindable.h"
+
 #include <optional>
 
 #include "AA_AIRacerController.generated.h"
@@ -60,7 +62,7 @@ struct ALPINEASPHALT_API FAA_RacerAISettings
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_AIRacerController : public AAIController, public IAA_RacerContextProvider
+class ALPINEASPHALT_API AAA_AIRacerController : public AAIController, public IAA_RacerContextProvider, public AA_BaseRewindable<FAA_AIRacerSnapshotData>
 {
 	GENERATED_BODY()
 
@@ -101,6 +103,11 @@ private:
 
 	void StopRacing();
 
+	// Inherited via AA_BaseRewindable
+	virtual FAA_AIRacerSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData) override;
+	virtual UObject* AsUObject() override { return this; }
+
 private:
 
 	static constexpr double MaxRaceDistance = 500 * 100;
@@ -136,6 +143,7 @@ private:
 
 	UPROPERTY(Category = "Finish", EditDefaultsOnly)
 	float RaceEndSteeringDeviation{ 0.1f };
+
 };
 
 #pragma region Inline Definitions

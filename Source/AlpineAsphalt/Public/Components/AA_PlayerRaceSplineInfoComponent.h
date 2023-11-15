@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "Race/AA_RaceState.h"
 
+#include "Interface/AA_BaseRewindable.h"
+
 #include <optional>
 
 #include "AA_PlayerRaceSplineInfoComponent.generated.h"
@@ -23,7 +25,7 @@ struct FPlayerSplineInfo
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAA_PlayerRaceSplineInfoComponent : public UActorComponent
+class ALPINEASPHALT_API UAA_PlayerRaceSplineInfoComponent : public UActorComponent, public AA_BaseRewindable<std::optional<FAA_RaceStateSnapshotData>>
 {
 	GENERATED_BODY()
 
@@ -41,10 +43,16 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
 	void UpdateSplineInfo();
+
+	// Inherited via AA_BaseRewindable
+	virtual std::optional<FAA_RaceStateSnapshotData> CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData) override;
+	virtual UObject* AsUObject() override { return this;  }
 
 private:
 	UPROPERTY(Transient)
@@ -54,4 +62,5 @@ private:
 	TObjectPtr<const AAA_WheeledVehiclePawn> Vehicle{};
 
 	std::optional<FPlayerSplineInfo> PlayerSplineInfo{};
+
 };

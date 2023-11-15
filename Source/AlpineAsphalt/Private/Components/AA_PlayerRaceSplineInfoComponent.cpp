@@ -60,6 +60,15 @@ void UAA_PlayerRaceSplineInfoComponent::SetVehicle(const AAA_WheeledVehiclePawn*
 void UAA_PlayerRaceSplineInfoComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	RegisterRewindable();
+}
+
+void UAA_PlayerRaceSplineInfoComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnregisterRewindable();
 }
 
 void UAA_PlayerRaceSplineInfoComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -113,6 +122,43 @@ void UAA_PlayerRaceSplineInfoComponent::UpdateSplineInfo()
 	}
 
 	SplineUtils::TryUpdateRaceState(*Spline, PlayerSplineInfo->RaceState);
+}
+
+std::optional<FAA_RaceStateSnapshotData> UAA_PlayerRaceSplineInfoComponent::CaptureSnapshot() const
+{
+	if (!PlayerSplineInfo)
+	{
+		return std::nullopt;
+	}
+
+	const auto& RaceState = PlayerSplineInfo->RaceState;
+
+	return FAA_RaceStateSnapshotData
+	{
+		.DistanceAlongSpline = RaceState.DistanceAlongSpline,
+		.LapCount = RaceState.LapCount
+	};
+}
+
+void UAA_PlayerRaceSplineInfoComponent::RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData)
+{
+	if (!PlayerSplineInfo)
+	{
+		return;
+	}
+
+	auto& RaceState = PlayerSplineInfo->RaceState;
+
+	if (InSnapshotData)
+	{
+		RaceState.DistanceAlongSpline = InSnapshotData->DistanceAlongSpline;
+		RaceState.LapCount = InSnapshotData->LapCount;
+	}
+	else
+	{
+		RaceState.DistanceAlongSpline = 0.0f;
+		RaceState.LapCount = 0;
+	}
 }
 
 #if ENABLE_VISUAL_LOG

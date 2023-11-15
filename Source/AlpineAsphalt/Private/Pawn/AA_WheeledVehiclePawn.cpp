@@ -64,6 +64,8 @@ void AAA_WheeledVehiclePawn::BeginPlay()
 
 void AAA_WheeledVehiclePawn::Destroyed()
 {
+	GetWorldTimerManager().ClearTimer(RecordingSnapshotTimerHandle);
+
 #if WITH_EDITOR
 	if(GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{

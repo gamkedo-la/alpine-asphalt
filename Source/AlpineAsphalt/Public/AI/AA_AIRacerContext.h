@@ -41,6 +41,16 @@ struct ALPINEASPHALT_API FAA_AIRacerContext
 	void SetRaceTrack(AAA_TrackInfoActor* InRaceTrack);
 };
 
+struct ALPINEASPHALT_API FAA_AIRacerSnapshotData
+{
+	FAA_RaceState RaceState{};
+
+	FVector MovementTarget{ EForceInit::ForceInitToZero };
+
+	float DesiredSpeedMph{};
+	float TargetDistanceAlongSpline{};
+};
+
 /**
  *
  */

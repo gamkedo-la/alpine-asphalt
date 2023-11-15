@@ -101,6 +101,25 @@ void AAA_AIRacerController::StopRacing()
 	}
 }
 
+FAA_AIRacerSnapshotData AAA_AIRacerController::CaptureSnapshot() const
+{
+	return FAA_AIRacerSnapshotData
+	{
+		.RaceState = RacerContext.RaceState,
+		.MovementTarget = RacerContext.MovementTarget,
+		.DesiredSpeedMph = RacerContext.DesiredSpeedMph,
+		.TargetDistanceAlongSpline = RacerContext.TargetDistanceAlongSpline
+	};
+}
+
+void AAA_AIRacerController::RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData)
+{
+	RacerContext.RaceState = InSnapshotData.RaceState;
+	RacerContext.DesiredSpeedMph = InSnapshotData.DesiredSpeedMph;
+	RacerContext.MovementTarget = InSnapshotData.MovementTarget;
+	RacerContext.TargetDistanceAlongSpline = InSnapshotData.TargetDistanceAlongSpline;
+}
+
 #if ENABLE_VISUAL_LOG
 void AAA_AIRacerController::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 {
@@ -199,6 +218,8 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 	
 	SetupComponentEventBindings();
 
+	RegisterRewindable();
+
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnPossess: RaceTrack=%s"),
 		*GetName(), *LoggingUtils::GetName(RacerContext.RaceTrack));
 }
@@ -208,6 +229,8 @@ void AAA_AIRacerController::OnUnPossess()
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnUnPossess: PreviousPawn=%s"), *GetName(), *LoggingUtils::GetName(GetPawn()));
 
 	Super::OnUnPossess();
+
+	UnregisterRewindable();
 
 	RacerContext = {};
 

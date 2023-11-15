@@ -42,6 +42,12 @@ struct ALPINEASPHALT_API FAA_RaceState
 	bool IsLooping() const;
 };
 
+struct ALPINEASPHALT_API FAA_RaceStateSnapshotData
+{
+	float DistanceAlongSpline{};
+	int32 LapCount{};
+};
+
 #pragma region Inline Definitions
 
 inline float FAA_RaceState::GetTotalDistance() const
