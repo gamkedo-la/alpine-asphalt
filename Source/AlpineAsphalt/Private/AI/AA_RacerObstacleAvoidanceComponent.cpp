@@ -106,6 +106,28 @@ void UAA_RacerObstacleAvoidanceComponent::BeginPlay()
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 		return;
 	}
+
+	RegisterRewindable();
+}
+
+void UAA_RacerObstacleAvoidanceComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnregisterRewindable();
+}
+
+FAA_RacerObstacleAvoidanceComponentSnapshotData UAA_RacerObstacleAvoidanceComponent::CaptureSnapshot() const
+{
+	return FSnapshotData
+	{
+		.LastUpdateGameTime = LastUpdateGameTime
+	};
+}
+
+void UAA_RacerObstacleAvoidanceComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData)
+{
+	LastUpdateGameTime = InSnapshotData.LastUpdateGameTime;
 }
 
 bool UAA_RacerObstacleAvoidanceComponent::PopulateThreatContext(FThreatContext& ThreatContext) const

@@ -19,6 +19,7 @@
 #include "Util/SplineUtils.h"
 
 using namespace AA;
+using namespace AA_RacerSplineFollowingComponent;
 
 // Sets default values for this component's properties
 UAA_RacerSplineFollowingComponent::UAA_RacerSplineFollowingComponent()
@@ -55,6 +56,8 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 	LastCurvature = 0.0f;
 	MaxApproachAngleCosine = FMath::Cos(FMath::DegreesToRadians(MaxApproachAngle));
 
+	RegisterRewindable();
+
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::SetInitialMovementTarget);
 }
 
@@ -83,6 +86,34 @@ void UAA_RacerSplineFollowingComponent::TickComponent(float DeltaTime, ELevelTic
 	}
 
 	SplineUtils::TryUpdateRaceState(*Spline, Context.RaceState);
+}
+
+void UAA_RacerSplineFollowingComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnregisterRewindable();
+}
+
+AA_RacerSplineFollowingComponent::FSnapshotData UAA_RacerSplineFollowingComponent::CaptureSnapshot() const
+{
+	return AA_RacerSplineFollowingComponent::FSnapshotData
+	{
+		.LastSplineState = LastSplineState,
+		.LastAvoidanceContext = LastAvoidanceContext,
+		.LastMovementTarget = LastMovementTarget,
+		.LastCurvature = LastCurvature,
+		.CurrentAvoidanceOffset = CurrentAvoidanceOffset
+	};
+}
+
+void UAA_RacerSplineFollowingComponent::RestoreFromSnapshot(const AA_RacerSplineFollowingComponent::FSnapshotData& InSnapshotData)
+{
+	LastSplineState = InSnapshotData.LastSplineState;
+	LastAvoidanceContext = InSnapshotData.LastAvoidanceContext;
+	LastMovementTarget = InSnapshotData.LastMovementTarget;
+	LastCurvature = InSnapshotData.LastCurvature;
+	CurrentAvoidanceOffset = InSnapshotData.CurrentAvoidanceOffset;
 }
 
 void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& PreviousMovementTarget)
@@ -437,7 +468,7 @@ ALandscape* UAA_RacerSplineFollowingComponent::GetLandscapeActor() const
 	return nullptr;
 }
 
-std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFollowingComponent::GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const
+std::optional<FSplineState> UAA_RacerSplineFollowingComponent::GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const
 {
 	check(RacerContext.RaceTrack);
 	check(RacerContext.RaceTrack->Spline);
@@ -459,7 +490,7 @@ std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFo
 	return State;
 }
 
-std::optional<UAA_RacerSplineFollowingComponent::FSplineState> UAA_RacerSplineFollowingComponent::GetNextSplineState(
+std::optional<FSplineState> UAA_RacerSplineFollowingComponent::GetNextSplineState(
 	const FAA_AIRacerContext& RacerContext, std::optional<float> NextDistanceAlongSplineOverride, std::optional<float> LookaheadDistanceOverride, bool bIgnoreRaceEnd) const
 {
 	check(RacerContext.RaceTrack);
@@ -762,7 +793,7 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 
 #endif
 
-FString UAA_RacerSplineFollowingComponent::FSplineState::ToString() const
+FString FSplineState::ToString() const
 {
 	return FString::Printf(
 		TEXT("OriginalWorldLocation=%s; WorldLocation=%s; SplineDirection=%s; SplineKey=%f; DistanceAlongSpline=%f; RoadOffset=%f; LookaheadDistance=%f"),

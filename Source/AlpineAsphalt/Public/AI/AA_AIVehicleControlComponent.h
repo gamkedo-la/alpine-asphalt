@@ -6,16 +6,30 @@
 #include "Components/ActorComponent.h"
 
 #include "AI/AA_AIRacerEvents.h"
+#include "Interface/AA_BaseRewindable.h"
 
 #include "AA_AIVehicleControlComponent.generated.h"
 
 class AAA_WheeledVehiclePawn;
 
+struct FAA_AIVehicleControlComponentSnapshotData
+{
+	FVector CurrentMovementTarget{ EForceInit::ForceInitToZero };
+	float DesiredSpeedMph{};
+
+	bool bTurningAround{};
+	bool bTargetReached{};
+	bool bTargetSet{};
+	bool bTargetStartedBehind{};
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAA_AIVehicleControlComponent : public UActorComponent
+class ALPINEASPHALT_API UAA_AIVehicleControlComponent : public UActorComponent, public TAA_BaseRewindable<FAA_AIVehicleControlComponentSnapshotData>
 {
 	GENERATED_BODY()
+
+protected:
+	using FSnapshotData = FAA_AIVehicleControlComponentSnapshotData;
 
 public:	
 	UAA_AIVehicleControlComponent();
@@ -50,6 +64,11 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Inherited via TAA_BaseRewindable
+	FSnapshotData CaptureSnapshot() const override;
+	void RestoreFromSnapshot(const FSnapshotData& InSnapshotData) override;
 
 private:
 	void CalculateThrottle() const;
@@ -68,6 +87,9 @@ private:
 	bool IsTargetBehind() const;
 
 	float CalculateNextTickInterval() const;
+
+	// Inherited via TAA_BaseRewindable
+	virtual UObject* AsUObject() override { return this; }
 
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)

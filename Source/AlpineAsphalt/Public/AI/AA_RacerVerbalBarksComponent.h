@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "AI/AA_RacerContextProvider.h"
+#include "Interface/AA_BaseRewindable.h"
 
 #include "AA_RacerVerbalBarksComponent.generated.h"
 
@@ -13,10 +14,18 @@ class AAA_PlayerController;
 class UAudioComponent;
 class USoundBase;
 
+struct FAA_RacerVerbalBarksComponentSnapshotData
+{
+	TArray<bool,TInlineAllocator<8>> PlayerPositionChanges{};
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAA_RacerVerbalBarksComponent : public UActorComponent
+class ALPINEASPHALT_API UAA_RacerVerbalBarksComponent : public UActorComponent, public TAA_BaseRewindable<FAA_RacerVerbalBarksComponentSnapshotData>
 {
 	GENERATED_BODY()
+
+protected:
+	using FSnapshotData = FAA_RacerVerbalBarksComponentSnapshotData;
 
 public:	
 	UAA_RacerVerbalBarksComponent();
@@ -31,6 +40,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Inherited via TAA_BaseRewindable
+	virtual FSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const FSnapshotData& InSnapshotData) override;
 
 private:
 	bool CheckRelativePlayerPosition();
@@ -46,6 +60,9 @@ private:
 	void OnVehicleHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	const AAA_WheeledVehiclePawn* DetermineInstigatorVehicle(const AAA_WheeledVehiclePawn* MyVehicle, const AAA_WheeledVehiclePawn* OtherVehicle, const FVector& HitLocation) const;
+
+	// Inherited via TAA_BaseRewindable
+	virtual UObject* AsUObject() override { return this; }
 
 private:
 
@@ -63,7 +80,7 @@ private:
 
 	IAA_RacerContextProvider* RacerContextProvider{};
 
-	TArray<bool> PlayerPositionChanges{};
+	TArray<bool, TInlineAllocator<8>> PlayerPositionChanges{};
 
 	UPROPERTY(Category = Audio, EditDefaultsOnly)
 	float SidewaysTractionFractionMax{ 0.2f };

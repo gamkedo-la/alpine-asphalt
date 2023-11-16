@@ -5,14 +5,35 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "AA_AIRacerEvents.h"
+#include "Interface/AA_BaseRewindable.h"
 
 #include "AA_AIGetUnstuckComponent.generated.h"
 
 class IAA_RacerContextProvider;
 class AAA_WheeledVehiclePawn;
 
+namespace AA_AIGetUnstuckComponent
+{
+	struct FStuckState
+	{
+		FVector Position{ EForceInit::ForceInitToZero };
+		int8 ThrottleSign : 1 {};
+	};
+
+	struct FSnapshotData
+	{
+		TArray<FStuckState,TInlineAllocator<32>> Positions{};
+
+		int32 ConsecutiveStuckCount{};
+		uint32 NextBufferIndex{};
+		uint32 NumSamples{};
+
+		float LastStuckTime{ -1.0f };
+		bool bHasStarted{};
+	};
+}
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class ALPINEASPHALT_API UAA_AIGetUnstuckComponent : public UActorComponent
+class ALPINEASPHALT_API UAA_AIGetUnstuckComponent : public UActorComponent, public TAA_BaseRewindable<AA_AIGetUnstuckComponent::FSnapshotData>
 {
 	GENERATED_BODY()
 
@@ -31,21 +52,22 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Inherited via TAA_BaseRewindable
+	virtual AA_AIGetUnstuckComponent::FSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const AA_AIGetUnstuckComponent::FSnapshotData& InSnapshotData) override;
 
 private:
 	void ResetBuffer();
 	FVector CalculateIdealSeekPosition(const AAA_WheeledVehiclePawn& VehiclePawn) const;
 
+	// Inherited via TAA_BaseRewindable
+	virtual UObject* AsUObject() override { return this; }
 private:
 
-	struct FStuckState
-	{
-		FVector Position{ EForceInit::ForceInitToZero };
-		int8 ThrottleSign : 1 {};
-	};
-
 	IAA_RacerContextProvider* RacerContextProvider{};
-	TUniquePtr<TCircularBuffer<FStuckState>> PositionsPtr{};
+	TUniquePtr<TCircularBuffer<AA_AIGetUnstuckComponent::FStuckState>> PositionsPtr{};
 
 	UPROPERTY(Category = "Detection", EditAnywhere)
 	float MinStuckTime{ 3.0f };
@@ -62,8 +84,9 @@ private:
 	int32 ConsecutiveStuckCount{};
 	float LastStuckTime{ -1.0f };
 
-	int32 NextBufferIndex{};
-	bool bSufficientSamples{};
+	uint32 NextBufferIndex{};
+	uint32 MinNumSamples{};
+	uint32 NumSamples{};
 
 	// Don't trigger stuck at start - wait for some movement initially
 	// TODO: Maybe there is an event we can subscribe to to "turn on the functionality"

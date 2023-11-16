@@ -7,6 +7,7 @@
 
 #include "AI/AA_AIRacerEvents.h"
 #include "AI/AA_AIRacerContext.h"
+#include "Interface/AA_BaseRewindable.h"
 
 #include <optional>
 
@@ -16,8 +17,33 @@ class AAA_WheeledVehiclePawn;
 class IAA_RacerContextProvider;
 class ALandscape;
 
+namespace AA_RacerSplineFollowingComponent
+{
+	struct FSplineState
+	{
+		FVector OriginalWorldLocation;
+		FVector WorldLocation;
+		FVector SplineDirection;
+		float SplineKey;
+		float DistanceAlongSpline;
+		float RoadOffset{};
+		float LookaheadDistance;
+
+		FString ToString() const;
+	};
+
+	struct FSnapshotData
+	{
+		std::optional<FSplineState> LastSplineState{};
+		std::optional<FAA_AIRacerAvoidanceContext> LastAvoidanceContext{};
+		FVector LastMovementTarget{ EForceInit::ForceInitToZero };
+		float LastCurvature{};
+		float CurrentAvoidanceOffset{};
+	};
+}
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAA_RacerSplineFollowingComponent : public UActorComponent
+class ALPINEASPHALT_API UAA_RacerSplineFollowingComponent : public UActorComponent, public TAA_BaseRewindable<AA_RacerSplineFollowingComponent::FSnapshotData>
 {
 	GENERATED_BODY()
 
@@ -44,33 +70,26 @@ public:
 #endif // ENABLE_VISUAL_LOG
 
 protected:
+
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Inherited via TAA_BaseRewindable
+	virtual AA_RacerSplineFollowingComponent::FSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const AA_RacerSplineFollowingComponent::FSnapshotData& InSnapshotData) override;
 
 private:
 	// TODO: May respond to a race start event
 	void SetInitialMovementTarget();
 
-	struct FSplineState
-	{
-		FVector OriginalWorldLocation;
-		FVector WorldLocation;
-		FVector SplineDirection;
-		float SplineKey;
-		float DistanceAlongSpline;
-		float RoadOffset{};
-		float LookaheadDistance;
-
-		FString ToString() const;
-	};
-
-	std::optional<FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
-	std::optional<FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext,
+	std::optional<AA_RacerSplineFollowingComponent::FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
+	std::optional<AA_RacerSplineFollowingComponent::FSplineState> GetNextSplineState(const FAA_AIRacerContext& RacerContext,
 		std::optional<float> NextDistanceAlongSplineOverride = {}, std::optional<float> LookaheadDistanceOverride = {}, bool bIgnoreRaceEnd = false) const;
-	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, FSplineState& SplineState, float RoadOffset) const;
 
 	void UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext);
-	void UpdateLastSplineStateIfApproachTooSteep(const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& OriginalSplineState);
+	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, AA_RacerSplineFollowingComponent::FSplineState& SplineState, float RoadOffset) const;
+	void UpdateLastSplineStateIfApproachTooSteep(const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, const AA_RacerSplineFollowingComponent::FSplineState& OriginalSplineState);
 
 	/*
 	* Curvature between [0,1] indicating how steep the upcoming road is for speed adjustment purposes.
@@ -85,10 +104,14 @@ private:
 
 	float ClampSpeed(float Speed) const;
 
-	bool IsSplineStateASufficientTarget(const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& SplineState) const;
+	bool IsSplineStateASufficientTarget(const AAA_WheeledVehiclePawn& VehiclePawn, const AA_RacerSplineFollowingComponent::FSplineState& SplineState) const;
 
 	ALandscape* GetLandscapeActor() const;
-	bool IsCurrentPathOccluded(const AAA_WheeledVehiclePawn& VehiclePawn, const FSplineState& SplineState) const;
+	bool IsCurrentPathOccluded(const AAA_WheeledVehiclePawn& VehiclePawn, const AA_RacerSplineFollowingComponent::FSplineState& SplineState) const;
+
+	// Inherited via TAA_BaseRewindable
+	virtual UObject* AsUObject() override { return this; }
+
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleTargetUpdated OnVehicleTargetUpdated {};
@@ -99,7 +122,7 @@ public:
 private:
 	IAA_RacerContextProvider* RacerContextProvider{};
 
-	std::optional<FSplineState> LastSplineState{};
+	std::optional<AA_RacerSplineFollowingComponent::FSplineState> LastSplineState{};
 	std::optional<FAA_AIRacerAvoidanceContext> LastAvoidanceContext{};
 
 	UPROPERTY(Category = "Movement", EditAnywhere)

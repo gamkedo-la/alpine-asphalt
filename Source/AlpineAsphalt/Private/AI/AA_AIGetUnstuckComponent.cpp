@@ -16,6 +16,7 @@
 #include "Kismet/KismetMathLibrary.h"
 
 using namespace AA;
+using namespace AA_AIGetUnstuckComponent;
 
 DEFINE_VLOG_EVENT(EventAIVehicleStuck, Display, "AI Vehicle Stuck")
 
@@ -40,7 +41,10 @@ void UAA_AIGetUnstuckComponent::DescribeSelfToVisLog(FVisualLogEntry* Snapshot) 
 	Category.Add(TEXT("ConsecutiveStuckCount"), FString::Printf(TEXT("%d"), ConsecutiveStuckCount));
 	Category.Add(TEXT("LastStuckTime"), FString::Printf(TEXT("%.1fs"), LastStuckTime));
 	Category.Add(TEXT("NextBufferIndex"), FString::Printf(TEXT("%d"), NextBufferIndex));
-	Category.Add(TEXT("SufficientSamples"), FString::Printf(TEXT("%s"), LoggingUtils::GetBoolString(bSufficientSamples)));
+	Category.Add(TEXT("NumSamples"), FString::Printf(TEXT("%d"), NextBufferIndex));
+	Category.Add(TEXT("MinNumSamples"), FString::Printf(TEXT("%d"), NextBufferIndex));
+	Category.Add(TEXT("BufferCapacity"), PositionsPtr ? FString::Printf(TEXT("%d"), PositionsPtr->Capacity()) : TEXT("N/A"));
+	Category.Add(TEXT("SufficientSamples"), FString::Printf(TEXT("%s"), LoggingUtils::GetBoolString(NumSamples >= MinNumSamples)));
 	Category.Add(TEXT("HasStarted"), FString::Printf(TEXT("%s"), LoggingUtils::GetBoolString(bHasStarted)));
 
 	Snapshot->Status.Add(Category);
@@ -68,7 +72,11 @@ void UAA_AIGetUnstuckComponent::BeginPlay()
 	}
 
 	// Size the buffer to hold enough entries for the min stuck time
-	PositionsPtr = MakeUnique<TCircularBuffer<FStuckState>>(FMath::CeilToInt(MinStuckTime / PrimaryComponentTick.TickInterval));
+	// Note that for TCircularBuffer the actual capacity is next power of 2 so must note the MinNumSamples
+	MinNumSamples = MinStuckTime / PrimaryComponentTick.TickInterval;
+	PositionsPtr = MakeUnique<TCircularBuffer<FStuckState>>(MinNumSamples);
+
+	RegisterRewindable();
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("BeginPlay: Buffer Capacity=%d"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), PositionsPtr ? PositionsPtr->Capacity() : 0);
@@ -111,24 +119,22 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 		.ThrottleSign = MovementComponent->GetThrottleInput() >= 0
 	};
 
+	++NumSamples;
 	Positions[CurrentBufferIndex] = CurrentState;
 	NextBufferIndex = Positions.GetNextIndex(CurrentBufferIndex);
 
-	if (!bSufficientSamples && CurrentBufferIndex == Positions.Capacity() - 1)
-	{
-		bSufficientSamples = true;
-	}
-
-	if (!bSufficientSamples)
+	if (NumSamples < MinNumSamples)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 			TEXT("%s-%s: TickComponent - Insufficient Samples %d < %d"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentBufferIndex, Positions.Capacity());
+			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentBufferIndex, MinNumSamples);
 		return;
 	}
 
 	// Difference between current position and the oldest one which is the next one we will overwrite since we wrap around once the capacity is reached
-	const auto& OldestState = Positions[NextBufferIndex];
+	// Remember that the TCircularBuffer Capacity is next power of 2 and not necessarily the MinNumSamples
+	const auto OldestBufferIndex = NumSamples <= Positions.Capacity() ? 0 : NextBufferIndex;
+	const auto& OldestState = Positions[OldestBufferIndex];
 
 	// if we just changed throttle sign then cooldown
 	if (CurrentState.ThrottleSign != OldestState.ThrottleSign)
@@ -193,14 +199,67 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	OnVehicleStuck.Broadcast(VehiclePawn, IdealSeekPosition);
 }
 
+void UAA_AIGetUnstuckComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnregisterRewindable();
+}
+
+AA_AIGetUnstuckComponent::FSnapshotData UAA_AIGetUnstuckComponent::CaptureSnapshot() const
+{
+	AA_AIGetUnstuckComponent::FSnapshotData Data
+	{
+		.ConsecutiveStuckCount = ConsecutiveStuckCount,
+		.NextBufferIndex = NextBufferIndex,
+		.NumSamples = NumSamples,
+		.LastStuckTime = LastStuckTime,
+		.bHasStarted = bHasStarted
+	};
+
+	if (PositionsPtr)
+	{
+		auto& SnapshotPositions = Data.Positions;
+		const auto& Positions = *PositionsPtr;
+
+		for (int32 i = 0, Len = NumSamples >= Positions.Capacity() ? Positions.Capacity() : NextBufferIndex; i < Len; ++i)
+		{
+			SnapshotPositions.Add(Positions[i]);
+		}
+	}
+
+	return Data;
+}
+
+void UAA_AIGetUnstuckComponent::RestoreFromSnapshot(const AA_AIGetUnstuckComponent::FSnapshotData& InSnapshotData)
+{
+	ConsecutiveStuckCount = InSnapshotData.ConsecutiveStuckCount;
+	NextBufferIndex = InSnapshotData.NextBufferIndex;
+	LastStuckTime = InSnapshotData.LastStuckTime;
+	NumSamples = InSnapshotData.NumSamples;
+	bHasStarted = InSnapshotData.bHasStarted;
+
+	if (!PositionsPtr)
+	{
+		return;
+	}
+
+	const auto& SnapshotPositions = InSnapshotData.Positions;
+	auto& Positions = *PositionsPtr;
+
+	for (int32 i = 0; i < SnapshotPositions.Num(); ++i)
+	{
+		Positions[i] = SnapshotPositions[i];
+	}
+}
+
 void UAA_AIGetUnstuckComponent::ResetBuffer()
 {
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 		TEXT("%s-%s: ResetBuffer"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()));
 
-	NextBufferIndex = 0;
-	bSufficientSamples = false;
+	NextBufferIndex = NumSamples = 0;
 }
 
 FVector UAA_AIGetUnstuckComponent::CalculateIdealSeekPosition(const AAA_WheeledVehiclePawn& VehiclePawn) const

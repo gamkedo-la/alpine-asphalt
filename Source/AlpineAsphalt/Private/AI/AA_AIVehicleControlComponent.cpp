@@ -31,6 +31,8 @@ void UAA_AIVehicleControlComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	RegisterRewindable();
+
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: BeginPlay"), *LoggingUtils::GetName(GetOwner()), *GetName());
 }
 
@@ -83,6 +85,13 @@ void UAA_AIVehicleControlComponent::TickComponent(float DeltaTime, ELevelTick Ti
 		CalculateThrottle();
 		CalculateSteering(DestinationDelta);
 	}
+}
+
+void UAA_AIVehicleControlComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnregisterRewindable();
 }
 
 void UAA_AIVehicleControlComponent::CalculateThrottle() const
@@ -335,6 +344,29 @@ float UAA_AIVehicleControlComponent::CalculateNextTickInterval() const
 	const auto AdjustedReachTime = TargetReachedTime * TargetTickCompletionFraction;
 
 	return FMath::Clamp(AdjustedReachTime, MinTickInterval, MaxTickInterval);
+}
+
+UAA_AIVehicleControlComponent::FSnapshotData UAA_AIVehicleControlComponent::CaptureSnapshot() const
+{
+	return FSnapshotData
+	{
+		.CurrentMovementTarget = CurrentMovementTarget,
+		.DesiredSpeedMph = DesiredSpeedMph,
+		.bTurningAround = bTurningAround,
+		.bTargetReached = bTargetReached,
+		.bTargetSet = bTargetSet,
+		.bTargetStartedBehind = bTargetStartedBehind
+	};
+}
+
+void UAA_AIVehicleControlComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData)
+{
+	CurrentMovementTarget = InSnapshotData.CurrentMovementTarget;
+	DesiredSpeedMph = InSnapshotData.DesiredSpeedMph;
+	bTurningAround = InSnapshotData.bTurningAround;
+	bTargetReached = InSnapshotData.bTargetReached;
+	bTargetSet = InSnapshotData.bTargetSet;
+	bTargetStartedBehind = InSnapshotData.bTargetStartedBehind;
 }
 
 void UAA_AIVehicleControlComponent::SetDesiredSpeedMph(float SpeedMph)

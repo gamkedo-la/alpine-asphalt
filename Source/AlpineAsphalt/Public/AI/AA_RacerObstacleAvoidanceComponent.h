@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "AI/AA_AIRacerEvents.h"
+#include "Interface/AA_BaseRewindable.h"
 
 #include <optional>
 
@@ -14,10 +15,18 @@ class IAA_RacerContextProvider;
 class AAA_WheeledVehiclePawn;
 struct FAA_AIRacerContext;
 
+struct FAA_RacerObstacleAvoidanceComponentSnapshotData
+{
+	float LastUpdateGameTime{};
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAA_RacerObstacleAvoidanceComponent : public UActorComponent
+class ALPINEASPHALT_API UAA_RacerObstacleAvoidanceComponent : public UActorComponent, public TAA_BaseRewindable<FAA_RacerObstacleAvoidanceComponentSnapshotData>
 {
 	GENERATED_BODY()
+
+protected:
+	using FSnapshotData = FAA_RacerObstacleAvoidanceComponentSnapshotData;
 
 public:	
 	UAA_RacerObstacleAvoidanceComponent();
@@ -32,6 +41,15 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	// Inherited via TAA_BaseRewindable
+	virtual FSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const FSnapshotData& InSnapshotData) override;
+
+private:
+	// Inherited via TAA_BaseRewindable
+	virtual UObject* AsUObject() override { return this; }
 
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)

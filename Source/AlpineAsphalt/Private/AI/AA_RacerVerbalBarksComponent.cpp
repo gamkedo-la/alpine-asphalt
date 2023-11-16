@@ -76,6 +76,8 @@ void UAA_RacerVerbalBarksComponent::BeginPlay()
 	AA_VB_REGISTER_AUDIO_CLIP(StuckAudioClip, StuckAudioCooldownTimeSeconds);
 	AA_VB_REGISTER_AUDIO_CLIP(HitPropAudioClip, HitPropAudioCooldownTimeSeconds);
 
+	RegisterRewindable();
+
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 		TEXT("%s-%s: BeginPlay - PitchOffsetValue=%f"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), PitchOffsetValue);
@@ -108,6 +110,26 @@ void UAA_RacerVerbalBarksComponent::TickComponent(float DeltaTime, ELevelTick Ti
 	{
 		return;
 	}
+}
+
+void UAA_RacerVerbalBarksComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnregisterRewindable();
+}
+
+UAA_RacerVerbalBarksComponent::FSnapshotData UAA_RacerVerbalBarksComponent::CaptureSnapshot() const
+{
+	return FSnapshotData
+	{
+		.PlayerPositionChanges = PlayerPositionChanges
+	};
+}
+
+void UAA_RacerVerbalBarksComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData)
+{
+	PlayerPositionChanges = InSnapshotData.PlayerPositionChanges;
 }
 
 void UAA_RacerVerbalBarksComponent::Deactivate()
