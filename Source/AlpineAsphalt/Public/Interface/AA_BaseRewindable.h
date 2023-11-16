@@ -13,7 +13,7 @@
  * RegisterRewindable in <c>BeginPlay</c> and UnregisterRewindable in <c>EndPlay</c>.
  */
 template<typename TSnapshotData>
-class ALPINEASPHALT_API AA_BaseRewindable : public IAA_RewindableInterface
+class ALPINEASPHALT_API TAA_BaseRewindable : public IAA_RewindableInterface
 {
 public:
 	virtual void SetRewindTime(float Time) override final;
@@ -21,7 +21,7 @@ public:
 	virtual void ResumeRecordingSnapshots() override final;
 	virtual void ResetRewindHistory() override final;
 
-	virtual ~AA_BaseRewindable() = default;
+	virtual ~TAA_BaseRewindable() = default;
 
 protected:
 	void RegisterRewindable();
@@ -51,7 +51,7 @@ private:
 #pragma region Template Definitions
 
 template<typename TSnapshotData>
-void AA_BaseRewindable<TSnapshotData>::RegisterRewindable()
+void TAA_BaseRewindable<TSnapshotData>::RegisterRewindable()
 {
 	auto Object = AsUObject();
 	check(Object);
@@ -67,7 +67,7 @@ void AA_BaseRewindable<TSnapshotData>::RegisterRewindable()
 
 	World->GetTimerManager().SetTimer(
 		RecordingSnapshotTimerHandle,
-		FTimerDelegate::CreateRaw(this, &AA_BaseRewindable<TSnapshotData>::RecordSnapshot),
+		FTimerDelegate::CreateRaw(this, &TAA_BaseRewindable<TSnapshotData>::RecordSnapshot),
 		RewindSystem->RecordingResolution, true);
 		
 	MaxSnapshots = FMath::FloorToInt(RewindSystem->MaxRecordingLength / RewindSystem->RecordingResolution);
@@ -79,7 +79,7 @@ void AA_BaseRewindable<TSnapshotData>::RegisterRewindable()
 }
 
 template<typename TSnapshotData>
-void AA_BaseRewindable<TSnapshotData>::UnregisterRewindable()
+void TAA_BaseRewindable<TSnapshotData>::UnregisterRewindable()
 {
 	auto Object = AsUObject();
 	check(Object);
@@ -99,7 +99,7 @@ void AA_BaseRewindable<TSnapshotData>::UnregisterRewindable()
 }
 
 template<typename TSnapshotData>
-void AA_BaseRewindable<TSnapshotData>::SetRewindTime(float Time)
+void TAA_BaseRewindable<TSnapshotData>::SetRewindTime(float Time)
 {
 	RewindTime = Time;
 
@@ -116,7 +116,7 @@ void AA_BaseRewindable<TSnapshotData>::SetRewindTime(float Time)
 }
 
 template<typename TSnapshotData>
-void AA_BaseRewindable<TSnapshotData>::PauseRecordingSnapshots()
+void TAA_BaseRewindable<TSnapshotData>::PauseRecordingSnapshots()
 {
 	RecordSnapshot();
 
@@ -131,7 +131,7 @@ void AA_BaseRewindable<TSnapshotData>::PauseRecordingSnapshots()
 }
 
 template<typename TSnapshotData>
-void AA_BaseRewindable<TSnapshotData>::ResumeRecordingSnapshots()
+void TAA_BaseRewindable<TSnapshotData>::ResumeRecordingSnapshots()
 {
 	int index = FMath::FloorToInt(RewindTime / RewindResolution);
 	index = SnapshotData.Num() - (index + 1);
@@ -157,13 +157,13 @@ void AA_BaseRewindable<TSnapshotData>::ResumeRecordingSnapshots()
 }
 
 template<typename TSnapshotData>
-void AA_BaseRewindable<TSnapshotData>::ResetRewindHistory()
+void TAA_BaseRewindable<TSnapshotData>::ResetRewindHistory()
 {
 	SnapshotData.Reset();
 }
 
 template<typename TSnapshotData>
-void AA_BaseRewindable<TSnapshotData>::RecordSnapshot()
+void TAA_BaseRewindable<TSnapshotData>::RecordSnapshot()
 {
 	if (bSnapshotsPaused) 
 	{ 

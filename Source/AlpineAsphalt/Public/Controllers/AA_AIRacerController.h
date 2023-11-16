@@ -62,7 +62,7 @@ struct ALPINEASPHALT_API FAA_RacerAISettings
  * 
  */
 UCLASS()
-class ALPINEASPHALT_API AAA_AIRacerController : public AAIController, public IAA_RacerContextProvider, public AA_BaseRewindable<FAA_AIRacerSnapshotData>
+class ALPINEASPHALT_API AAA_AIRacerController : public AAIController, public IAA_RacerContextProvider, public TAA_BaseRewindable<FAA_AIRacerSnapshotData>
 {
 	GENERATED_BODY()
 
@@ -88,6 +88,10 @@ protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override final;
 
+	// Inherited via TAA_BaseRewindable
+	virtual FAA_AIRacerSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData) override;
+
 private:
 	void SetupComponentEventBindings();
 	void SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn);
@@ -103,9 +107,7 @@ private:
 
 	void StopRacing();
 
-	// Inherited via AA_BaseRewindable
-	virtual FAA_AIRacerSnapshotData CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData) override;
+	// Inherited via TAA_BaseRewindable
 	virtual UObject* AsUObject() override { return this; }
 
 private:

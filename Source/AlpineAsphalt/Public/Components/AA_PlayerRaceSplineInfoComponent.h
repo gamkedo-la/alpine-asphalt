@@ -25,7 +25,7 @@ struct FPlayerSplineInfo
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAA_PlayerRaceSplineInfoComponent : public UActorComponent, public AA_BaseRewindable<std::optional<FAA_RaceStateSnapshotData>>
+class ALPINEASPHALT_API UAA_PlayerRaceSplineInfoComponent : public UActorComponent, public TAA_BaseRewindable<std::optional<FAA_RaceStateSnapshotData>>
 {
 	GENERATED_BODY()
 
@@ -46,12 +46,14 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	// Inherited via TAA_BaseRewindable
+	virtual std::optional<FAA_RaceStateSnapshotData> CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData) override;
+
 private:
 	void UpdateSplineInfo();
 
-	// Inherited via AA_BaseRewindable
-	virtual std::optional<FAA_RaceStateSnapshotData> CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData) override;
+	// Inherited via TAA_BaseRewindable
 	virtual UObject* AsUObject() override { return this;  }
 
 private:
