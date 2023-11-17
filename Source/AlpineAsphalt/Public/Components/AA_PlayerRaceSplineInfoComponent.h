@@ -48,7 +48,7 @@ protected:
 
 	// Inherited via TAA_BaseRewindable
 	virtual std::optional<FAA_RaceStateSnapshotData> CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData) override;
+	virtual void RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData, float InRewindTime) override;
 
 private:
 	void UpdateSplineInfo();

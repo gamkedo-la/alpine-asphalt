@@ -22,6 +22,9 @@ public:
 private:
 
 	UFUNCTION()
+	void OnRewindModeActivated();
+
+	UFUNCTION()
 	void OnRewindModeDeactivated();
 
 	UFUNCTION()
@@ -46,6 +49,7 @@ protected:
 	void RegisterRewindCallback();
 	void UnregisterRewindCallback();
 
+	virtual void OnRewindBegin() = 0;
 	virtual void RecalculateOnRewind() = 0;
 	virtual UObject* AsUObject() = 0;
 

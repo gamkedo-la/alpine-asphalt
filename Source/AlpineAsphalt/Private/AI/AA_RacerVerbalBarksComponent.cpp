@@ -76,7 +76,7 @@ void UAA_RacerVerbalBarksComponent::BeginPlay()
 	AA_VB_REGISTER_AUDIO_CLIP(StuckAudioClip, StuckAudioCooldownTimeSeconds);
 	AA_VB_REGISTER_AUDIO_CLIP(HitPropAudioClip, HitPropAudioCooldownTimeSeconds);
 
-	RegisterRewindable();
+	RegisterRewindable(ERestoreTiming::Resume);
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 		TEXT("%s-%s: BeginPlay - PitchOffsetValue=%f"),
@@ -127,9 +127,40 @@ UAA_RacerVerbalBarksComponent::FSnapshotData UAA_RacerVerbalBarksComponent::Capt
 	};
 }
 
-void UAA_RacerVerbalBarksComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData)
+void UAA_RacerVerbalBarksComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime)
 {
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-%s: RestoreFromSnapshot: InRewindTime=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), InRewindTime);
+
 	PlayerPositionChanges = InSnapshotData.PlayerPositionChanges;
+
+	// Adjust end times for time dialation as some may not have occurred after rewind
+	auto World = GetWorld();
+	check(World);
+
+	const auto AdjustedTimeSeconds = World->GetTimeSeconds() - InRewindTime;
+
+	for (auto& [Clip, AudioState] : AudioStateMap)
+	{
+		if (AudioState.LastPlayEndTimeSeconds > AdjustedTimeSeconds)
+		{
+			UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+				TEXT("%s-%s: RestoreFromSnapshot: Removing sound that happened in future - %s at %fs"),
+				*GetName(), *LoggingUtils::GetName(GetOwner()), *Clip->GetName(), AudioState.LastPlayEndTimeSeconds);
+
+			AudioState.LastPlayEndTimeSeconds = 0;
+		}
+	}
+}
+
+void UAA_RacerVerbalBarksComponent::OnRewindBegin()
+{
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-%s: OnRewindBegin"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()));
+
+	StopAllAudio();
 }
 
 void UAA_RacerVerbalBarksComponent::Deactivate()
@@ -237,6 +268,26 @@ bool UAA_RacerVerbalBarksComponent::CheckSideways()
 	return false;
 }
 
+void UAA_RacerVerbalBarksComponent::StopAllAudio()
+{
+	// Stop playing any active sounds
+	for (auto& [Clip, AudioState] : AudioStateMap)
+	{
+		if (auto AudioComponent = AudioState.LastPlayedSound; AudioComponent && AudioComponent->IsPlaying())
+		{
+			UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+				TEXT("%s-%s: StopAllAudio - Stopping %s"),
+				*GetName(), *LoggingUtils::GetName(GetOwner()),
+				*Clip->GetName()
+			);
+
+			AudioComponent->Stop();
+
+			AudioState.LastPlayedSound = nullptr;
+		}
+	}
+}
+
 bool UAA_RacerVerbalBarksComponent::PlayClipIfApplicable(USoundBase* Clip)
 {
 	if (!Clip)
@@ -266,7 +317,7 @@ bool UAA_RacerVerbalBarksComponent::PlayClipIfApplicable(USoundBase* Clip)
 		{
 			UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 				TEXT("%s-%s: PlayClipIfApplicable - FALSE - Clip=%s is still in cooldown; DeltaTime=%f <= %f"),
-				*GetName(), *LoggingUtils::GetName(GetOwner()), *Clip->GetName(), DeltaTime, AudioState.LastPlayEndTimeSeconds);
+				*GetName(), *LoggingUtils::GetName(GetOwner()), *Clip->GetName(), DeltaTime, AudioState.CooldownTimeSeconds);
 			return false;
 		}
 	}

@@ -25,6 +25,8 @@ void AA_RecalculateOnRewind::RegisterRewindCallback()
 	}
 
 	Holder = NewObject<UAA_RecalculateOnRewindDelegateHolder>();
+	Holder->SetParent(*this);
+
 	Holder->AddToRoot(); // Avoid spurious GC
 
 	Holder->Register(*RewindSystem);
@@ -55,14 +57,22 @@ void AA_RecalculateOnRewind::UnregisterRewindCallback()
 
 void UAA_RecalculateOnRewindDelegateHolder::Register(UAA_RewindSubsystem& Subsystem)
 {
+	Subsystem.ActivatedDelegate.AddDynamic(this, &UAA_RecalculateOnRewindDelegateHolder::OnRewindModeActivated);
 	Subsystem.DeactivatedDelegate.AddDynamic(this, &UAA_RecalculateOnRewindDelegateHolder::OnRewindModeDeactivated);
 	Subsystem.CurrentRewindValueChangedDelegate.AddDynamic(this, &UAA_RecalculateOnRewindDelegateHolder::OnRewindPercentageChanged);
 }
 
 void UAA_RecalculateOnRewindDelegateHolder::Deactivate(UAA_RewindSubsystem& Subsystem)
 {
+	Subsystem.ActivatedDelegate.RemoveDynamic(this, &UAA_RecalculateOnRewindDelegateHolder::OnRewindModeActivated);
 	Subsystem.DeactivatedDelegate.RemoveDynamic(this, &UAA_RecalculateOnRewindDelegateHolder::OnRewindModeDeactivated);
 	Subsystem.CurrentRewindValueChangedDelegate.RemoveDynamic(this, &UAA_RecalculateOnRewindDelegateHolder::OnRewindPercentageChanged);
+}
+
+void UAA_RecalculateOnRewindDelegateHolder::OnRewindModeActivated()
+{
+	check(Parent);
+	Parent->OnRewindBegin();
 }
 
 void UAA_RecalculateOnRewindDelegateHolder::OnRewindModeDeactivated()

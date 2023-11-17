@@ -56,7 +56,7 @@ protected:
 
 	// Inherited via TAA_BaseRewindable
 	virtual AA_AIGetUnstuckComponent::FSnapshotData CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const AA_AIGetUnstuckComponent::FSnapshotData& InSnapshotData) override;
+	virtual void RestoreFromSnapshot(const AA_AIGetUnstuckComponent::FSnapshotData& InSnapshotData, float InRewindTime) override;
 
 private:
 	void ResetBuffer();

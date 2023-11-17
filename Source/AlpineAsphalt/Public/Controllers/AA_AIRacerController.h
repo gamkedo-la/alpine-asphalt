@@ -90,7 +90,7 @@ protected:
 
 	// Inherited via TAA_BaseRewindable
 	virtual FAA_AIRacerSnapshotData CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData) override;
+	virtual void RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData, float InRewindTime) override;
 
 private:
 	void SetupComponentEventBindings();

@@ -56,7 +56,7 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 	LastCurvature = 0.0f;
 	MaxApproachAngleCosine = FMath::Cos(FMath::DegreesToRadians(MaxApproachAngle));
 
-	RegisterRewindable();
+	RegisterRewindable(ERestoreTiming::Resume);
 
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::SetInitialMovementTarget);
 }
@@ -107,8 +107,12 @@ AA_RacerSplineFollowingComponent::FSnapshotData UAA_RacerSplineFollowingComponen
 	};
 }
 
-void UAA_RacerSplineFollowingComponent::RestoreFromSnapshot(const AA_RacerSplineFollowingComponent::FSnapshotData& InSnapshotData)
+void UAA_RacerSplineFollowingComponent::RestoreFromSnapshot(const AA_RacerSplineFollowingComponent::FSnapshotData& InSnapshotData, float InRewindTime)
 {
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-%s: RestoreFromSnapshot: InRewindTime=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), InRewindTime);
+
 	LastSplineState = InSnapshotData.LastSplineState;
 	LastAvoidanceContext = InSnapshotData.LastAvoidanceContext;
 	LastMovementTarget = InSnapshotData.LastMovementTarget;

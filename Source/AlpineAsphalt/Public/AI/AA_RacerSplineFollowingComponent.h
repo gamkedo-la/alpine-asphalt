@@ -77,7 +77,7 @@ protected:
 
 	// Inherited via TAA_BaseRewindable
 	virtual AA_RacerSplineFollowingComponent::FSnapshotData CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const AA_RacerSplineFollowingComponent::FSnapshotData& InSnapshotData) override;
+	virtual void RestoreFromSnapshot(const AA_RacerSplineFollowingComponent::FSnapshotData& InSnapshotData, float InRewindTime) override;
 
 private:
 	// TODO: May respond to a race start event

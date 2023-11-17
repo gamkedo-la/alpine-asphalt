@@ -61,7 +61,7 @@ void UAA_PlayerRaceSplineInfoComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	RegisterRewindable();
+	RegisterRewindable(ERestoreTiming::Resume);
 }
 
 void UAA_PlayerRaceSplineInfoComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -136,12 +136,17 @@ std::optional<FAA_RaceStateSnapshotData> UAA_PlayerRaceSplineInfoComponent::Capt
 	return FAA_RaceStateSnapshotData
 	{
 		.DistanceAlongSpline = RaceState.DistanceAlongSpline,
+		.CurrentLapMaxCompletionFraction = RaceState.CurrentLapMaxCompletionFraction,
 		.LapCount = RaceState.LapCount
 	};
 }
 
-void UAA_PlayerRaceSplineInfoComponent::RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData)
+void UAA_PlayerRaceSplineInfoComponent::RestoreFromSnapshot(const std::optional<FAA_RaceStateSnapshotData>& InSnapshotData, float InRewindTime)
 {
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-%s: RestoreFromSnapshot: InRewindTime=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), InRewindTime);
+
 	if (!PlayerSplineInfo)
 	{
 		return;
@@ -152,11 +157,13 @@ void UAA_PlayerRaceSplineInfoComponent::RestoreFromSnapshot(const std::optional<
 	if (InSnapshotData)
 	{
 		RaceState.DistanceAlongSpline = InSnapshotData->DistanceAlongSpline;
+		RaceState.CurrentLapMaxCompletionFraction = InSnapshotData->CurrentLapMaxCompletionFraction;
 		RaceState.LapCount = InSnapshotData->LapCount;
 	}
 	else
 	{
 		RaceState.DistanceAlongSpline = 0.0f;
+		RaceState.CurrentLapMaxCompletionFraction = 0.0f;
 		RaceState.LapCount = 0;
 	}
 }

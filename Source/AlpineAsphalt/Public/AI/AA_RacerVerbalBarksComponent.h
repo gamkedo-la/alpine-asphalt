@@ -44,11 +44,14 @@ protected:
 
 	// Inherited via TAA_BaseRewindable
 	virtual FSnapshotData CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const FSnapshotData& InSnapshotData) override;
+	virtual void RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime) override;
+
+	virtual void OnRewindBegin() override;
 
 private:
 	bool CheckRelativePlayerPosition();
 	bool CheckSideways();
+	void StopAllAudio();
 
 	bool PlayClipIfApplicable(USoundBase* Clip);
 

@@ -68,7 +68,7 @@ protected:
 
 	// Inherited via TAA_BaseRewindable
 	FSnapshotData CaptureSnapshot() const override;
-	void RestoreFromSnapshot(const FSnapshotData& InSnapshotData) override;
+	void RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime) override;
 
 private:
 	void CalculateThrottle() const;

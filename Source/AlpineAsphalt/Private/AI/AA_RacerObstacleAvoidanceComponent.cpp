@@ -107,7 +107,7 @@ void UAA_RacerObstacleAvoidanceComponent::BeginPlay()
 		return;
 	}
 
-	RegisterRewindable();
+	RegisterRewindable(ERestoreTiming::Resume);
 }
 
 void UAA_RacerObstacleAvoidanceComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -125,9 +125,9 @@ FAA_RacerObstacleAvoidanceComponentSnapshotData UAA_RacerObstacleAvoidanceCompon
 	};
 }
 
-void UAA_RacerObstacleAvoidanceComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData)
+void UAA_RacerObstacleAvoidanceComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime)
 {
-	LastUpdateGameTime = InSnapshotData.LastUpdateGameTime;
+	LastUpdateGameTime = InSnapshotData.LastUpdateGameTime + InRewindTime;
 }
 
 bool UAA_RacerObstacleAvoidanceComponent::PopulateThreatContext(FThreatContext& ThreatContext) const

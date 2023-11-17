@@ -379,7 +379,7 @@ void AAA_WheeledVehiclePawn::SetRewindTime(float Time)
 	if(index < SnapshotData.Num())
 	{
 		UE_LOG(LogAAVehicle,Verbose,TEXT("Setting Snapshot %d of %d"),index, SnapshotData.Num())
-		const FWheeledSnaphotData Snapshot = SnapshotData[index]; 
+		const FWheeledSnaphotData& Snapshot = SnapshotData[index]; 
 		VehicleMovementComponent->SetSnapshot(Snapshot);
 	}else
 	{

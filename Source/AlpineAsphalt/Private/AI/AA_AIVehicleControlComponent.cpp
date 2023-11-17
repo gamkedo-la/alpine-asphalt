@@ -31,7 +31,7 @@ void UAA_AIVehicleControlComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	RegisterRewindable();
+	RegisterRewindable(ERestoreTiming::Resume);
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: BeginPlay"), *LoggingUtils::GetName(GetOwner()), *GetName());
 }
@@ -359,8 +359,12 @@ UAA_AIVehicleControlComponent::FSnapshotData UAA_AIVehicleControlComponent::Capt
 	};
 }
 
-void UAA_AIVehicleControlComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData)
+void UAA_AIVehicleControlComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime)
 {
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-%s: RestoreFromSnapshot: InRewindTime=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), InRewindTime);
+
 	CurrentMovementTarget = InSnapshotData.CurrentMovementTarget;
 	DesiredSpeedMph = InSnapshotData.DesiredSpeedMph;
 	bTurningAround = InSnapshotData.bTurningAround;

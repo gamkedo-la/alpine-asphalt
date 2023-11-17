@@ -76,7 +76,7 @@ void UAA_AIGetUnstuckComponent::BeginPlay()
 	MinNumSamples = MinStuckTime / PrimaryComponentTick.TickInterval;
 	PositionsPtr = MakeUnique<TCircularBuffer<FStuckState>>(MinNumSamples);
 
-	RegisterRewindable();
+	RegisterRewindable(ERestoreTiming::Resume);
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("BeginPlay: Buffer Capacity=%d"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), PositionsPtr ? PositionsPtr->Capacity() : 0);
@@ -231,11 +231,17 @@ AA_AIGetUnstuckComponent::FSnapshotData UAA_AIGetUnstuckComponent::CaptureSnapsh
 	return Data;
 }
 
-void UAA_AIGetUnstuckComponent::RestoreFromSnapshot(const AA_AIGetUnstuckComponent::FSnapshotData& InSnapshotData)
+void UAA_AIGetUnstuckComponent::RestoreFromSnapshot(const AA_AIGetUnstuckComponent::FSnapshotData& InSnapshotData, float InRewindTime)
 {
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-%s: RestoreFromSnapshot: InRewindTime=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), InRewindTime);
+
 	ConsecutiveStuckCount = InSnapshotData.ConsecutiveStuckCount;
 	NextBufferIndex = InSnapshotData.NextBufferIndex;
-	LastStuckTime = InSnapshotData.LastStuckTime;
+	// need to increase the time because the reference point for what is "Now" has changed
+	// We went "back in time" gameplay wise but GetWorldTimeSeconds() is still where it was before
+	LastStuckTime = InSnapshotData.LastStuckTime + InRewindTime; 
 	NumSamples = InSnapshotData.NumSamples;
 	bHasStarted = InSnapshotData.bHasStarted;
 

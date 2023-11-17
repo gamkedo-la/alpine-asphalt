@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "Interface/AA_RewindableInterface.h"
+#include "Interface/AA_RecalculateOnRewind.h"
 #include "Subsystems/AA_RewindSubsystem.h"
 
 /**
@@ -13,9 +14,23 @@
  * RegisterRewindable in <c>BeginPlay</c> and UnregisterRewindable in <c>EndPlay</c>.
  */
 template<typename TSnapshotData>
-class ALPINEASPHALT_API TAA_BaseRewindable : public IAA_RewindableInterface
+class ALPINEASPHALT_API TAA_BaseRewindable : public IAA_RewindableInterface, private AA_RecalculateOnRewind
 {
 public:
+
+	enum class ERestoreTiming : uint8
+	{
+		/*
+		* Immediately restore the snapshot as soon as the rewind occurs.  Needed for visual components.
+		*/
+		Immediate,
+
+		/*
+		* Restore once play resumes.  Usually for calculating non-visual components.
+		*/
+		Resume
+	};
+
 	virtual void SetRewindTime(float Time) override final;
 	virtual void PauseRecordingSnapshots() override final;
 	virtual void ResumeRecordingSnapshots() override final;
@@ -24,15 +39,22 @@ public:
 	virtual ~TAA_BaseRewindable() = default;
 
 protected:
-	void RegisterRewindable();
+	void RegisterRewindable(ERestoreTiming InRestoreTiming);
 	void UnregisterRewindable();
 
 	virtual TSnapshotData CaptureSnapshot() const = 0;
-	virtual void RestoreFromSnapshot(const TSnapshotData& InSnapshotData) = 0;
+	virtual void RestoreFromSnapshot(const TSnapshotData& InSnapshotData, float InRewindTime) = 0;
 	virtual UObject* AsUObject() = 0;
+
+	// optional functions to override
+	// Inherited from AA_RecalculateOnRewind
+	virtual void OnRewindBegin() override {}
 
 private:
 	void RecordSnapshot();
+
+	// Inherited from AA_RecalculateOnRewind
+	virtual void RecalculateOnRewind() override;
 
 private:
 	FTimerHandle RecordingSnapshotTimerHandle;
@@ -45,13 +67,16 @@ private:
 	//Cached property of Rewind Subsystem
 	float RewindResolution = 0.f;
 
+	int32 LastSnapshotIndex{ -1 };
+
 	bool bSnapshotsPaused = false;
+	ERestoreTiming RestoreTiming{};
 };
 
 #pragma region Template Definitions
 
 template<typename TSnapshotData>
-void TAA_BaseRewindable<TSnapshotData>::RegisterRewindable()
+void TAA_BaseRewindable<TSnapshotData>::RegisterRewindable(ERestoreTiming InRestoreTiming)
 {
 	auto Object = AsUObject();
 	check(Object);
@@ -59,10 +84,18 @@ void TAA_BaseRewindable<TSnapshotData>::RegisterRewindable()
 	auto World = Object->GetWorld();
 	check(World);
 	
+	RestoreTiming = InRestoreTiming;
+
 	UAA_RewindSubsystem* RewindSystem = World->GetSubsystem<UAA_RewindSubsystem>();
 	if (!RewindSystem)
 	{
 		return;
+	}
+
+	// register AA_RecalculateOnRewind behavior
+	if (RestoreTiming == ERestoreTiming::Resume)
+	{
+		RegisterRewindCallback();
 	}
 
 	World->GetTimerManager().SetTimer(
@@ -83,6 +116,11 @@ void TAA_BaseRewindable<TSnapshotData>::UnregisterRewindable()
 {
 	auto Object = AsUObject();
 	check(Object);
+
+	if (RestoreTiming == ERestoreTiming::Resume)
+	{
+		UnregisterRewindCallback();
+	}
 
 	auto World = Object->GetWorld();
 	if (!World)
@@ -112,7 +150,12 @@ void TAA_BaseRewindable<TSnapshotData>::SetRewindTime(float Time)
 		return;
 	}
 
-	RestoreFromSnapshot(SnapshotData[Index]);
+	LastSnapshotIndex = Index;
+
+	if (RestoreTiming == ERestoreTiming::Immediate)
+	{
+		RestoreFromSnapshot(SnapshotData[Index], RewindTime);
+	}
 }
 
 template<typename TSnapshotData>
@@ -160,6 +203,7 @@ template<typename TSnapshotData>
 void TAA_BaseRewindable<TSnapshotData>::ResetRewindHistory()
 {
 	SnapshotData.Reset();
+	LastSnapshotIndex = -1;
 }
 
 template<typename TSnapshotData>
@@ -177,6 +221,23 @@ void TAA_BaseRewindable<TSnapshotData>::RecordSnapshot()
 	}
 
 	SnapshotData.Add(CaptureSnapshot());
+}
+
+template<typename TSnapshotData>
+void TAA_BaseRewindable<TSnapshotData>::RecalculateOnRewind()
+{
+	// Rewind history reset or rewind mode canceled
+	if (LastSnapshotIndex < 0 || FMath::IsNearlyZero(RewindTime))
+	{
+		return;
+	}
+
+	// We only register this callback for resume case
+	check(RestoreTiming == ERestoreTiming::Resume);
+
+	check(LastSnapshotIndex < SnapshotData.Num());
+
+	RestoreFromSnapshot(SnapshotData[LastSnapshotIndex], RewindTime);
 }
 
 #pragma endregion Template Definitions

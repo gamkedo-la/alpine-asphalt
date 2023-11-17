@@ -112,8 +112,12 @@ FAA_AIRacerSnapshotData AAA_AIRacerController::CaptureSnapshot() const
 	};
 }
 
-void AAA_AIRacerController::RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData)
+void AAA_AIRacerController::RestoreFromSnapshot(const FAA_AIRacerSnapshotData& InSnapshotData, float InRewindTime)
 {
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s: RestoreFromSnapshot: InRewindTime=%f"),
+		*GetName(), InRewindTime);
+
 	RacerContext.RaceState = InSnapshotData.RaceState;
 	RacerContext.DesiredSpeedMph = InSnapshotData.DesiredSpeedMph;
 	RacerContext.MovementTarget = InSnapshotData.MovementTarget;
@@ -218,7 +222,7 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 	
 	SetupComponentEventBindings();
 
-	RegisterRewindable();
+	RegisterRewindable(ERestoreTiming::Resume);
 
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnPossess: RaceTrack=%s"),
 		*GetName(), *LoggingUtils::GetName(RacerContext.RaceTrack));

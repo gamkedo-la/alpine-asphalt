@@ -45,6 +45,7 @@ struct ALPINEASPHALT_API FAA_RaceState
 struct ALPINEASPHALT_API FAA_RaceStateSnapshotData
 {
 	float DistanceAlongSpline{};
+	float CurrentLapMaxCompletionFraction{};
 	int32 LapCount{};
 };
 
