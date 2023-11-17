@@ -14,6 +14,7 @@
 
 #include <numbers>
 
+#include "Components/AudioComponent.h"
 #include "UI/AA_GameUserSettings.h"
 
 FName AAA_WheeledVehiclePawn::VehicleMovementComponentName(TEXT("WheeledVehicleMovementComp"));
@@ -31,13 +32,17 @@ AAA_WheeledVehiclePawn::AAA_WheeledVehiclePawn(const class FObjectInitializer& O
 	Mesh->BodyInstance.bUseCCD = true;
 	Mesh->SetGenerateOverlapEvents(true);
 	Mesh->SetCanEverAffectNavigation(false);
+
+	//set properties based on mesh
+	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
 	RootComponent = Mesh;
 
 	VehicleMovementComponent = CreateDefaultSubobject<UChaosWheeledVehicleMovementComponent>(VehicleMovementComponentName);
 	VehicleMovementComponent->SetIsReplicated(true); // Enable replication by default
 	VehicleMovementComponent->UpdatedComponent = Mesh;
-	
-	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
+
+	AudioComponent = CreateDefaultSubobject<UAudioComponent>("Audio Component");
+	AudioComponent->SetupAttachment(RootComponent);
 }
 
 void AAA_WheeledVehiclePawn::BeginPlay()
@@ -323,6 +328,9 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 	
 	//Set Skeletal Mesh
 	Mesh->SetSkeletalMesh(NewVehicleData->VehicleMesh);
+	
+	AudioComponent->SetSound(NewVehicleData->Sound);
+	AudioComponent.PO
 
 	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
 	if(PaintMaterial)

@@ -58,6 +58,9 @@ public:
 	UAnimBlueprint* AnimationInstance;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	USoundBase* Sound;
+	
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	TArray<FPaintStyleInfo> PaintStyles;
 
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)

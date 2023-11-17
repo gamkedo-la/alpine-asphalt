@@ -30,6 +30,9 @@ private:
 	UPROPERTY(Category = Vehicle, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UChaosWheeledVehicleMovementComponent> VehicleMovementComponent;
 
+	UPROPERTY(Category = Vehicle, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UAudioComponent> AudioComponent;
+
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta= (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAA_VehicleDataAsset> VehicleData;
 	
