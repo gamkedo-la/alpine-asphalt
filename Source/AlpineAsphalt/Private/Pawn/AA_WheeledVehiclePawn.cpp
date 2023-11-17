@@ -330,7 +330,6 @@ void AAA_WheeledVehiclePawn::SetVehicleData(UAA_VehicleDataAsset* NewVehicleData
 	Mesh->SetSkeletalMesh(NewVehicleData->VehicleMesh);
 	
 	AudioComponent->SetSound(NewVehicleData->Sound);
-	AudioComponent.PO
 
 	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
 	if(PaintMaterial)
