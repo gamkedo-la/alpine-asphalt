@@ -8,6 +8,7 @@
 #include "Components/AA_CheckpointComponent.h"
 #include "Controllers/AA_AIRacerController.h"
 #include "Controllers/AA_PlayerController.h"
+#include "Race/AA_RaceState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_ActivityManagerSubsystem.h"
@@ -143,6 +144,7 @@ void UAA_HeadToHeadActivity::CountdownEnded()
 	StartTime = UGameplayStatics::GetTimeSeconds(this);
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartTimer();
 
+	RegisterRacePositionTimer();
 }
 
 void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
@@ -169,8 +171,10 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 					UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
 					FTimerHandle TimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::RaceEnded,FinishDelay,false);
-					UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
-					//TODO: Add to Score Screen
+					UE_LOG(LogTemp, Log, TEXT("Last Checkpoint Hit: Race Over"))
+						//TODO: Add to Score Screen
+
+					UnRegisterRacePositionTimer();
 				}else
 				{
 					//TODO: increment Laps display
@@ -209,6 +213,97 @@ void UAA_HeadToHeadActivity::AddAIDriverScore(float TimeScore)
 	DriverNames.RemoveAt(NameIndex); // dont reuse name
 }
 
+void UAA_HeadToHeadActivity::HideRaceUIElements(AAA_PlayerController* PlayerController)
+{
+	if (!PlayerController)
+	{
+		return;
+	}
+
+	auto VehicleUI = PlayerController->VehicleUI;
+	if (!VehicleUI)
+	{
+		return;
+	}
+
+	//Hide Time
+	VehicleUI->HideTimer();
+
+	UnRegisterRacePositionTimer();
+	VehicleUI->HideRacePosition();
+
+	//TODO: Hide Laps
+}
+
+void UAA_HeadToHeadActivity::RegisterRacePositionTimer()
+{
+	auto World = GetWorld();
+	check(World);
+
+	World->GetTimerManager().SetTimer(RacePositionUpdateTimer, this, &UAA_HeadToHeadActivity::UpdateRacePosition, RacePositionUpdateFrequency, true);
+}
+
+void UAA_HeadToHeadActivity::UnRegisterRacePositionTimer()
+{
+	auto World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	World->GetTimerManager().ClearTimer(RacePositionUpdateTimer);
+}
+
+void UAA_HeadToHeadActivity::UpdateRacePosition()
+{
+	// Add Player state
+	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (!PC)
+	{
+		return;
+	}
+
+	const auto& PlayerSplineInfo = PC->GetPlayerSplineInfo();
+	if (!PlayerSplineInfo)
+	{
+		return;
+	}
+
+	const auto& PlayerRaceState = PlayerSplineInfo->RaceState;
+	const auto PlayerCompletionFraction = PlayerRaceState.GetOverallCompletionFraction();
+
+	int32 RacerCount { 1 };
+	int32 RacePosition { 1 };
+
+	// Compare to AI Racer States
+	for (auto Racer : AIRacers)
+	{
+		if (!Racer)
+		{
+			continue;
+		}
+
+		auto RacerController = Cast<AAA_AIRacerController>(Racer->GetController());
+		if (!RacerController)
+		{
+			continue;
+		}
+
+		const auto& AIRacerState = RacerController->GetRacerContext().RaceState;
+		++RacerCount;
+
+		if (AIRacerState.GetOverallCompletionFraction() > PlayerCompletionFraction)
+		{
+			++RacePosition;
+		}
+	}
+
+	auto VehicleUI = PC->VehicleUI;
+	check(VehicleUI);
+
+	VehicleUI->UpdateRacePosition(RacePosition, RacerCount);
+}
+
 void UAA_HeadToHeadActivity::RaceEnded()
 {
 	//Play Replay
@@ -216,6 +311,8 @@ void UAA_HeadToHeadActivity::RaceEnded()
 
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::ReplayStartDelayEnded,ReplayStartDelay,false);
+
+	UnRegisterRacePositionTimer();
 }
 
 void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
@@ -247,9 +344,7 @@ void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
 		ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
 	}
 	
-	//Hide Time
-	PC->VehicleUI->HideTimer();
-	//TODO: Hide Laps, Hide Position
+	HideRaceUIElements(PC);
 }
 void UAA_HeadToHeadActivity::DestroyActivity()
 {
@@ -269,8 +364,8 @@ void UAA_HeadToHeadActivity::DestroyActivity()
 	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
 	PlayerVehicle->ResetVehicle();
 
-	//Hide Timer (May be redundant, but we might leave before the race is over)
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
+	//Hide Timer and other UI elements specific to the race (May be redundant, but we might leave before the race is over)
+	HideRaceUIElements(Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)));
 
 	ScoreScreen = nullptr;
 

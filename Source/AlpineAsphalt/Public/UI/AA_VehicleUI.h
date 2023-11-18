@@ -35,4 +35,10 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void SetSpeedUnitKPH(bool SpeedUnitIsKPH);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void UpdateRacePosition(int32 Place, int32 NumRacers);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void HideRacePosition();
 };

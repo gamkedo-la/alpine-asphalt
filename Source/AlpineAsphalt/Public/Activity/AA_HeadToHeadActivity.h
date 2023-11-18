@@ -9,18 +9,19 @@ class UAA_VehicleDataAsset;
 class AAA_WheeledVehiclePawn;
 class UAA_TimeTrialScoreScreenUI;
 class AAA_TrackInfoActor;
+class AAA_PlayerController;
 
 UCLASS(Blueprintable)
 class UAA_HeadToHeadActivity : public UAA_BaseActivity
 {
-	
+
 	GENERATED_BODY()
-	
+
 public:
 	//Initialize Activity with all needed info
 	UFUNCTION()
 	virtual void Initialize(AAA_TrackInfoActor* Track) override;
-	
+
 	//loads the activity and all needed actors
 	UFUNCTION()
 	virtual void LoadActivity() override;
@@ -49,15 +50,21 @@ private:
 	UFUNCTION()
 	void AddAIDriverScore(float TimeScore);
 
+	void HideRaceUIElements(AAA_PlayerController* PlayerController);
+
+	void RegisterRacePositionTimer();
+	void UnRegisterRacePositionTimer();
+	void UpdateRacePosition();
+
 	UPROPERTY()
 	TArray<FDriverName> DriverNames;
-	
+
 	UPROPERTY()
-	TMap<AAA_WheeledVehiclePawn*,int> LapsCompletedMap;
-	
+	TMap<AAA_WheeledVehiclePawn*, int> LapsCompletedMap;
+
 	UPROPERTY(EditDefaultsOnly)
 	TArray<UAA_VehicleDataAsset*> VehiclesToSpawn;
-	
+
 	UPROPERTY()
 	AAA_TrackInfoActor* Track;
 
@@ -78,7 +85,7 @@ private:
 
 	UPROPERTY()
 	TArray<float> FinishTimes;
-	
+
 	UPROPERTY()
 	int LastCheckpointHitIndex = -1;
 
@@ -87,14 +94,18 @@ private:
 
 	UPROPERTY()
 	float FinishDelay = 1.f;
-	
+
 	UPROPERTY()
 	float ReplayStartDelay = .2f;
 
 	UPROPERTY()
 	float StartTime;
-	
+
 	UPROPERTY()
 	float FinishTime;
-	
+
+	FTimerHandle RacePositionUpdateTimer{};
+
+	UPROPERTY(EditDefaultsOnly)
+	float RacePositionUpdateFrequency{ 1.0f };
 };
