@@ -76,7 +76,7 @@ void AAA_WheeledVehiclePawn::Destroyed()
 	{
 		GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->UnregisterRewindable(this);
 	}
-#elif 
+#else 
 	GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->UnregisterRewindable(this);
 #endif
 
