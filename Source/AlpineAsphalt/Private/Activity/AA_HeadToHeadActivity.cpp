@@ -31,7 +31,7 @@ void UAA_HeadToHeadActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 void UAA_HeadToHeadActivity::LoadActivity()
 {
 	//Start Replay
-	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
+	//UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
 	
 	//Spawn DataLayers, Despawn DataLayers, Spawn Checkpoints
 	Track->LoadRace();
@@ -119,6 +119,9 @@ void UAA_HeadToHeadActivity::StartActivity()
 {
 	//Ensure Index is reset
 	LastCheckpointHitIndex = -1;
+
+	//Set First Checkpoint Active
+	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 	
 	//Start Countdown
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
@@ -160,6 +163,7 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 	{
 		if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
 		{
+			Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit]->SetActive(false);
 			LastCheckpointHitIndex = IndexCheckpointHit;
 			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
 			if(LastCheckpointHitIndex == NumCheckpoints-1) // Player finished race
@@ -168,7 +172,7 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 				if(LapsCompletedMap[HitVehicle] == Track->LapsToComplete)
 				{
 					FinishTime = UGameplayStatics::GetTimeSeconds(this);
-					UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
+					//UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
 					FTimerHandle TimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_HeadToHeadActivity::RaceEnded,FinishDelay,false);
 					UE_LOG(LogTemp, Log, TEXT("Last Checkpoint Hit: Race Over"))
@@ -179,6 +183,9 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 				{
 					//TODO: increment Laps display
 				}
+			}else
+			{
+				Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit+1]->SetActive(true);
 			}
 		}else
 		{

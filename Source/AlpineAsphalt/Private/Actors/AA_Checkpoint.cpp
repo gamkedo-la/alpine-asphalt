@@ -66,8 +66,12 @@ void AAA_Checkpoint::SetIndicatorVisibleInMap(bool bVisible)
 	MapIndicator->SetHiddenInSceneCapture(!bVisible);
 }
 
+void AAA_Checkpoint::SetActive_Implementation(bool IsActive)
+{
+}
+
 void AAA_Checkpoint::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if(auto HitVehicle = Cast<AAA_WheeledVehiclePawn>(OtherActor))
 	{

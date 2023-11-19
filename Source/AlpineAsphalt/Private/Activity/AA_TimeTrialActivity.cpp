@@ -28,7 +28,7 @@ void UAA_TimeTrialActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 void UAA_TimeTrialActivity::LoadActivity()
 {
 	//Start Replay
-	UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
+	//UGameplayStatics::GetGameInstance(this)->StartRecordingReplay(FString("Replay"),FString("Replay"));
 	
 	//Spawn DataLayers, Despawn DataLayers, Spawn Checkpoints
 	Track->LoadRace();
@@ -98,7 +98,7 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 				if(PlayerLapCounter == Track->LapsToComplete)
 				{
 					FinishTime = UGameplayStatics::GetTimeSeconds(this);
-					UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
+					//UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
 					FTimerHandle TimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::RaceEnded,FinishDelay,false);
 					UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))

@@ -23,15 +23,17 @@ public:
 	void SetIndex(int Index);
 	void SetIndicatorVisibleInMap(bool bVisible);
 
+	UFUNCTION(BlueprintNativeEvent)
+	void SetActive(bool IsActive);
 	UPROPERTY(BlueprintAssignable)
 	FCheckpointHitSignature CheckpointHit;
+	
+	UPROPERTY(BlueprintReadOnly,EditAnywhere)
+	UBoxComponent* Collision;
 	
 private:
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UPROPERTY(EditAnywhere)
-	UBoxComponent* Collision;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UPaperSpriteComponent> MapIndicator{};
