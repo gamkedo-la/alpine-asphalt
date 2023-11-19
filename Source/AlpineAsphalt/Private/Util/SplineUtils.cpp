@@ -95,6 +95,23 @@ bool AA::SplineUtils::TryUpdateRaceState(const USplineComponent& Spline, FAA_Rac
 	return true;
 }
 
+ALPINEASPHALT_API FVector AA::SplineUtils::ResetVehicleToLastSplineLocation(AAA_WheeledVehiclePawn& VehiclePawn, const USplineComponent& Spline, const FAA_RaceState& RaceState)
+{
+	const auto& ResetWorldLocation = Spline.GetWorldLocationAtDistanceAlongSpline(RaceState.DistanceAlongSpline);
+
+	UE_VLOG_UELOG(SplineUtilsGetLogOwner(VehiclePawn), LogAlpineAsphalt, Display,
+		TEXT("%s: ResetVehicleToLastSplineLocation: %s"),
+		*VehiclePawn.GetName(), *ResetWorldLocation.ToCompactString());
+
+	UE_VLOG_LOCATION(SplineUtilsGetLogOwner(VehiclePawn), LogAlpineAsphalt, Display,
+		ResetWorldLocation + FVector(0, 0, 75.0f), 150.0f, FColor::Blue,
+		TEXT("%s: ResetVehicleLocation"), *VehiclePawn.GetName());
+
+	VehiclePawn.ResetVehicleAtLocation(ResetWorldLocation);
+
+	return ResetWorldLocation;
+}
+
 namespace
 {
 	const UObject* SplineUtilsGetLogOwner(const AAA_WheeledVehiclePawn& Vehicle)

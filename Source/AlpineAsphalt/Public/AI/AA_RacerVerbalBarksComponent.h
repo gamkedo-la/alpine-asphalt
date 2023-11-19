@@ -31,7 +31,7 @@ public:
 	UAA_RacerVerbalBarksComponent();
 
 	UFUNCTION()
-	void OnStuck(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition);
+	void OnStuck(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition, bool bAtMaxRetries);
 
 	void OnPossessedVehiclePawn(AAA_WheeledVehiclePawn* VehiclePawn);
 

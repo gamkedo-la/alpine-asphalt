@@ -27,7 +27,7 @@ UAA_RacerVerbalBarksComponent::UAA_RacerVerbalBarksComponent()
 	PrimaryComponentTick.TickInterval = 0.5f;
 }
 
-void UAA_RacerVerbalBarksComponent::OnStuck(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition)
+void UAA_RacerVerbalBarksComponent::OnStuck(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition, bool bAtMaxRetries)
 {
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 		TEXT("%s-%s: OnStuck"),

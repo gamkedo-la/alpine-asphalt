@@ -13,7 +13,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnVehicleReachedTarget, AAA_Wheele
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnVehicleTargetUpdated, AAA_WheeledVehiclePawn*, VehiclePawn, const FVector&, Target, float, NewDesiredSpeedMph);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnVehicleObstaclesUpdated, AAA_WheeledVehiclePawn*, VehiclePawn, const TArray<AAA_WheeledVehiclePawn*>&, VehicleObstacles);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnVehicleAvoidancePositionUpdated, AAA_WheeledVehiclePawn*, VehiclePawn, const FAA_AIRacerAvoidanceContext&, AvoidanceContext);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnVehicleStuck, AAA_WheeledVehiclePawn*, VehiclePawn, const FVector&, IdealTarget);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnVehicleStuck, AAA_WheeledVehiclePawn*, VehiclePawn, const FVector&, IdealTarget, bool, bAtMaxRetries);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRaceCompleted, AAA_WheeledVehiclePawn*, VehiclePawn);
 
 // This is required in order for the above delegate declaration to code expand - otherwise the macros do nothing

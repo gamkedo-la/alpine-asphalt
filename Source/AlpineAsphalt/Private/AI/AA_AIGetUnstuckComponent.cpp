@@ -127,7 +127,7 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 			TEXT("%s-%s: TickComponent - Insufficient Samples %d < %d"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), CurrentBufferIndex, MinNumSamples);
+			*GetName(), *LoggingUtils::GetName(GetOwner()), NumSamples, MinNumSamples);
 		return;
 	}
 
@@ -196,7 +196,8 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Display, IdealSeekPosition, IdealSeekPosition + FVector{ 0,0, 100 }, 50.0f, FColor::Blue,
 		TEXT("%s: Unstuck Seek Target"), *VehiclePawn->GetName());
 
-	OnVehicleStuck.Broadcast(VehiclePawn, IdealSeekPosition);
+	const bool bAtMaxStuckCountBeforeReset = ConsecutiveStuckCount == MaxOffsets - 1;
+	OnVehicleStuck.Broadcast(VehiclePawn, IdealSeekPosition, bAtMaxStuckCountBeforeReset);
 }
 
 void UAA_AIGetUnstuckComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)

@@ -228,6 +228,47 @@ void UAA_RacerSplineFollowingComponent::UpdateLastSplineStateIfApproachTooSteep(
 	}
 }
 
+bool UAA_RacerSplineFollowingComponent::ResetLastSplineStateToRaceState(FAA_AIRacerContext& RacerContext)
+{
+	check(RacerContext.RaceTrack);
+	check(RacerContext.RaceTrack->Spline);
+	check(RacerContext.VehiclePawn);
+
+	auto Spline = RacerContext.RaceTrack->Spline;
+	auto Vehicle = RacerContext.VehiclePawn;
+	const auto& RaceState = RacerContext.RaceState;
+
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: ResetLastSplineStateToRaceState: VehiclePawn=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(Vehicle));
+
+	const auto& ResetSplineWorldLocation = SplineUtils::ResetVehicleToLastSplineLocation(*Vehicle, *Spline, RaceState);
+
+	FSplineState SplineState;
+
+	SplineState.SplineKey = Spline->GetInputKeyAtDistanceAlongSpline(RaceState.DistanceAlongSpline);
+	SplineState.DistanceAlongSpline = RaceState.DistanceAlongSpline;
+	SplineState.WorldLocation =  SplineState.OriginalWorldLocation = ResetSplineWorldLocation;
+	SplineState.LookaheadDistance = MinLookaheadDistance;
+	SplineState.SplineDirection = Spline->GetDirectionAtSplineInputKey(SplineState.SplineKey, ESplineCoordinateSpace::World);
+
+	ResetAvoidanceContext();
+
+	LastSplineState = SplineState;
+
+	const auto NextSplineState = GetNextSplineState(RacerContext, LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance);
+	if (!NextSplineState)
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning, TEXT("%s-%s: ResetLastSplineStateToRaceState: VehiclePawn=%s - Unable to GetNextSplineState from LastSplineState=%s"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(Vehicle), *LastSplineState->ToString());
+
+		return false;
+	}
+
+	LastSplineState = NextSplineState;
+
+	return true;
+}
+
 void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_WheeledVehiclePawn* VehiclePawn, const FAA_AIRacerAvoidanceContext& AvoidanceContext)
 {
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: VehiclePawn=%s; AvoidanceContext=%s"),
@@ -310,7 +351,6 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Log, LastSplineState->WorldLocation + FVector(0,0,50.0f), 100.0f, FColor::Red,
 		TEXT("%s - Avoidance Target; CurrentAvoidanceOffset=%f"), *VehiclePawn->GetName(), CurrentAvoidanceOffset);
 
-
 	UpdateMovementFromLastSplineState(RacerContext);
 }
 
@@ -320,10 +360,10 @@ void UAA_RacerSplineFollowingComponent::ResetAvoidanceContext()
 	LastAvoidanceContext.reset();
 }
 
-void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition)
+void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition, bool bAtMaxRetries)
 {
-	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: SelectUnstuckTarget: VehiclePawn=%s; IdealSeekPosition=%s"),
-		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *IdealSeekPosition.ToCompactString());
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: SelectUnstuckTarget: VehiclePawn=%s; IdealSeekPosition=%s, bAtMaxRetries=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *IdealSeekPosition.ToCompactString(), LoggingUtils::GetBoolString(bAtMaxRetries));
 
 	check(VehiclePawn);
 	check(RacerContextProvider);
@@ -334,17 +374,27 @@ void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePa
 
 	auto RaceSpline = RacerContext.RaceTrack->Spline;
 
-	const auto Key = RaceSpline->FindInputKeyClosestToWorldLocation(IdealSeekPosition);
-	const auto DistanceAlongSpline = RaceSpline->GetDistanceAlongSplineAtSplineInputKey(Key);
-
-	auto NextSplineState = GetNextSplineState(RacerContext, DistanceAlongSpline);
-
-	if (!NextSplineState)
+	if (bAtMaxRetries)
 	{
-		return;
+		if (!ResetLastSplineStateToRaceState(RacerContext))
+		{
+			return;
+		}
 	}
+	else
+	{
+		const auto Key = RaceSpline->FindInputKeyClosestToWorldLocation(IdealSeekPosition);
+		const auto DistanceAlongSpline = RaceSpline->GetDistanceAlongSplineAtSplineInputKey(Key);
 
-	LastSplineState = NextSplineState;
+		auto NextSplineState = GetNextSplineState(RacerContext, DistanceAlongSpline);
+
+		if (!NextSplineState)
+		{
+			return;
+		}
+
+		LastSplineState = NextSplineState;
+	}
 
 	UpdateMovementFromLastSplineState(RacerContext);
 }

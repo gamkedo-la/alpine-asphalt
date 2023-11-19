@@ -57,7 +57,7 @@ public:
 	void OnVehicleAvoidancePositionUpdated(AAA_WheeledVehiclePawn* VehiclePawn, const FAA_AIRacerAvoidanceContext& AvoidanceContext);
 
 	UFUNCTION()
-	void SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition);
+	void SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition, bool bAtMaxRetries);
 
 	UFUNCTION(BlueprintCallable, Category = "Racer AI")
 	void SetMaxSpeedMph(float SpeedMph);
@@ -90,6 +90,7 @@ private:
 	void UpdateMovementFromLastSplineState(FAA_AIRacerContext& RacerContext);
 	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, AA_RacerSplineFollowingComponent::FSplineState& SplineState, float RoadOffset) const;
 	void UpdateLastSplineStateIfApproachTooSteep(const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, const AA_RacerSplineFollowingComponent::FSplineState& OriginalSplineState);
+	bool ResetLastSplineStateToRaceState(FAA_AIRacerContext& RacerContext);
 
 	/*
 	* Curvature between [0,1] indicating how steep the upcoming road is for speed adjustment purposes.

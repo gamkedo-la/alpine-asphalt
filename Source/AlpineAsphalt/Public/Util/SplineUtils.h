@@ -11,4 +11,6 @@ struct FAA_RaceState;
 namespace AA::SplineUtils
 {
 	ALPINEASPHALT_API bool TryUpdateRaceState(const USplineComponent& Spline, FAA_RaceState& RaceState);
+
+	ALPINEASPHALT_API FVector ResetVehicleToLastSplineLocation(AAA_WheeledVehiclePawn& VehiclePawn, const USplineComponent& Spline, const FAA_RaceState& RaceState);
 }
