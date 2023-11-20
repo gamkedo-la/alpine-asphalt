@@ -182,6 +182,7 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 				}else
 				{
 					//TODO: increment Laps display
+					Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 				}
 			}else
 			{

@@ -62,6 +62,9 @@ void UAA_TimeTrialActivity::StartActivity()
 {
 	//Ensure Index is reset
 	LastCheckpointHitIndex = -1;
+
+	//Set First Checkpoint Active
+	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 	
 	//Start Countdown
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
@@ -86,10 +89,11 @@ void UAA_TimeTrialActivity::CountdownEnded()
 
 void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
 {
-	if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
+	if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 	{
-		if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
+		if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
 		{
+			Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit]->SetActive(false);
 			LastCheckpointHitIndex = IndexCheckpointHit;
 			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Success"))
 			if(LastCheckpointHitIndex == NumCheckpoints-1)
@@ -105,12 +109,17 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 				}else
 				{
 					//TODO: Increase Lap Counter Display
+					Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
+
 				}
+			}else
+			{
+				Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit+1]->SetActive(true);
 			}
+		}else
+		{
+			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
 		}
-	}else
-	{
-		UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
 	}
 }
 
