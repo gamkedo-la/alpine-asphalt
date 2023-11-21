@@ -550,6 +550,6 @@ void AAA_WheeledVehiclePawn::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 
 void AAA_WheeledVehiclePawn::ResetVehicleAtLocation(const FVector& WorldLocation)
 {
-	SetActorLocation(WorldLocation);
+	SetActorLocation(WorldLocation, false, nullptr, ETeleportType::ResetPhysics);
 	ResetVehicle();
 }
