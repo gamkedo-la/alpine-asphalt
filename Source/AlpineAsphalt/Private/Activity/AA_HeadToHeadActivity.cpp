@@ -356,6 +356,11 @@ void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
 }
 void UAA_HeadToHeadActivity::DestroyActivity()
 {
+	for(int i = AIRacers.Num()-1; i >= 0; i--)
+	{
+		AIRacers[i]->Destroy();
+	}
+	AIRacers.Reset();
 	//Unbind to Checkpoints
 	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
 	{
@@ -376,7 +381,7 @@ void UAA_HeadToHeadActivity::DestroyActivity()
 	HideRaceUIElements(Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)));
 
 	ScoreScreen = nullptr;
-
+	
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
 }
 
