@@ -175,6 +175,13 @@ void AAA_PlayerController::BeginPlay()
 	InitDebugDraw();
 }
 
+void AAA_PlayerController::EndPlay(EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	DestroyDebugDraw();
+}
+
 void AAA_PlayerController::SetBrake(const FInputActionValue& Value) 
 {
 	VehiclePawn->SetBrake(Value.Get<float>());

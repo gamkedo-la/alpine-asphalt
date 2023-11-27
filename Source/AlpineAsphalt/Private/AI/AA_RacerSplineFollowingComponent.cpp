@@ -53,7 +53,7 @@ void UAA_RacerSplineFollowingComponent::BeginPlay()
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: BeginPlay: Landscape=%s"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(Landscape));
 
-	LastCurvature = 0.0f;
+	LastCurvature = {};
 	MaxApproachAngleCosine = FMath::Cos(FMath::DegreesToRadians(MaxApproachAngle));
 
 	RegisterRewindable(ERestoreTiming::Resume);
@@ -564,7 +564,7 @@ std::optional<FSplineState> UAA_RacerSplineFollowingComponent::GetNextSplineStat
 	if (!LookaheadDistanceOverride)
 	{
 		const auto LookaheadSpeedAlpha = FMath::Max(0, Vehicle->GetVehicleSpeedMph() - MinSpeedMph) / (MaxSpeedMph - MinSpeedMph);
-		const auto LookaheadCurvatureAlpha = FMath::Abs(LastCurvature);
+		const auto LookaheadCurvatureAlpha = FMath::Abs(LastCurvature.Curvature);
 		const auto LookaheadAlpha = LookaheadCurvatureAlpha * LookaheadCurvatureAlphaWeight + LookaheadSpeedAlpha * (1 - LookaheadCurvatureAlphaWeight);
 
 		State.LookaheadDistance = FMath::Lerp(MinLookaheadDistance, MaxLookaheadDistance, LookaheadAlpha);
@@ -662,17 +662,17 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 	check(RacerContext.VehiclePawn);
 
 	// Adjust speed based on upcoming curvature
-	LastCurvature = CalculateUpcomingRoadCurvature();
+	LastCurvature = CalculateUpcomingRoadCurvatureAndBankAngle();
 
 	// Adjust positioning based on curvature if not avoiding an obstacle 
 	// head to outside of track to minimize the angular velocity and give best chance to negotiate the turn
 	const auto CurrentAvoidanceOffsetSign = FMath::Sign(CurrentAvoidanceOffset);
-	const auto LastCurvatureSign = FMath::Sign(LastCurvature);
+	const auto LastCurvatureSign = FMath::Sign(LastCurvature.Curvature);
 
 	// Either adding a new offset or increasing the current one in the same direction
-	if (!FMath::IsNearlyZero(LastCurvature) && (FMath::IsNearlyZero(CurrentAvoidanceOffsetSign) || FMath::IsNearlyEqual(CurrentAvoidanceOffsetSign, LastCurvatureSign)))
+	if (!FMath::IsNearlyZero(LastCurvature.Curvature) && (FMath::IsNearlyZero(CurrentAvoidanceOffsetSign) || FMath::IsNearlyEqual(CurrentAvoidanceOffsetSign, LastCurvatureSign)))
 	{
-		const auto CurvatureAdjustedOffset = LastCurvatureSign * FMath::Max(CurrentAvoidanceOffset * CurrentAvoidanceOffsetSign, CalculateMaxOffsetAtLastSplineState() * LastCurvature * LastCurvatureSign);
+		const auto CurvatureAdjustedOffset = LastCurvatureSign * FMath::Max(CurrentAvoidanceOffset * CurrentAvoidanceOffsetSign, CalculateMaxOffsetAtLastSplineState() * LastCurvature.Curvature * LastCurvatureSign);
 
 		// Blend with previous
 		const auto AdjustedOffset = LastSplineState->RoadOffset * CurvatureRoadOffsetBlendFactor + CurvatureAdjustedOffset * (1 - CurvatureRoadOffsetBlendFactor);
@@ -681,7 +681,7 @@ void UAA_RacerSplineFollowingComponent::UpdateMovementFromLastSplineState(FAA_AI
 
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
 		TEXT("%s-%s: UpdateMovementFromLastSplineState - Curvature=%f"),
-		*GetName(), *LoggingUtils::GetName(GetOwner()), LastCurvature);
+		*GetName(), *LoggingUtils::GetName(GetOwner()), LastCurvature.Curvature);
 
 	RacerContext.DesiredSpeedMph = CalculateNewSpeed(RacerContext);
 	RacerContext.MovementTarget = LastSplineState->WorldLocation;
@@ -706,7 +706,7 @@ float UAA_RacerSplineFollowingComponent::CalculateNewSpeed(const FAA_AIRacerCont
 	}
 
 	// Make curvature influence max speed with square of straightness factor [0,1]
-	const auto StraightnessFactor = 1 - FMath::Abs(LastCurvature);
+	const auto StraightnessFactor = 1 - FMath::Abs(LastCurvature.Curvature);
 	auto NewSpeed = ClampSpeed(MaxSpeedMph * FMath::Square(StraightnessFactor));
 
 	// Scale the speed to avoidance target as well
@@ -726,11 +726,11 @@ float UAA_RacerSplineFollowingComponent::CalculateNewSpeed(const FAA_AIRacerCont
 	return NewSpeed;
 }
 
-float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
+FRoadCurvature UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvatureAndBankAngle() const
 {
 	if (!LastSplineState || !RacerContextProvider)
 	{
-		return 0.0f;
+		return {};
 	}
 
 	const auto& RacerContext = RacerContextProvider->GetRacerContext();
@@ -738,15 +738,13 @@ float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 
 	if (!MyVehicle)
 	{
-		return 0.0f;
+		return {};
 	}
-
 
 	check(RacerContext.RaceTrack);
 	check(RacerContext.RaceTrack->Spline);
 
 	const auto RaceTrack = RacerContext.RaceTrack;
-	const auto Spline = RaceTrack->Spline;
 	const auto& RaceState = RacerContext.RaceState;
 
 	float LookaheadDistanceAlongSpline = LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance * RoadCurvatureLookaheadFactor;
@@ -763,17 +761,44 @@ float UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature() const
 	// Base curvature on direction vector to current target and direction from that target to one after it
 	if (!LookaheadState)
 	{
-		return 0.0f;
+		return {};
 	}
+
+	FRoadCurvature Curvature;
 
 	const auto ToCurrentTargetNormalized = (LastSplineState->WorldLocation - LastMovementTarget).GetSafeNormal();
 	const auto CurrentTargetToNextNormalized = (LookaheadState->WorldLocation - LastSplineState->WorldLocation).GetSafeNormal();
 	const auto DotProduct = ToCurrentTargetNormalized | CurrentTargetToNextNormalized;
 
 	// consider anything <= 0 a curvature of one
-	// Sign is based on sign of cross product - left is positive and right is negative - this helps with offset calculations
-	const auto Sign = -FMath::Sign((ToCurrentTargetNormalized ^ CurrentTargetToNextNormalized).Z);
-	return Sign * FMath::Min(1 - DotProduct, 1);
+	// CurvatureSign is based on sign of cross product - left is positive and right is negative - this helps with offset calculations
+	const auto CurvatureSign = -FMath::Sign((ToCurrentTargetNormalized ^ CurrentTargetToNextNormalized).Z);
+	Curvature.Curvature = CurvatureSign * FMath::Min(1 - DotProduct, 1);
+
+	// TODO: Calculate Bank Angle
+	const auto Spline = RaceTrack->Spline;
+
+	// Determine if bank angle is positive or negative by the z component of the right vector and then multiple by the direction of the curve (CurvatureSign)
+	// A left turn should be banked with right vector z positive and right turn with right vector z negative
+	const auto LookaheadSplineRightVector = Spline->GetRightVectorAtSplineInputKey(LookaheadState->SplineKey, ESplineCoordinateSpace::Type::Local);
+
+	if (!FMath::IsNearlyZero(LookaheadSplineRightVector.Z))
+	{
+		const auto BankSign = FMath::Sign(LookaheadSplineRightVector.Z);
+
+		// Bank angle is the angle between the world up and the spline world up
+		const auto SplineUp = Spline->GetUpVectorAtSplineInputKey(LookaheadState->SplineKey, ESplineCoordinateSpace::Type::World);
+
+		Curvature.BankAngle = FMath::RadiansToDegrees(FMath::Acos(SplineUp | FVector::UpVector) * CurvatureSign * BankSign);
+	}
+	else
+	{
+		// no bank
+		Curvature.BankAngle = 0;
+	}
+
+
+	return Curvature;
 }
 
 float UAA_RacerSplineFollowingComponent::CalculateMaxOffsetAtLastSplineState() const
@@ -817,8 +842,9 @@ void UAA_RacerSplineFollowingComponent::DescribeSelfToVisLog(FVisualLogEntry* Sn
 	FVisualLogStatusCategory Category;
 	Category.Category = TEXT("Racer Spline Following Component");
 	
-	Category.Add(TEXT("MaxSpeed"), FString::Printf(TEXT("%.1f mph"), MaxSpeedMph));
-	Category.Add(TEXT("LastCurvature"), FString::Printf(TEXT("%.1f"), LastCurvature));
+	Category.Add(TEXT("Max Speed"), FString::Printf(TEXT("%.1f mph"), MaxSpeedMph));
+	Category.Add(TEXT("Last Curvature"), FString::Printf(TEXT("%.1f"), LastCurvature.Curvature));
+	Category.Add(TEXT("Last Bank Angle"), FString::Printf(TEXT("%.1f"), LastCurvature.BankAngle));
 	Category.Add(TEXT("CurrentAvoidanceOffset"), FString::Printf(TEXT("%.1f"), CurrentAvoidanceOffset));
 
 	if (RacerContextProvider && LastSplineState && RacerContextProvider->GetRacerContext().VehiclePawn && 

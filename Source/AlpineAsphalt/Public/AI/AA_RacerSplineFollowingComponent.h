@@ -32,12 +32,18 @@ namespace AA_RacerSplineFollowingComponent
 		FString ToString() const;
 	};
 
+	struct FRoadCurvature
+	{
+		float Curvature{};
+		float BankAngle{};
+	};
+
 	struct FSnapshotData
 	{
 		std::optional<FSplineState> LastSplineState{};
 		std::optional<FAA_AIRacerAvoidanceContext> LastAvoidanceContext{};
 		FVector LastMovementTarget{ EForceInit::ForceInitToZero };
-		float LastCurvature{};
+		FRoadCurvature LastCurvature{};
 		float CurrentAvoidanceOffset{};
 	};
 }
@@ -94,8 +100,9 @@ private:
 
 	/*
 	* Curvature between [0,1] indicating how steep the upcoming road is for speed adjustment purposes.
+	* Bank angle is between [-90,90] indicating the bank of the road.
 	*/
-	float CalculateUpcomingRoadCurvature() const;
+	AA_RacerSplineFollowingComponent::FRoadCurvature CalculateUpcomingRoadCurvatureAndBankAngle() const;
 
 	float CalculateMaxOffsetAtLastSplineState() const;
 
@@ -162,8 +169,7 @@ private:
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float CurvatureRoadOffsetBlendFactor{ 0.5f };
 
-	UPROPERTY(Transient, Category = "Movement", VisibleInstanceOnly)
-	float LastCurvature{ 0.0f };
+	AA_RacerSplineFollowingComponent::FRoadCurvature LastCurvature{ };
 
 	FVector LastMovementTarget{ EForceInit::ForceInitToZero };
 
