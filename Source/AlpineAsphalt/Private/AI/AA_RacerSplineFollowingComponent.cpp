@@ -14,6 +14,7 @@
 #include "FunctionLibraries/AA_BlueprintFunctionLibrary.h"
 #include "Landscape.h"
 #include "Components/SplineMeshComponent.h"
+#include "Curves/CurveFloat.h"
 
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Util/SplineUtils.h"
@@ -508,6 +509,7 @@ bool UAA_RacerSplineFollowingComponent::IsCurrentPathOccluded(const AAA_WheeledV
 	return bOccluded;
 }
 
+
 ALandscape* UAA_RacerSplineFollowingComponent::GetLandscapeActor() const
 {
 	const auto GameWorld = GetWorld();
@@ -705,9 +707,31 @@ float UAA_RacerSplineFollowingComponent::CalculateNewSpeed(const FAA_AIRacerCont
 		return MinSpeedMph;
 	}
 
-	// Make curvature influence max speed with square of straightness factor [0,1]
-	const auto StraightnessFactor = 1 - FMath::Abs(LastCurvature.Curvature);
-	auto NewSpeed = ClampSpeed(MaxSpeedMph * FMath::Square(StraightnessFactor));
+
+	float StraightnessFactor = 1 - FMath::Abs(LastCurvature.Curvature);
+	float NewSpeed;
+
+	if (FMath::Abs(1.0f - StraightnessFactor) < 0.02f)
+	{
+		NewSpeed = MaxSpeedMph;
+	}
+	else if (SpeedVsCurvatureCurve)
+	{
+		if (CurvatureReductionVsBankAngleCurve && LastCurvature.BankAngle > 0)
+		{
+			StraightnessFactor = FMath::Min(StraightnessFactor * CurvatureReductionVsBankAngleCurve->FloatCurve.Eval(LastCurvature.BankAngle, 1.0f), 1.0f);
+		}
+
+		NewSpeed = ClampSpeed(SpeedVsCurvatureCurve->FloatCurve.Eval(1 - StraightnessFactor, MaxSpeedMph));
+	}
+	else
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning,
+			TEXT("%s-%s: CalculateNewSpeed - SpeedVsCurvatureCurve not set - using default calculation"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()));
+
+		NewSpeed = GetDefaultSpeedFromStraightnessFactor(StraightnessFactor);
+	}
 
 	// Scale the speed to avoidance target as well
 	if (LastAvoidanceContext && NewSpeed > LastAvoidanceContext->NormalizedThreatSpeedMph)
@@ -719,11 +743,18 @@ float UAA_RacerSplineFollowingComponent::CalculateNewSpeed(const FAA_AIRacerCont
 			(1 - AvoidanceThreatSpeedReductionFactor * LastAvoidanceContext->ThreatCount));
 
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
-			TEXT("%s-%s: UpdateMovementFromLastSplineState - Adjusting speed target based on avoidance data: InitialNewSpeed=%fmph; AdjustedNewSpeed=%fmph; AvoidanceContext=%s"),
+			TEXT("%s-%s: CalculateNewSpeed - Adjusting speed target based on avoidance data: InitialNewSpeed=%fmph; AdjustedNewSpeed=%fmph; AvoidanceContext=%s"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), InitialNewSpeed, NewSpeed, *LastAvoidanceContext->ToString());
 	}
 
 	return NewSpeed;
+}
+
+
+float UAA_RacerSplineFollowingComponent::GetDefaultSpeedFromStraightnessFactor(float StraightnessFactor) const
+{
+	// Make curvature influence max speed with square of straightness factor [0,1]
+	return ClampSpeed(MaxSpeedMph * FMath::Square(StraightnessFactor));
 }
 
 FRoadCurvature UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvatureAndBankAngle() const

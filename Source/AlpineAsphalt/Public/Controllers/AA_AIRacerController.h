@@ -24,7 +24,7 @@ class UAA_RacerVerbalBarksComponent;
 
 class AAA_WheeledVehiclePawn;
 class ALandscape;
-
+class UCurveFloat;
 
 USTRUCT(BlueprintType)
 struct ALPINEASPHALT_API FAA_RacerAISettings
@@ -49,6 +49,11 @@ struct ALPINEASPHALT_API FAA_RacerAISettings
 	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, meta = (ClampMin = 1.0f))
 	float BrakingForceBoostMultiplier{ 1.0f };
 
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UCurveFloat* SpeedVsCurvatureCurve{};
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UCurveFloat* CurvatureReductionVsBankAngleCurve{};
 	/*
 	* Setting to 0 makes it easier for the AI to drive and 1 makes it harder.
 	*/
@@ -96,6 +101,7 @@ private:
 	void SetupComponentEventBindings();
 	void SetRaceTrack(const AAA_WheeledVehiclePawn& VehiclePawn);
 	void SetVehicleParameters(const FAA_RacerAISettings& RacerAISettings);
+	void SetAIParameters(const FAA_RacerAISettings& RacerAISettings);
 
 	FAA_RacerAISettings GetCurrentRacerAISettings() const;
 

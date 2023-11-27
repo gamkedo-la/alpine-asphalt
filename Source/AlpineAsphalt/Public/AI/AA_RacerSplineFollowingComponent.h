@@ -16,6 +16,7 @@
 class AAA_WheeledVehiclePawn;
 class IAA_RacerContextProvider;
 class ALandscape;
+class UCurveFloat;
 
 namespace AA_RacerSplineFollowingComponent
 {
@@ -71,6 +72,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Racer AI")
 	void SetMinSpeedMph(float SpeedMph);
 
+	UFUNCTION(BlueprintCallable, Category = "Racer AI")
+	void SetSpeedCurvatureCurve(UCurveFloat* SpeedVersusCurvatureCurve);
+
+	UFUNCTION(BlueprintCallable, Category = "Racer AI")
+	void SetBankAngleCurvatureReductionCurve(UCurveFloat* CurvatureReductionVersusBankAngleCurve);
+
 #if ENABLE_VISUAL_LOG
 	virtual void DescribeSelfToVisLog(struct FVisualLogEntry* Snapshot) const;
 #endif // ENABLE_VISUAL_LOG
@@ -119,6 +126,8 @@ private:
 
 	// Inherited via TAA_BaseRewindable
 	virtual UObject* AsUObject() override { return this; }
+
+	float GetDefaultSpeedFromStraightnessFactor(float StraightnessFactor) const;
 
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
@@ -186,6 +195,12 @@ private:
 
 	UPROPERTY(Transient)
 	ALandscape* Landscape{};
+
+	UPROPERTY(Transient)
+	UCurveFloat* SpeedVsCurvatureCurve{};
+
+	UPROPERTY(Transient)
+	UCurveFloat* CurvatureReductionVsBankAngleCurve{};
 };
 
 #pragma region Inline Definitions
@@ -203,6 +218,16 @@ inline void UAA_RacerSplineFollowingComponent::SetMaxSpeedMph(float SpeedMph)
 inline void UAA_RacerSplineFollowingComponent::SetMinSpeedMph(float SpeedMph)
 {
 	MinSpeedMph = SpeedMph;
+}
+
+inline void UAA_RacerSplineFollowingComponent::SetSpeedCurvatureCurve(UCurveFloat* SpeedVersusCurvatureCurve)
+{
+	SpeedVsCurvatureCurve = SpeedVersusCurvatureCurve;
+}
+
+inline void UAA_RacerSplineFollowingComponent::SetBankAngleCurvatureReductionCurve(UCurveFloat* CurvatureReductionVersusBankAngleCurve)
+{
+	CurvatureReductionVsBankAngleCurve = CurvatureReductionVersusBankAngleCurve;
 }
 
 #pragma endregion

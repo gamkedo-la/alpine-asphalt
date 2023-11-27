@@ -196,6 +196,8 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 			*GetName(), *LoggingUtils::GetName(InPawn), InPawn ? *LoggingUtils::GetName(InPawn->GetClass()) : TEXT("NULL"));
 	}
 
+	SetAIParameters(GetCurrentRacerAISettings());
+
 	// The vehicle changes parameters on start so defer setting these 
 	FTimerHandle OneShotTimer;
 	
@@ -342,8 +344,15 @@ void AAA_AIRacerController::SetVehicleParameters(const FAA_RacerAISettings& Race
 	VehiclePawn->BoostBrakingForce(RacerAISettings.BrakingForceBoostMultiplier);
 	VehiclePawn->SetWheelLoadRatio(RacerAISettings.WheelLoadRatio);
 
+	SetAIParameters(RacerAISettings);
+}
+
+void AAA_AIRacerController::SetAIParameters(const FAA_RacerAISettings& RacerAISettings)
+{
 	RacerSplineFollowingComponent->SetMinSpeedMph(RacerAISettings.MinSpeedMph);
 	RacerSplineFollowingComponent->SetMaxSpeedMph(RacerAISettings.MaxSpeedMph);
+	RacerSplineFollowingComponent->SetSpeedCurvatureCurve(RacerAISettings.SpeedVsCurvatureCurve);
+	RacerSplineFollowingComponent->SetBankAngleCurvatureReductionCurve(RacerAISettings.CurvatureReductionVsBankAngleCurve);
 }
 
 FAA_RacerAISettings AAA_AIRacerController::GetCurrentRacerAISettings() const
