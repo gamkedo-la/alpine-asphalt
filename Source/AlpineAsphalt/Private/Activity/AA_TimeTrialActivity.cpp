@@ -66,7 +66,8 @@ void UAA_TimeTrialActivity::StartActivity()
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 
-	RegisterRewindable(ERestoreTiming::Resume);
+	// Need immediate to update the race timer in the UI
+	RegisterRewindable(ERestoreTiming::Immediate);
 	
 	//Start Countdown
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
@@ -145,6 +146,14 @@ void UAA_TimeTrialActivity::RestoreFromSnapshot(const AA_TimeTrialActivity::FSna
 	StartTime = InSnapshotData.StartTime + InRewindTime;
 	// If we went back after finishing race then this would reset it back to original value
 	FinishTime = InSnapshotData.FinishTime;
+
+	if (auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)); PC)
+	{
+		if (auto VehicleUI = PC->VehicleUI; VehicleUI)
+		{
+			VehicleUI->UpdateTimerDuringRewind(InRewindTime);
+		}
+	}
 }
 
 void UAA_TimeTrialActivity::RaceEnded()

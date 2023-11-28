@@ -41,4 +41,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void HideRacePosition();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void UpdateTimerDuringRewind(float RewindTime);
 };

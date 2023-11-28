@@ -123,7 +123,8 @@ void UAA_HeadToHeadActivity::StartActivity()
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 	
-	RegisterRewindable(ERestoreTiming::Resume);
+	// Need immediate to update the race timer in the UI
+	RegisterRewindable(ERestoreTiming::Immediate);
 
 	//Start Countdown
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
@@ -260,6 +261,14 @@ void UAA_HeadToHeadActivity::RestoreFromSnapshot(const AA_HeadToHeadActivity::FS
 		LapsCompletedMap.Add(VehiclePawn, LapsCompleted);
 	}
 
+	
+	if (auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)); PC)
+	{
+		if (auto VehicleUI = PC->VehicleUI; VehicleUI)
+		{
+			VehicleUI->UpdateTimerDuringRewind(InRewindTime);
+		}
+	}
 }
 
 void UAA_HeadToHeadActivity::AddAIDriverScore(float TimeScore)

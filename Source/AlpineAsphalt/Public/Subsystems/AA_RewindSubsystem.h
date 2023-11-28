@@ -52,10 +52,12 @@ public:
 	void CancelRewindMode();
 	void ConfirmRewind();
 	void ResetRewindHistory();
-	bool IsRewindModeActive();
+
+	UFUNCTION(BlueprintPure)
+	bool IsRewindModeActive() const;
 
 	UFUNCTION(BlueprintCallable)
-	bool CanEnterRewindMode();
+	bool CanEnterRewindMode() const;
 	
 	UFUNCTION(BlueprintCallable)
 	void EnableRewindMode(bool bisEnabled);

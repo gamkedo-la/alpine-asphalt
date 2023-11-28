@@ -145,12 +145,12 @@ void UAA_RewindSubsystem::ResetRewindHistory()
 	RewindStartTime = GetWorld()->GetTimeSeconds();
 }
 
-bool UAA_RewindSubsystem::IsRewindModeActive()
+bool UAA_RewindSubsystem::IsRewindModeActive() const
 {
 	return RewindModeActive;
 }
 
-bool UAA_RewindSubsystem::CanEnterRewindMode()
+bool UAA_RewindSubsystem::CanEnterRewindMode() const
 {
 	return RewindModeEnabled && !RewindModeActive;
 }
