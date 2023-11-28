@@ -2,6 +2,8 @@
 #include "AA_BaseActivity.h"
 #include "AA_TimeTrialActivity.h"
 #include "Engine/DataTable.h"
+#include "Interface/AA_BaseRewindable.h"
+
 #include "AA_HeadToHeadActivity.generated.h"
 
 
@@ -11,8 +13,20 @@ class UAA_TimeTrialScoreScreenUI;
 class AAA_TrackInfoActor;
 class AAA_PlayerController;
 
+namespace AA_HeadToHeadActivity
+{
+	struct FSnapshotData
+	{
+		TArray<float, TInlineAllocator<8>> FinishTimes;
+		TMap<AAA_WheeledVehiclePawn*, int, TInlineSetAllocator<8>> LapsCompletedMap;
+		float StartTime;
+		float FinishTime;
+		int LastCheckpointHitIndex;
+	};
+}
+
 UCLASS(Blueprintable)
-class UAA_HeadToHeadActivity : public UAA_BaseActivity
+class UAA_HeadToHeadActivity : public UAA_BaseActivity, public TAA_BaseRewindable<AA_HeadToHeadActivity::FSnapshotData>
 {
 
 	GENERATED_BODY()
@@ -45,6 +59,12 @@ public:
 protected:
 	UFUNCTION()
 	void CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle);
+
+	// Inherited from TAA_BaseRewindable
+
+	virtual AA_HeadToHeadActivity::FSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const AA_HeadToHeadActivity::FSnapshotData& InSnapshotData, float InRewindTime) override;
+	virtual UObject* AsUObject() override { return this; }
 
 private:
 	UFUNCTION()

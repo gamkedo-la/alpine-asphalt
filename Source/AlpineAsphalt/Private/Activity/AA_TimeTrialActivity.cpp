@@ -65,6 +65,8 @@ void UAA_TimeTrialActivity::StartActivity()
 
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
+
+	RegisterRewindable(ERestoreTiming::Resume);
 	
 	//Start Countdown
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
@@ -121,6 +123,28 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
 		}
 	}
+}
+
+AA_TimeTrialActivity::FSnapshotData UAA_TimeTrialActivity::CaptureSnapshot() const
+{
+	return AA_TimeTrialActivity::FSnapshotData
+	{
+		.PlayerLapCounter = PlayerLapCounter,
+		.LastCheckpointHitIndex = LastCheckpointHitIndex,
+		.StartTime = StartTime,
+		.FinishTime = FinishTime
+	};
+}
+
+void UAA_TimeTrialActivity::RestoreFromSnapshot(const AA_TimeTrialActivity::FSnapshotData& InSnapshotData, float InRewindTime)
+{
+	PlayerLapCounter = InSnapshotData.PlayerLapCounter;
+	LastCheckpointHitIndex = InSnapshotData.LastCheckpointHitIndex;
+
+	// Offset start time by rewind time so that finish times are accurate
+	StartTime = InSnapshotData.StartTime + InRewindTime;
+	// If we went back after finishing race then this would reset it back to original value
+	FinishTime = InSnapshotData.FinishTime;
 }
 
 void UAA_TimeTrialActivity::RaceEnded()
@@ -188,6 +212,8 @@ void UAA_TimeTrialActivity::DestroyActivity()
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
 
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
+
+	UnregisterRewindable();
 }
 
 UWorld* UAA_TimeTrialActivity::GetWorld() const

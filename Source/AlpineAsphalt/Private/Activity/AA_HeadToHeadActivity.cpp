@@ -123,6 +123,8 @@ void UAA_HeadToHeadActivity::StartActivity()
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 	
+	RegisterRewindable(ERestoreTiming::Resume);
+
 	//Start Countdown
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartCountdown();
 	FTimerHandle TimerHandle;
@@ -211,6 +213,53 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 			}
 		}
 	}
+}
+
+AA_HeadToHeadActivity::FSnapshotData UAA_HeadToHeadActivity::CaptureSnapshot() const
+{
+	using namespace AA_HeadToHeadActivity;
+	FSnapshotData Snapshot
+	{
+		.StartTime = StartTime,
+		.FinishTime = FinishTime,
+		.LastCheckpointHitIndex = LastCheckpointHitIndex
+	};
+
+	// can't use assignment operator as using custom inline allocator on the snapshot to reduce memory allocations
+	for (float Time : FinishTimes)
+	{
+		Snapshot.FinishTimes.Add(Time);
+	}
+
+	for (const auto& [VehiclePawn, LapsCompleted] : LapsCompletedMap)
+	{
+		Snapshot.LapsCompletedMap.Add(VehiclePawn, LapsCompleted);
+	}
+
+	return Snapshot;
+}
+
+void UAA_HeadToHeadActivity::RestoreFromSnapshot(const AA_HeadToHeadActivity::FSnapshotData& InSnapshotData, float InRewindTime)
+{
+	// Offset start time by rewind time so that finish times are accurate
+	StartTime = InSnapshotData.StartTime + InRewindTime;
+	// If we went back after finishing race then this would reset it back to original value
+	FinishTime = InSnapshotData.FinishTime;
+	LastCheckpointHitIndex = InSnapshotData.LastCheckpointHitIndex;
+
+	FinishTimes.Reset();
+	for (float Time : InSnapshotData.FinishTimes)
+	{
+		FinishTimes.Add(Time);
+	}
+
+	LapsCompletedMap.Reset();
+
+	for (const auto& [VehiclePawn, LapsCompleted] : InSnapshotData.LapsCompletedMap)
+	{
+		LapsCompletedMap.Add(VehiclePawn, LapsCompleted);
+	}
+
 }
 
 void UAA_HeadToHeadActivity::AddAIDriverScore(float TimeScore)
@@ -383,6 +432,8 @@ void UAA_HeadToHeadActivity::DestroyActivity()
 	ScoreScreen = nullptr;
 	
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
+
+	UnregisterRewindable();
 }
 
 UWorld* UAA_HeadToHeadActivity::GetWorld() const

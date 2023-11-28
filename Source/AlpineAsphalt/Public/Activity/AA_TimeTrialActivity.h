@@ -1,11 +1,24 @@
 ﻿#pragma once
 #include "AA_BaseActivity.h"
 #include "Engine/DataTable.h"
+#include "Interface/AA_BaseRewindable.h"
+
 #include "AA_TimeTrialActivity.generated.h"
 
 
 class UAA_TimeTrialScoreScreenUI;
 class AAA_TrackInfoActor;
+
+namespace AA_TimeTrialActivity
+{
+	struct FSnapshotData
+	{
+		int PlayerLapCounter;
+		int LastCheckpointHitIndex;
+		float StartTime;
+		float FinishTime;
+	};
+}
 
 USTRUCT(BlueprintType)
 struct FDriverName : public FTableRowBase
@@ -17,7 +30,7 @@ public:
 	FString DriverName;
 };
 UCLASS(Blueprintable)
-class UAA_TimeTrialActivity : public UAA_BaseActivity
+class UAA_TimeTrialActivity : public UAA_BaseActivity, public TAA_BaseRewindable<AA_TimeTrialActivity::FSnapshotData>
 {
 	
 	GENERATED_BODY()
@@ -50,6 +63,11 @@ public:
 protected:
 	UFUNCTION()
 	void CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle);
+
+	// Inherited from TAA_BaseRewindable
+	virtual AA_TimeTrialActivity::FSnapshotData CaptureSnapshot() const override;
+	virtual void RestoreFromSnapshot(const AA_TimeTrialActivity::FSnapshotData& InSnapshotData, float InRewindTime) override;
+	virtual UObject* AsUObject() override { return this; }
 
 private:
 	UPROPERTY()
