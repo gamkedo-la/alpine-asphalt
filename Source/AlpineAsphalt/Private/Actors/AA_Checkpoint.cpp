@@ -9,7 +9,8 @@ AAA_Checkpoint::AAA_Checkpoint()
 {
 	Collision = CreateDefaultSubobject<UBoxComponent>("Collision");
 	Collision->OnComponentBeginOverlap.AddDynamic(this,&AAA_Checkpoint::OnOverlapBegin);
-
+	SetRootComponent(Collision);
+	
 	MapIndicator = CreateDefaultSubobject<UPaperSpriteComponent>("MapIndicator");
 	MapIndicator->SetupAttachment(Collision);
 
