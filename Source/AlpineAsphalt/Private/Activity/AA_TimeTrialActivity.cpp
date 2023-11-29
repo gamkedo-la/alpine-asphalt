@@ -44,9 +44,7 @@ void UAA_TimeTrialActivity::LoadActivity()
 	auto Rotation = Track->StartLocations[0].Rotator() + Track->GetActorRotation();
 	auto Location = Track->GetActorRotation().RotateVector(Track->StartLocations[0].GetLocation());
 	Location += Track->GetActorLocation();
-	UE_LOG(LogTemp,Warning,TEXT("Location: %s,%s,%s"),*Location.ToString(),*Track->StartLocations[0].GetLocation().ToString(),*Track->GetActorLocation().ToString());
-	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
-	PlayerVehicle->ResetVehicle();
+	PlayerVehicle->ResetVehicleAtLocation(Location, Rotation);
 
 	//TODO: Lock Car in Place
 	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
@@ -214,15 +212,6 @@ void UAA_TimeTrialActivity::DestroyActivity()
 	{
 		// remove track info actor from player controller
 		PlayerController->SetTrackInfo(nullptr);
-
-		if (auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(PlayerController->GetPawn()); PlayerVehicle)
-		{
-			//Put Player back where race started
-			const auto Rotation = Track->GetActorRotation();
-			const auto Location = Track->GetActorLocation();
-
-			PlayerVehicle->ResetVehicleAtLocation(Location, Rotation);
-		}
 
 		//Hide Timer (May be redundant, but we might leave before the race is over)
 		if (auto VehicleUI = PlayerController->VehicleUI; VehicleUI)

@@ -46,8 +46,7 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	FRotator Rotation = Track->StartLocations[LastStartingPosition].Rotator() + Track->GetActorRotation();
 	FVector Location = Track->GetActorRotation().RotateVector(Track->StartLocations[LastStartingPosition].GetLocation());
 	Location += Track->GetActorLocation();
-	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
-	PlayerVehicle->ResetVehicle();
+	PlayerVehicle->ResetVehicleAtLocation(Location, Rotation);
 	LapsCompletedMap.Reset();
 	LapsCompletedMap.Add(PlayerVehicle,0);
 
@@ -451,15 +450,6 @@ void UAA_HeadToHeadActivity::DestroyActivity()
 	{
 		// remove track info actor from player controller
 		PlayerController->SetTrackInfo(nullptr);
-
-		if (auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(PlayerController->GetPawn()); PlayerVehicle)
-		{
-			//Put Player back where race started
-			const auto Rotation = Track->GetActorRotation();
-			const auto Location = Track->GetActorLocation();
-
-			PlayerVehicle->ResetVehicleAtLocation(Location, Rotation);
-		}
 
 		//Hide Timer and other UI elements specific to the race (May be redundant, but we might leave before the race is over)
 		HideRaceUIElements(PlayerController);
