@@ -8,14 +8,24 @@
 void UAA_VerticalBox_Indented::SetIndentForAllChildren()
 {
 	UWidget* Widget;
-	for (int i = 0; i < GetChildrenCount(); i++)
+	auto Children = GetAllChildren();
+	//Remove collapsed children
+	for(int i = Children.Num()-1; i >=0; i--)
 	{
-		Widget = GetChildAt(i);
+		if(Children[i]->GetVisibility() == ESlateVisibility::Collapsed)
+		{
+			Children.RemoveAt(i);
+		}
+	}
+	//Start indenting
+	for (int i = 0; i < Children.Num(); i++)
+	{
+		Widget = Children[i];
 		auto InSlot = CastChecked<UVerticalBoxSlot>(Widget->Slot);
 		FMargin Margin = InSlot->GetPadding();
 		if(ReverseIndentOrder)
 		{
-			Margin.Left = (GetChildrenCount() - i - 1) * IndentAmount;
+			Margin.Left = (Children.Num() - i - 1) * IndentAmount;
 		}else
 		{
 			Margin.Left = i * IndentAmount;
@@ -50,5 +60,10 @@ void UAA_VerticalBox_Indented::PostEditChangeProperty(FPropertyChangedEvent& Pro
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	SetIndentForAllChildren();
 	RebuildWidget();
+}
+
+void UAA_VerticalBox_Indented::UpdateIndent()
+{
+	SetIndentForAllChildren();
 }
 #endif

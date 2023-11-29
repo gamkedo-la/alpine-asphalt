@@ -28,7 +28,9 @@ protected:
 
 
 public:
-
+	UFUNCTION(BlueprintCallable)
+	void UpdateIndent();
+	
 	UPROPERTY(EditAnywhere)
 	float IndentAmount = 50.f;
 
