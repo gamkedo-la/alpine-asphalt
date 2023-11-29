@@ -74,7 +74,7 @@ private:
 
 	void RegisterRacePositionTimer();
 	void UnRegisterRacePositionTimer();
-	void UpdateRacePosition();
+	void UpdatePlayerHUD();
 
 	UPROPERTY()
 	TArray<FDriverName> DriverNames;

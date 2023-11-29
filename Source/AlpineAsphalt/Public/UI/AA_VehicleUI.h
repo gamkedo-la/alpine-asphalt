@@ -44,4 +44,7 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateTimerDuringRewind(float RewindTime);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void SetPlayerMissedCheckpoint(bool bPlayerMissedCheckpoint);
 };

@@ -6,6 +6,7 @@
 #include "Actors/AA_TrackInfoActor.h"
 #include "Algo/RandomShuffle.h"
 #include "Components/AA_CheckpointComponent.h"
+#include "Components/SplineComponent.h"
 #include "Controllers/AA_AIRacerController.h"
 #include "Controllers/AA_PlayerController.h"
 #include "Race/AA_RaceState.h"
@@ -118,7 +119,7 @@ void UAA_HeadToHeadActivity::LoadActivity()
 void UAA_HeadToHeadActivity::StartActivity()
 {
 	//Ensure Index is reset
-	LastCheckpointHitIndex = -1;
+	LastCheckpointHitIndex = NumCheckpoints-1;
 
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
@@ -164,7 +165,8 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 
 	if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 	{
-		if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
+		//if we hit the next checkpoint, or we hit the first checkpoint after the last
+		if(IndexCheckpointHit == LastCheckpointHitIndex + 1 || (IndexCheckpointHit == 0 && LastCheckpointHitIndex == NumCheckpoints-1))
 		{
 			Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit]->SetActive(false);
 			LastCheckpointHitIndex = IndexCheckpointHit;
@@ -306,7 +308,7 @@ void UAA_HeadToHeadActivity::RegisterRacePositionTimer()
 	auto World = GetWorld();
 	check(World);
 
-	World->GetTimerManager().SetTimer(RacePositionUpdateTimer, this, &UAA_HeadToHeadActivity::UpdateRacePosition, RacePositionUpdateFrequency, true);
+	World->GetTimerManager().SetTimer(RacePositionUpdateTimer, this, &UAA_HeadToHeadActivity::UpdatePlayerHUD, RacePositionUpdateFrequency, true);
 }
 
 void UAA_HeadToHeadActivity::UnRegisterRacePositionTimer()
@@ -320,27 +322,26 @@ void UAA_HeadToHeadActivity::UnRegisterRacePositionTimer()
 	World->GetTimerManager().ClearTimer(RacePositionUpdateTimer);
 }
 
-void UAA_HeadToHeadActivity::UpdateRacePosition()
+void UAA_HeadToHeadActivity::UpdatePlayerHUD()
 {
-	// Add Player state
+	// Get Player Info
 	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
 	if (!PC)
 	{
 		return;
 	}
-
 	const auto& PlayerSplineInfo = PC->GetPlayerSplineInfo();
 	if (!PlayerSplineInfo)
 	{
 		return;
 	}
-
 	const auto& PlayerRaceState = PlayerSplineInfo->RaceState;
 	const auto PlayerCompletionFraction = PlayerRaceState.GetOverallCompletionFraction();
 
+
+	//Update Race Position
 	int32 RacerCount { 1 };
 	int32 RacePosition { 1 };
-
 	// Compare to AI Racer States
 	for (auto Racer : AIRacers)
 	{
@@ -363,11 +364,29 @@ void UAA_HeadToHeadActivity::UpdateRacePosition()
 			++RacePosition;
 		}
 	}
-
 	auto VehicleUI = PC->VehicleUI;
 	check(VehicleUI);
-
 	VehicleUI->UpdateRacePosition(RacePosition, RacerCount);
+
+	//Update Missed Checkpoint HUD
+	if(Track->CheckpointComponent->SpawnedCheckpoints.Num() > LastCheckpointHitIndex + 1)
+	{
+		const FVector NextCheckpointLocation = Track->CheckpointComponent->SpawnedCheckpoints[LastCheckpointHitIndex+1]->GetActorLocation();
+		const float SplineInputKey = Track->Spline->FindInputKeyClosestToWorldLocation(NextCheckpointLocation);
+		const float CheckpointDistanceAlongSpline = Track->Spline->GetDistanceAlongSplineAtSplineInputKey(SplineInputKey);
+		bool PlayerMissedCheckpoint = PlayerRaceState.DistanceAlongSpline > CheckpointDistanceAlongSpline;
+		//if the checkpoint we last hit is the last one,
+		//we could be past the last checkpoint, but still at the end of the spline numerically
+		//and the next spline would be the first one which will have a low value.
+		if(PlayerMissedCheckpoint && LastCheckpointHitIndex == Track->CheckpointComponent->SpawnedCheckpoints.Num()-1)
+		{
+			const FVector LastCheckpointLocation = Track->CheckpointComponent->SpawnedCheckpoints.Last()->GetActorLocation();
+			const float LastInputKey = Track->Spline->FindInputKeyClosestToWorldLocation(LastCheckpointLocation);
+			const float LastCheckpointDistanceAlongSpline = Track->Spline->GetDistanceAlongSplineAtSplineInputKey(LastInputKey);
+			PlayerMissedCheckpoint = PlayerRaceState.DistanceAlongSpline > LastCheckpointDistanceAlongSpline;
+		}
+		VehicleUI->SetPlayerMissedCheckpoint(PlayerMissedCheckpoint);
+	}
 }
 
 void UAA_HeadToHeadActivity::RaceEnded()
