@@ -20,8 +20,11 @@ public:
 
 	void LoadScreenMinimumCompleted(bool LoadingActivity);
 	
-	UFUNCTION()
+	UFUNCTION(BlueprintPure)
 	bool CanLaunchActivity() const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsActivityActive() const;
 
 	UFUNCTION(BlueprintCallable,Exec)
 	void DestroyActivity();
@@ -50,3 +53,8 @@ private:
 	bool LoadScreenFinished = false;
 	bool ActivityLoaded = false;
 };
+
+inline bool UAA_ActivityManagerSubsystem::IsActivityActive() const
+{
+	return CurrentActivity != nullptr;
+}
