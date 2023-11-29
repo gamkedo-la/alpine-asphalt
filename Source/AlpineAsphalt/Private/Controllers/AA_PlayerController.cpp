@@ -230,7 +230,10 @@ void AAA_PlayerController::ResetVehicle(const FInputActionValue& Value)
 	// If in an activity respawn to center of road oriented along the spline
 	// TODO: We could determine if already "on road" and then not reset to the spline location but need to deal with being on a different road
 	// possibly by comparing the vehicle's position with the spline location and checking against the road width in that case
-	if (auto PlayerSplineInfo = PlayerRaceSplineInfoComponent->GetPlayerSplineInfo(); PlayerSplineInfo && PlayerSplineInfo->RaceState.RaceTrack)
+
+	// Be sure to check for lap completion as well as player could use this to cheat at beginning otherwise
+	if (auto PlayerSplineInfo = PlayerRaceSplineInfoComponent->GetPlayerSplineInfo(); 
+		PlayerSplineInfo && PlayerSplineInfo->RaceState.RaceTrack && PlayerSplineInfo->RaceState.GetOverallCompletionFraction() > 0)
 	{
 		const auto& RaceState = PlayerSplineInfo->RaceState;
 		auto Spline = RaceState.RaceTrack->Spline;
