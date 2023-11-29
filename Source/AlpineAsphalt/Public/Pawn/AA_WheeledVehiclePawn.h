@@ -62,7 +62,7 @@ public:
 	void ResetVehicle();
 
 	UFUNCTION(BlueprintCallable)
-	void ResetVehicleAtLocation(const FVector& WorldLocation);
+	void ResetVehicleAtLocation(const FVector& WorldLocation, const FRotator& WorldRotation);
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void ShiftUp();

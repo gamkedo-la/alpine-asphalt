@@ -548,8 +548,8 @@ void AAA_WheeledVehiclePawn::GrabDebugSnapshot(FVisualLogEntry* Snapshot) const
 
 #endif //ENABLE_VISUAL_LOG
 
-void AAA_WheeledVehiclePawn::ResetVehicleAtLocation(const FVector& WorldLocation)
+void AAA_WheeledVehiclePawn::ResetVehicleAtLocation(const FVector& WorldLocation, const FRotator& WorldRotation)
 {
-	SetActorLocation(WorldLocation, false, nullptr, ETeleportType::ResetPhysics);
+	SetActorTransform(FTransform(WorldRotation, WorldLocation), false, nullptr, ETeleportType::ResetPhysics);
 	ResetVehicle();
 }
