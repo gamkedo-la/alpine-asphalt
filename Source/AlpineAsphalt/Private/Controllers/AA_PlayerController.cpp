@@ -10,6 +10,9 @@
 #include "UI/AA_VehicleUI.h"
 #include "UI/AA_BaseUI.h"
 #include "Components/AA_PlayerRaceSplineInfoComponent.h"
+#include "Util/SplineUtils.h"
+#include "Components/SplineComponent.h"
+#include "Actors/AA_TrackInfoActor.h"
 
 #include "Logging/AlpineAsphaltLogger.h"
 #include "UI/AA_GameUserSettings.h"
@@ -219,7 +222,26 @@ void AAA_PlayerController::CameraLookFinish(const FInputActionValue& Value)
 
 void AAA_PlayerController::ResetVehicle(const FInputActionValue& Value) 
 {
-	VehiclePawn->ResetVehicle();
+	if (!VehiclePawn)
+	{
+		return;
+	}
+
+	// If in an activity respawn to center of road oriented along the spline
+	// TODO: We could determine if already "on road" and then not reset to the spline location but need to deal with being on a different road
+	// possibly by comparing the vehicle's position with the spline location and checking against the road width in that case
+	if (auto PlayerSplineInfo = PlayerRaceSplineInfoComponent->GetPlayerSplineInfo(); PlayerSplineInfo && PlayerSplineInfo->RaceState.RaceTrack)
+	{
+		const auto& RaceState = PlayerSplineInfo->RaceState;
+		auto Spline = RaceState.RaceTrack->Spline;
+		check(Spline);
+
+		AA::SplineUtils::ResetVehicleToLastSplineLocation(*VehiclePawn, *Spline, RaceState);
+	}
+	else
+	{
+		VehiclePawn->ResetVehicle();
+	}
 }
 
 void AAA_PlayerController::ShiftUp(const FInputActionValue& Value) 

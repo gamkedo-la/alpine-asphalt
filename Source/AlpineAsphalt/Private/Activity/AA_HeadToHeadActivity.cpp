@@ -447,15 +447,23 @@ void UAA_HeadToHeadActivity::DestroyActivity()
 	//Unload the race
 	Track->UnloadRace();
 
-	//Put Player back where race started
-	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
-	auto Rotation = Track->GetActorRotation();
-	auto Location = Track->GetActorLocation();
-	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
-	PlayerVehicle->ResetVehicle();
+	if (auto PlayerController = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));  PlayerController)
+	{
+		// remove track info actor from player controller
+		PlayerController->SetTrackInfo(nullptr);
 
-	//Hide Timer and other UI elements specific to the race (May be redundant, but we might leave before the race is over)
-	HideRaceUIElements(Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)));
+		if (auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(PlayerController->GetPawn()); PlayerVehicle)
+		{
+			//Put Player back where race started
+			const auto Rotation = Track->GetActorRotation();
+			const auto Location = Track->GetActorLocation();
+
+			PlayerVehicle->ResetVehicleAtLocation(Location, Rotation);
+		}
+
+		//Hide Timer and other UI elements specific to the race (May be redundant, but we might leave before the race is over)
+		HideRaceUIElements(PlayerController);
+	}
 
 	ScoreScreen = nullptr;
 	

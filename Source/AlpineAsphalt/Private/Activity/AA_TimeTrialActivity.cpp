@@ -210,15 +210,26 @@ void UAA_TimeTrialActivity::DestroyActivity()
 	//Unload the race
 	Track->UnloadRace();
 
-	//Put Player back where race started
-	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
-	auto Rotation = Track->GetActorRotation();
-	auto Location = Track->GetActorLocation();
-	PlayerVehicle->SetActorTransform(FTransform(Rotation,Location),false,nullptr,ETeleportType::ResetPhysics);
-	PlayerVehicle->ResetVehicle();
+	if (auto PlayerController = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));  PlayerController)
+	{
+		// remove track info actor from player controller
+		PlayerController->SetTrackInfo(nullptr);
 
-	//Hide Timer (May be redundant, but we might leave before the race is over)
-	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->HideTimer();
+		if (auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(PlayerController->GetPawn()); PlayerVehicle)
+		{
+			//Put Player back where race started
+			const auto Rotation = Track->GetActorRotation();
+			const auto Location = Track->GetActorLocation();
+
+			PlayerVehicle->ResetVehicleAtLocation(Location, Rotation);
+		}
+
+		//Hide Timer (May be redundant, but we might leave before the race is over)
+		if (auto VehicleUI = PlayerController->VehicleUI; VehicleUI)
+		{
+			VehicleUI->HideTimer();
+		}
+	}
 
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
 
