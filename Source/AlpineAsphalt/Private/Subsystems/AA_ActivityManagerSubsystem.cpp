@@ -1,8 +1,10 @@
 ﻿#include "Subsystems/AA_ActivityManagerSubsystem.h"
 
+#include "ChaosWheeledVehicleMovementComponent.h"
 #include "Controllers/AA_PlayerController.h"
 #include "Activity/AA_BaseActivity.h"
 #include "Kismet/GameplayStatics.h"
+#include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_RewindSubsystem.h"
 #include "UI/AA_BaseUI.h"
 #include "UI/AA_VehicleUI.h"
@@ -15,14 +17,14 @@ UAA_ActivityManagerSubsystem::UAA_ActivityManagerSubsystem()
 	OnDestroyActivityCompleted.AddDynamic(this,&UAA_ActivityManagerSubsystem::DestroyActivityFinished);
 }
 
-void UAA_ActivityManagerSubsystem::LaunchActivity(UAA_BaseActivity* Activity)
+void UAA_ActivityManagerSubsystem::LaunchActivity(UAA_BaseActivity* Activity, bool RestartingActivity)
 {
 	if(!Activity)
 	{
 		UE_LOG(ActivityManagerSubsystem,Error,TEXT("%hs: Can't Launch Activity: Activity was nullptr"),__func__)
 		return;
 	}
-	if(CurrentActivity)
+	if(!RestartingActivity && CurrentActivity)
 	{
 		UE_LOG(ActivityManagerSubsystem,Error,TEXT("%hs: Can't Launch Activity: Activity already taking place"),__func__)
 		return;
@@ -75,9 +77,13 @@ void UAA_ActivityManagerSubsystem::DestroyActivity()
 	LoadScreenFinished = false;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,TimerDelegate,MinimumLoadScreenTime,false);
 
+	
 	//Start Task to destroy Activity
 	AsyncTask(ENamedThreads::GameThread, [&]()
 	{
+		auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+		PlayerVehicle->ResetVehicle();
+		PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
 		CurrentActivity->DestroyActivity();
 		ActivityLoaded = false;
 		DestroyActivityFinished();
@@ -111,19 +117,21 @@ void UAA_ActivityManagerSubsystem::RestartActivity()
 	FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this,&UAA_ActivityManagerSubsystem::LoadScreenMinimumCompleted,false);
 	LoadScreenFinished = false;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle,TimerDelegate,MinimumLoadScreenTime,false);
 
-	auto ActivityToRestart = CurrentActivity;
-	//Start Task to destroy Activity
-	//AsyncTask(ENamedThreads::GameThread, [&]()
-	//{
+	//Don't need this since we're going to Start the activity too?
+	//GetWorld()->GetTimerManager().SetTimer(TimerHandle,TimerDelegate,MinimumLoadScreenTime,false);
+	
+	//Task to Destroy and Restart
+	AsyncTask(ENamedThreads::GameThread, [&]()
+	{
 		CurrentActivity->DestroyActivity();
+		GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->ResetRewindHistory();
 		ActivityLoaded = false;
-		CurrentActivity = nullptr;
-	//});
+		LaunchActivity(CurrentActivity, true);
+	});
 	//Destroy Done////////////////////////
 
-	LaunchActivity(ActivityToRestart);
+	
 }
 
 void UAA_ActivityManagerSubsystem::DestroyActivityFinished()
@@ -133,6 +141,9 @@ void UAA_ActivityManagerSubsystem::DestroyActivityFinished()
 	GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->ResetRewindHistory();
 	//End Loading Screen
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->HideLoadingScreen();
+
+	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+	PlayerVehicle->GetVehicleMovementComponent()->SetParked(false);
 	
 	//Set current activity back to nullptr
 	CurrentActivity = nullptr;

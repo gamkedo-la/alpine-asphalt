@@ -16,7 +16,7 @@ class UAA_ActivityManagerSubsystem : public UWorldSubsystem
 public:
 	UAA_ActivityManagerSubsystem();
 	
-	void LaunchActivity(UAA_BaseActivity* Activity);
+	void LaunchActivity(UAA_BaseActivity* Activity, bool RestartingActivity = false);
 
 	void LoadScreenMinimumCompleted(bool LoadingActivity);
 	
@@ -48,7 +48,7 @@ private:
 	UAA_BaseActivity* CurrentActivity;
 
 	UPROPERTY()
-	float MinimumLoadScreenTime = 1.f;
+	float MinimumLoadScreenTime = 2.f;
 
 	bool LoadScreenFinished = false;
 	bool ActivityLoaded = false;

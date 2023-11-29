@@ -26,7 +26,7 @@ void UAA_HeadToHeadActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 	}
 	this->Track = TrackToUse;
 	NumCheckpoints = Track->CheckpointComponent->CheckpointPositionData.Num();
-	LastCheckpointHitIndex = -1;
+	LastCheckpointHitIndex = NumCheckpoints-1;
 }
 
 void UAA_HeadToHeadActivity::LoadActivity()
@@ -298,6 +298,7 @@ void UAA_HeadToHeadActivity::HideRaceUIElements(AAA_PlayerController* PlayerCont
 
 	UnRegisterRacePositionTimer();
 	VehicleUI->HideRacePosition();
+	VehicleUI->SetPlayerMissedCheckpoint(false);
 
 	//TODO: Hide Laps
 }
