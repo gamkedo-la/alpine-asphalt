@@ -168,6 +168,10 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 	UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
 	float PlayerTime = FinishTime-StartTime;
 
+	//Park Player
+	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
+	
 	//Show Score Screen
 	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
 	UAA_TimeTrialScoreScreenUI* ScoreScreen = Cast<UAA_TimeTrialScoreScreenUI>(PC->BaseUI->PushMenu(ScoreScreenClass));
@@ -217,6 +221,7 @@ void UAA_TimeTrialActivity::DestroyActivity()
 		if (auto VehicleUI = PlayerController->VehicleUI; VehicleUI)
 		{
 			VehicleUI->HideTimer();
+			VehicleUI->SetPlayerMissedCheckpoint(false);
 		}
 	}
 

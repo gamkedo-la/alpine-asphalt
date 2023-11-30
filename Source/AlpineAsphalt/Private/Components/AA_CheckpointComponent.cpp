@@ -59,7 +59,7 @@ void UAA_CheckpointComponent::GenerateCheckpoints()
 	{
 		const FVector Position = SplineComponent->GetLocationAtDistanceAlongSpline(i*CheckpointGenerationDistance,ESplineCoordinateSpace::World);
 		const FRotator Rotation  = SplineComponent->GetRotationAtDistanceAlongSpline(i*CheckpointGenerationDistance,ESplineCoordinateSpace::World);
-		const float Width = RaceActor->GetWidthAtDistance(i*CheckpointGenerationDistance);
+		const float Width = RaceActor->GetWidthAtDistance(i*CheckpointGenerationDistance)*2;
 		CheckpointPositionData.Add(FCheckpointStruct(Position,Rotation,Width,DEFAULT_CHECKPOINT_HEIGHT));
 	}
 }

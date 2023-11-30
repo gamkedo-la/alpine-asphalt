@@ -11,6 +11,7 @@ class AAA_Checkpoint;
 class USplineComponent;
 
 #define DEFAULT_CHECKPOINT_HEIGHT 500
+#define DEFAULT_CHECKPOINT_WIDTH 1000
 #define DEFAULT_CHECKPOINT_DEPTH 20
 
 USTRUCT(BlueprintType)
@@ -98,7 +99,7 @@ public:
 	TArray<AAA_Checkpoint*> SpawnedCheckpoints; 
 	
 	UPROPERTY(BlueprintReadWrite,EditInstanceOnly,Category=Checkpoints)
-	float CheckpointGenerationDistance = 5000.f;
+	float CheckpointGenerationDistance = 10000.f;
 
 	UPROPERTY(BlueprintReadWrite,EditInstanceOnly,Category=Checkpoints)
 	TArray<FCheckpointStruct> CheckpointPositionData;

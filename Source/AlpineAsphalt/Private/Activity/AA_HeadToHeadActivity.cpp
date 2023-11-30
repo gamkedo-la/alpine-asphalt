@@ -410,6 +410,10 @@ void UAA_HeadToHeadActivity::ReplayStartDelayEnded()
 	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
 	ScoreScreen = Cast<UAA_TimeTrialScoreScreenUI>(PC->BaseUI->PushMenu(ScoreScreenClass));
 
+	//Park Player
+	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(),0));
+	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
+	
 	bool PlayerTimeAdded = false;
 	
 	for(int i = 0; i < AIRacers.Num(); i++)
