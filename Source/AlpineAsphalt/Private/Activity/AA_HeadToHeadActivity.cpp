@@ -120,6 +120,9 @@ void UAA_HeadToHeadActivity::StartActivity()
 	//Ensure Index is reset
 	LastCheckpointHitIndex = NumCheckpoints-1;
 
+	//ensure RaceFinished is reset
+	RaceFinished = false;
+
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 	
@@ -164,6 +167,9 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 
 	if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 	{
+		//sometimes we hit an extra checkpoint after finishing if the start and finish are close together
+		//return here to avoid lighting the next flare since we've finished the race
+		if(RaceFinished)return;
 		//if we hit the next checkpoint, or we hit the first checkpoint after the last
 		if(IndexCheckpointHit == LastCheckpointHitIndex + 1 || (IndexCheckpointHit == 0 && LastCheckpointHitIndex == NumCheckpoints-1))
 		{
@@ -175,6 +181,7 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 				LapsCompletedMap[HitVehicle]++;
 				if(LapsCompletedMap[HitVehicle] == Track->LapsToComplete)
 				{
+					RaceFinished = true;
 					FinishTime = UGameplayStatics::GetTimeSeconds(this);
 					//UGameplayStatics::GetGameInstance(this)->StopRecordingReplay();
 					FTimerHandle TimerHandle;

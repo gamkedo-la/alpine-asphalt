@@ -122,6 +122,9 @@ private:
 	float StartTime;
 
 	UPROPERTY()
+	bool RaceFinished = false;
+
+	UPROPERTY()
 	float FinishTime;
 
 	FTimerHandle RacePositionUpdateTimer{};
