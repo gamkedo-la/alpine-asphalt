@@ -227,15 +227,13 @@ template<typename TSnapshotData>
 void TAA_BaseRewindable<TSnapshotData>::RecalculateOnRewind()
 {
 	// Rewind history reset or rewind mode canceled
-	if (LastSnapshotIndex < 0 || FMath::IsNearlyZero(RewindTime))
+	if (LastSnapshotIndex < 0 || LastSnapshotIndex >= SnapshotData.Num() || FMath::IsNearlyZero(RewindTime))
 	{
 		return;
 	}
 
 	// We only register this callback for resume case
 	check(RestoreTiming == ERestoreTiming::Resume);
-
-	check(LastSnapshotIndex < SnapshotData.Num());
 
 	RestoreFromSnapshot(SnapshotData[LastSnapshotIndex], RewindTime);
 }
