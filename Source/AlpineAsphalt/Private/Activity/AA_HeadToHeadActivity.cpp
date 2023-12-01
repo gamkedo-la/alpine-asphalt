@@ -22,7 +22,7 @@ void UAA_HeadToHeadActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 {
 	if(!TrackToUse)
 	{
-		UE_LOG(LogTemp,Error,TEXT("Couldn't Initialize TimeTrialActivity: Track was nullptr"))
+		UE_LOG(LogTemp,Error,TEXT("Couldn't Initialize HeadToHeadActivity: Track was nullptr"))
 		return;
 	}
 	this->Track = TrackToUse;

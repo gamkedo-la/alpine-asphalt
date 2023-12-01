@@ -64,6 +64,7 @@ void UAA_TimeTrialActivity::StartActivity()
 
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
+	IndexActiveCheckpoint = 0;
 
 	// Need immediate to update the race timer in the UI
 	RegisterRewindable(ERestoreTiming::Immediate);
@@ -112,11 +113,13 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 				{
 					//TODO: Increase Lap Counter Display
 					Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
+					IndexActiveCheckpoint = 0;
 
 				}
 			}else
 			{
 				Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit+1]->SetActive(true);
+				IndexActiveCheckpoint = IndexCheckpointHit + 1;
 			}
 		}else
 		{
@@ -132,7 +135,8 @@ AA_TimeTrialActivity::FSnapshotData UAA_TimeTrialActivity::CaptureSnapshot() con
 		.PlayerLapCounter = PlayerLapCounter,
 		.LastCheckpointHitIndex = LastCheckpointHitIndex,
 		.StartTime = StartTime,
-		.FinishTime = FinishTime
+		.FinishTime = FinishTime,
+		.IndexActiveCheckpoint = IndexActiveCheckpoint
 	};
 }
 
@@ -140,6 +144,10 @@ void UAA_TimeTrialActivity::RestoreFromSnapshot(const AA_TimeTrialActivity::FSna
 {
 	PlayerLapCounter = InSnapshotData.PlayerLapCounter;
 	LastCheckpointHitIndex = InSnapshotData.LastCheckpointHitIndex;
+
+	Track->CheckpointComponent->SpawnedCheckpoints[IndexActiveCheckpoint]->SetActive(false);
+	IndexActiveCheckpoint = InSnapshotData.IndexActiveCheckpoint;
+	Track->CheckpointComponent->SpawnedCheckpoints[IndexActiveCheckpoint]->SetActive(true);
 
 	// Offset start time by rewind time so that finish times are accurate
 	StartTime = InSnapshotData.StartTime + InRewindTime;

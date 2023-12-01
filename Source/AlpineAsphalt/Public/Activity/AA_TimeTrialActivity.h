@@ -17,6 +17,7 @@ namespace AA_TimeTrialActivity
 		int LastCheckpointHitIndex;
 		float StartTime;
 		float FinishTime;
+		int IndexActiveCheckpoint;
 	};
 }
 
@@ -87,6 +88,9 @@ private:
 
 	UPROPERTY()
 	int NumCheckpoints = -1;
+
+	UPROPERTY()
+	int IndexActiveCheckpoint;
 
 	UPROPERTY()
 	float FinishDelay = 1.f;
