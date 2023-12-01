@@ -126,6 +126,7 @@ void UAA_HeadToHeadActivity::StartActivity()
 
 	//Set First Checkpoint Active
 	Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
+	IndexActiveCheckpoint = 0;
 	
 	// Need immediate to update the race timer in the UI
 	RegisterRewindable(ERestoreTiming::Immediate);
@@ -195,10 +196,12 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 				{
 					//TODO: increment Laps display
 					Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
+					IndexActiveCheckpoint = 0;
 				}
 			}else
 			{
 				Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit+1]->SetActive(true);
+				IndexActiveCheckpoint = IndexCheckpointHit+1;
 			}
 		}else
 		{
@@ -232,7 +235,8 @@ AA_HeadToHeadActivity::FSnapshotData UAA_HeadToHeadActivity::CaptureSnapshot() c
 	{
 		.StartTime = StartTime,
 		.FinishTime = FinishTime,
-		.LastCheckpointHitIndex = LastCheckpointHitIndex
+		.LastCheckpointHitIndex = LastCheckpointHitIndex,
+		.IndexActiveCheckpoint = IndexActiveCheckpoint
 	};
 
 	// can't use assignment operator as using custom inline allocator on the snapshot to reduce memory allocations
@@ -256,6 +260,10 @@ void UAA_HeadToHeadActivity::RestoreFromSnapshot(const AA_HeadToHeadActivity::FS
 	// If we went back after finishing race then this would reset it back to original value
 	FinishTime = InSnapshotData.FinishTime;
 	LastCheckpointHitIndex = InSnapshotData.LastCheckpointHitIndex;
+
+	Track->CheckpointComponent->SpawnedCheckpoints[IndexActiveCheckpoint]->SetActive(false);
+	IndexActiveCheckpoint = InSnapshotData.IndexActiveCheckpoint;
+	Track->CheckpointComponent->SpawnedCheckpoints[IndexActiveCheckpoint]->SetActive(true);
 
 	FinishTimes.Reset();
 	for (float Time : InSnapshotData.FinishTimes)
