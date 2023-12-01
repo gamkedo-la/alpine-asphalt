@@ -131,8 +131,9 @@ private:
 	UPROPERTY()
 	float FinishTime;
 
-	FTimerHandle RacePositionUpdateTimer{};
+	UPROPERTY()
+	FTimerHandle RaceHUDUpdateTimer{};
 
 	UPROPERTY(EditDefaultsOnly)
-	float RacePositionUpdateFrequency{ 1.0f };
+	float RaceHUDUpdateFrequency{ 1.0f };
 };

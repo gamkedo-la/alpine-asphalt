@@ -5,6 +5,7 @@
 #include "Actors/AA_TrackInfoActor.h"
 #include "Components/AA_ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AA_CheckpointComponent.h"
+#include "Components/SplineComponent.h"
 #include "Controllers/AA_PlayerController.h"
 #include "Engine/Internal/Kismet/BlueprintTypeConversions.h"
 #include "Kismet/GameplayStatics.h"
@@ -33,7 +34,7 @@ void UAA_TimeTrialActivity::LoadActivity()
 	
 	//Spawn DataLayers, Despawn DataLayers, Spawn Checkpoints
 	Track->LoadRace();
-
+	
 	//Listen to Checkpoints
 	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
 	{
@@ -53,8 +54,50 @@ void UAA_TimeTrialActivity::LoadActivity()
 	GetWorld()->Exec(GetWorld(),TEXT("demo.MinRecordHz 60"));
 	GetWorld()->Exec(GetWorld(),TEXT("demo.RecordHz 120"));
 
+	auto PlayerController = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	PlayerController->SetTrackInfo(Track);
 
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnLoadActivityCompleted.Broadcast();
+}
+
+void UAA_TimeTrialActivity::UpdatePlayerHUD() const
+{
+	// Get Player Info
+	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (!PC)
+	{
+		return;
+	}
+	const auto& PlayerSplineInfo = PC->GetPlayerSplineInfo();
+	if (!PlayerSplineInfo)
+	{
+		return;
+	}
+	const auto& PlayerRaceState = PlayerSplineInfo->RaceState;
+	
+	//Update Missed Checkpoint HUD
+	if(Track->CheckpointComponent->SpawnedCheckpoints.Num() > LastCheckpointHitIndex + 1)
+	{
+		const FVector NextCheckpointLocation = Track->CheckpointComponent->SpawnedCheckpoints[LastCheckpointHitIndex+1]->GetActorLocation();
+		const float SplineInputKey = Track->Spline->FindInputKeyClosestToWorldLocation(NextCheckpointLocation);
+		const float CheckpointDistanceAlongSpline = Track->Spline->GetDistanceAlongSplineAtSplineInputKey(SplineInputKey);
+		bool PlayerMissedCheckpoint = PlayerRaceState.DistanceAlongSpline > CheckpointDistanceAlongSpline;
+		//if the checkpoint we last hit is the last one,
+		//we could be past the last checkpoint, but still at the end of the spline numerically
+		//and the next spline would be the first one which will have a low value.
+		if(PlayerMissedCheckpoint && LastCheckpointHitIndex == Track->CheckpointComponent->SpawnedCheckpoints.Num()-1)
+		{
+			const FVector LastCheckpointLocation = Track->CheckpointComponent->SpawnedCheckpoints.Last()->GetActorLocation();
+			const float LastInputKey = Track->Spline->FindInputKeyClosestToWorldLocation(LastCheckpointLocation);
+			const float LastCheckpointDistanceAlongSpline = Track->Spline->GetDistanceAlongSplineAtSplineInputKey(LastInputKey);
+			PlayerMissedCheckpoint = PlayerRaceState.DistanceAlongSpline > LastCheckpointDistanceAlongSpline;
+		}
+
+		//Update HUD
+		auto VehicleUI = PC->VehicleUI;
+		check(VehicleUI);
+		VehicleUI->SetPlayerMissedCheckpoint(PlayerMissedCheckpoint);
+	}
 }
 
 void UAA_TimeTrialActivity::StartActivity()
@@ -88,6 +131,7 @@ void UAA_TimeTrialActivity::CountdownEnded()
 	StartTime = UGameplayStatics::GetTimeSeconds(this);
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartTimer();
 
+	GetWorld()->GetTimerManager().SetTimer(RaceHUDUpdateTimer, this, &UAA_TimeTrialActivity::UpdatePlayerHUD, RaceHUDUpdateFrequency, true);
 }
 
 void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
@@ -109,6 +153,7 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 					FTimerHandle TimerHandle;
 					GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::RaceEnded,FinishDelay,false);
 					UE_LOG(LogTemp,Log,TEXT("Last Checkpoint Hit: Race Over"))
+					GetWorld()->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
 				}else
 				{
 					//TODO: Increase Lap Counter Display
@@ -167,12 +212,15 @@ void UAA_TimeTrialActivity::RaceEnded()
 {
 	//Play Replay
 	//UGameplayStatics::GetGameInstance(this)->PlayReplay(FString("Replay"),GetWorld());
+	GetWorld()->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
 
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::ReplayStartDelayEnded,ReplayStartDelay,false);
 }
 void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 {
+	HideRaceUIElements();
+	
 	//Calculate Player Time
 	UE_LOG(LogTemp,Log,TEXT("Finish Time: %f"),(FinishTime-StartTime));
 	float PlayerTime = FinishTime-StartTime;
@@ -210,6 +258,11 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 	//Hide Time
 	PC->VehicleUI->HideTimer();
 }
+void UAA_TimeTrialActivity::HideRaceUIElements()
+{
+	GetWorld()->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
+
+}
 void UAA_TimeTrialActivity::DestroyActivity()
 {
 	//Unbind to Checkpoints
@@ -235,7 +288,7 @@ void UAA_TimeTrialActivity::DestroyActivity()
 	}
 
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnDestroyActivityCompleted.Broadcast();
-
+	HideRaceUIElements();
 	UnregisterRewindable();
 }
 

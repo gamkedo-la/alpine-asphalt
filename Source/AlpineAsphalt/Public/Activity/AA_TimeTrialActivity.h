@@ -45,6 +45,7 @@ public:
 	UFUNCTION()
 	virtual void LoadActivity() override;
 
+	void UpdatePlayerHUD() const;
 	void CountdownEnded();
 	//starts the activity
 	UFUNCTION()
@@ -55,6 +56,7 @@ public:
 	virtual void DestroyActivity() override;
 
 	void ReplayStartDelayEnded();
+	void HideRaceUIElements();
 	//call when TimeTrial ends
 	UFUNCTION()
 	virtual void RaceEnded();
@@ -103,5 +105,10 @@ private:
 	
 	UPROPERTY()
 	float FinishTime;
-	
+
+	UPROPERTY()
+	FTimerHandle RaceHUDUpdateTimer{};
+
+	UPROPERTY(EditDefaultsOnly)
+	float RaceHUDUpdateFrequency{ 1.0f };
 };

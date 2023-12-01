@@ -324,7 +324,7 @@ void UAA_HeadToHeadActivity::RegisterRacePositionTimer()
 	auto World = GetWorld();
 	check(World);
 
-	World->GetTimerManager().SetTimer(RacePositionUpdateTimer, this, &UAA_HeadToHeadActivity::UpdatePlayerHUD, RacePositionUpdateFrequency, true);
+	World->GetTimerManager().SetTimer(RaceHUDUpdateTimer, this, &UAA_HeadToHeadActivity::UpdatePlayerHUD, RaceHUDUpdateFrequency, true);
 }
 
 void UAA_HeadToHeadActivity::UnRegisterRacePositionTimer()
@@ -335,7 +335,7 @@ void UAA_HeadToHeadActivity::UnRegisterRacePositionTimer()
 		return;
 	}
 
-	World->GetTimerManager().ClearTimer(RacePositionUpdateTimer);
+	World->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
 }
 
 void UAA_HeadToHeadActivity::UpdatePlayerHUD()
