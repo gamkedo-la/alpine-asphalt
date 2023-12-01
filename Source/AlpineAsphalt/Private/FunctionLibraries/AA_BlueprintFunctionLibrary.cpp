@@ -4,6 +4,7 @@
 #include "FunctionLibraries/AA_BlueprintFunctionLibrary.h"
 
 #include "ChaosVehicleWheel.h"
+#include "ChaosWheeledVehicleMovementComponent.h"
 #include "Actors/AA_TrackInfoActor.h"
 #include "LandscapeSplineActor.h"
 #include "LandscapeSplineControlPoint.h"
@@ -260,5 +261,4 @@ UPhysicalMaterial* UAA_BlueprintFunctionLibrary::GetWheelContactMaterial(UChaosV
 		return Wheel->GetContactSurfaceMaterial();
 	}
 	return nullptr;
-	
 }

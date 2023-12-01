@@ -10,6 +10,7 @@
 
 #include "AA_BlueprintFunctionLibrary.generated.h"
 
+class UChaosWheeledVehicleMovementComponent;
 class UChaosVehicleWheel;
 class AAA_TrackInfoActor;
 class AAA_RoadSplineActor;

@@ -3,6 +3,7 @@
 
 #include "Components/AA_VehicleAudioComponent.h"
 #include "ChaosWheeledVehicleMovementComponent.h"
+#include "Components/AA_ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AudioComponent.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 

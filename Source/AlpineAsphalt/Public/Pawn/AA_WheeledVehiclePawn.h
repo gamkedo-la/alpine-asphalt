@@ -28,7 +28,7 @@ private:
 
 	/** vehicle simulation component */
 	UPROPERTY(Category = Vehicle, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UChaosWheeledVehicleMovementComponent> VehicleMovementComponent;
+	TObjectPtr<class UAA_ChaosWheeledVehicleMovementComponent> VehicleMovementComponent;
 
 	UPROPERTY(Category = Vehicle, VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UAudioComponent> AudioComponent;
@@ -50,7 +50,7 @@ public:
 	static FName VehicleMovementComponentName;
 
 	/** Util to get the wheeled vehicle movement component */
-	UChaosWheeledVehicleMovementComponent* GetVehicleMovementComponent() const;
+	UAA_ChaosWheeledVehicleMovementComponent* GetVehicleMovementComponent() const;
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void SetHandbrake(bool bEnabled);

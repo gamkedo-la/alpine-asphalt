@@ -5,6 +5,7 @@
 #include "Actors/AA_Checkpoint.h"
 #include "Actors/AA_TrackInfoActor.h"
 #include "Algo/RandomShuffle.h"
+#include "Components/AA_ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AA_CheckpointComponent.h"
 #include "Components/SplineComponent.h"
 #include "Controllers/AA_AIRacerController.h"

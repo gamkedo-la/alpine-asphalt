@@ -19,7 +19,7 @@ USTRUCT(BlueprintType)
 struct FPlayerSplineInfo
 {
 	GENERATED_BODY()
-
+	
 	UPROPERTY(Transient, BlueprintReadOnly)
 	FAA_RaceState RaceState{};
 };

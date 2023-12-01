@@ -14,6 +14,7 @@
 
 #include <numbers>
 
+#include "Components/AA_ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AudioComponent.h"
 #include "UI/AA_GameUserSettings.h"
 
@@ -37,7 +38,7 @@ AAA_WheeledVehiclePawn::AAA_WheeledVehiclePawn(const class FObjectInitializer& O
 	PaintMaterial = Mesh->CreateAndSetMaterialInstanceDynamicFromMaterial(0,Mesh->GetMaterial(0));
 	RootComponent = Mesh;
 
-	VehicleMovementComponent = CreateDefaultSubobject<UChaosWheeledVehicleMovementComponent>(VehicleMovementComponentName);
+	VehicleMovementComponent = CreateDefaultSubobject<UAA_ChaosWheeledVehicleMovementComponent>(VehicleMovementComponentName);
 	VehicleMovementComponent->SetIsReplicated(true); // Enable replication by default
 	VehicleMovementComponent->UpdatedComponent = Mesh;
 
@@ -83,7 +84,7 @@ void AAA_WheeledVehiclePawn::Destroyed()
 	Super::Destroyed();
 }
 
-UChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovementComponent() const
+UAA_ChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovementComponent() const
 {
 	return VehicleMovementComponent;
 }

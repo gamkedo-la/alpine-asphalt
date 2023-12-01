@@ -3,6 +3,7 @@
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Actors/AA_Checkpoint.h"
 #include "Actors/AA_TrackInfoActor.h"
+#include "Components/AA_ChaosWheeledVehicleMovementComponent.h"
 #include "Components/AA_CheckpointComponent.h"
 #include "Controllers/AA_PlayerController.h"
 #include "Engine/Internal/Kismet/BlueprintTypeConversions.h"

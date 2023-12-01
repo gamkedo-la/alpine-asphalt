@@ -11,6 +11,7 @@
 #include "AI/AA_RacerContextProvider.h"
 
 #include "ChaosWheeledVehicleMovementComponent.h"
+#include "Components/AA_ChaosWheeledVehicleMovementComponent.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 
 #include "Kismet/KismetMathLibrary.h"

@@ -3,6 +3,7 @@
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Controllers/AA_PlayerController.h"
 #include "Activity/AA_BaseActivity.h"
+#include "Components/AA_ChaosWheeledVehicleMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_RewindSubsystem.h"
@@ -114,7 +115,7 @@ void UAA_ActivityManagerSubsystem::RestartActivity()
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->BaseUI->ShowLoadingScreen();
 
 	//Show Load Screen for minimum time
-	FTimerHandle TimerHandle;
+	//FTimerHandle TimerHandle;
 	FTimerDelegate TimerDelegate = FTimerDelegate::CreateUObject(this,&UAA_ActivityManagerSubsystem::LoadScreenMinimumCompleted,false);
 	LoadScreenFinished = false;
 
