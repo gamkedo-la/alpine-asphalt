@@ -138,4 +138,8 @@ private:
 
 	UPROPERTY(EditDefaultsOnly)
 	float RaceHUDUpdateFrequency{ 1.0f };
+
+	// Sometimes AI will hit the checkpoint before last and it will detect an early finish so this is a workaround to avoid that.
+	UPROPERTY(EditDefaultsOnly)
+	float MinRaceTimeForFinish{ 10.0f };
 };

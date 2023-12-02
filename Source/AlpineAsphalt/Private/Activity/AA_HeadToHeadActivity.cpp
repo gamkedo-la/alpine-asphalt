@@ -18,6 +18,8 @@
 #include "UI/AA_TimeTrialScoreScreenUI.h"
 #include "UI/AA_VehicleUI.h"
 
+#include "Logging/AlpineAsphaltLogger.h"
+
 void UAA_HeadToHeadActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 {
 	if(!TrackToUse)
@@ -212,16 +214,29 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 		if(IndexCheckpointHit == NumCheckpoints-1) // Non-Player finished race
 		{
 			LapsCompletedMap[HitVehicle]++;
+
 			//AI need to hit the finish line twice for one lap because we assume they start behind it
 			if(LapsCompletedMap[HitVehicle] == Track->LapsToComplete+1) // AI Finished Race
 			{
-				float TimeToFinish = UGameplayStatics::GetTimeSeconds(this)-StartTime;
-				if(ScoreScreen) //if UI already exists add the score, otherwise save it for later in array
+				// Sometimes AI still finishes the race early - usually in <=2 seconds (may only happen on test map)
+				const float TimeToFinish = UGameplayStatics::GetTimeSeconds(this) - StartTime;
+
+				if (TimeToFinish >= MinRaceTimeForFinish)
 				{
-					AddAIDriverScore(TimeToFinish);
-				}else
+					if (ScoreScreen) //if UI already exists add the score, otherwise save it for later in array
+					{
+						AddAIDriverScore(TimeToFinish);
+					}
+					else
+					{
+						FinishTimes.Add(TimeToFinish);
+					}
+				}
+				else
 				{
-					FinishTimes.Add(TimeToFinish);
+					// make sure we can go through and detect again
+					--LapsCompletedMap[HitVehicle];
+					UE_LOG(LogAlpineAsphalt, Warning, TEXT("%s-%s: AI finished the race spuriously - ignoring"), *GetName(), *HitVehicle->GetName());
 				}
 			}
 		}
@@ -277,7 +292,6 @@ void UAA_HeadToHeadActivity::RestoreFromSnapshot(const AA_HeadToHeadActivity::FS
 	}
 
 	LapsCompletedMap.Reset();
-
 	for (const auto& [VehiclePawn, LapsCompleted] : InSnapshotData.LapsCompletedMap)
 	{
 		LapsCompletedMap.Add(VehiclePawn, LapsCompleted);
@@ -380,6 +394,7 @@ void UAA_HeadToHeadActivity::UpdatePlayerHUD()
 		const auto& AIRacerState = RacerController->GetRacerContext().RaceState;
 		++RacerCount;
 
+		// FIXME: This may be getting reset after completing race
 		if (AIRacerState.GetOverallCompletionFraction() > PlayerCompletionFraction)
 		{
 			++RacePosition;
@@ -460,8 +475,14 @@ void UAA_HeadToHeadActivity::DestroyActivity()
 {
 	for(int i = AIRacers.Num()-1; i >= 0; i--)
 	{
-		AIRacers[i]->Destroy();
+		auto Racer = AIRacers[i];
+		// If a racer falls off and isn't reset in time they get unpossessed and ai controller deactivated
+		if (Racer)
+		{
+			Racer->Destroy();
+		}
 	}
+
 	AIRacers.Reset();
 	//Unbind to Checkpoints
 	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
