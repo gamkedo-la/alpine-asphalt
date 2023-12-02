@@ -68,20 +68,16 @@ void AAA_WheeledVehiclePawn::BeginPlay()
 	
 }
 
-void AAA_WheeledVehiclePawn::Destroyed()
+void AAA_WheeledVehiclePawn::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
+	Super::EndPlay(EndPlayReason);
+
 	GetWorldTimerManager().ClearTimer(RecordingSnapshotTimerHandle);
-
-#if WITH_EDITOR
-	if(GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
+	if (UAA_RewindSubsystem* RewindSystem = GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{
-		GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->UnregisterRewindable(this);
+		RewindSystem->UnregisterRewindable(this);
+		SnapshotData.Empty();
 	}
-#else 
-	GetWorld()->GetSubsystem<UAA_RewindSubsystem>()->UnregisterRewindable(this);
-#endif
-
-	Super::Destroyed();
 }
 
 UAA_ChaosWheeledVehicleMovementComponent* AAA_WheeledVehiclePawn::GetVehicleMovementComponent() const

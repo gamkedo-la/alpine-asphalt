@@ -60,11 +60,11 @@ private:
 	FTimerHandle RecordingSnapshotTimerHandle;
 	TArray<TSnapshotData> SnapshotData{};
 
-	//Cached property of Rewind Subsystem
+	//Cached property of Rewind RewindSystem
 	int32 MaxSnapshots = 0;
-	//Cached Time that should match RewindSubsystem
+	//Cached Time that should match RewindSystem
 	float RewindTime = 0;
-	//Cached property of Rewind Subsystem
+	//Cached property of Rewind RewindSystem
 	float RewindResolution = 0.f;
 
 	int32 LastSnapshotIndex{ -1 };
@@ -130,9 +130,10 @@ void TAA_BaseRewindable<TSnapshotData>::UnregisterRewindable()
 
 	World->GetTimerManager().ClearTimer(RecordingSnapshotTimerHandle);
 
-	if (auto Subsystem = World->GetSubsystem<UAA_RewindSubsystem>())
+	if (auto RewindSystem = World->GetSubsystem<UAA_RewindSubsystem>())
 	{
-		Subsystem->UnregisterRewindable(this);
+		RewindSystem->UnregisterRewindable(this);
+		SnapshotData.Empty();
 	}
 }
 

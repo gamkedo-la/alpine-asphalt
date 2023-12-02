@@ -81,6 +81,7 @@ void UAA_RecalculateOnRewindDelegateHolder::OnRewindModeDeactivated()
 	{
 		check(Parent);
 		Parent->RecalculateOnRewind();
+		bWasRewound = false;
 	}
 }
 

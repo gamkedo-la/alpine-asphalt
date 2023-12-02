@@ -41,7 +41,7 @@ public:
 	AAA_WheeledVehiclePawn(const class FObjectInitializer& ObjectInitializer);
 
 	virtual void BeginPlay() override;
-	virtual void Destroyed() override;
+	virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override;
 
 	/** Name of the MeshComponent. Use this name if you want to prevent creation of the component (with ObjectInitializer.DoNotCreateDefaultSubobject). */
 	static FName VehicleMeshComponentName;
