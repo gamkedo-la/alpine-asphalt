@@ -57,47 +57,53 @@ void AAA_AIRacerController::StopRacing()
 {
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Display, TEXT("%s: StopRacing"), *GetName());
 
-	if (GetUnstuckComponent)
-	{
-		GetUnstuckComponent->Deactivate();
-	}
-	if (RacerSplineFollowingComponent)
-	{
-		RacerSplineFollowingComponent->Deactivate();
-	}
-	if (RacerVerbalBarksComponent)
-	{
-		RacerVerbalBarksComponent->Deactivate();
-	}
-	if (RacerObstacleAvoidanceComponent)
-	{
-		RacerObstacleAvoidanceComponent->Deactivate();
-	}
-	if (ObstacleDetectionComponent)
-	{
-		ObstacleDetectionComponent->Deactivate();
-	}
-	if (VehicleControlComponent)
-	{
-		VehicleControlComponent->Deactivate();
-	}
+	bRaceCompleted = true;
+
+	DeactivateAIComponents();
 
 	if (auto VehiclePawn = Cast<AAA_WheeledVehiclePawn>(GetPawn()); VehiclePawn)
 	{
-		// TODO: For some reason the current tick cannot be aborted on VehicleControlComponent even with an active check so schedule for next tick
-		// Slow down to a stop
+		// Current tick cannot be aborted on VehicleControlComponent even with an active check so schedule for next tick
 		GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this, WeakVehicle = TWeakObjectPtr<AAA_WheeledVehiclePawn>(VehiclePawn)]()
 		{
 			if (auto VehiclePawn = WeakVehicle.Get(); VehiclePawn)
 			{
-				VehiclePawn->SetSteering(FMath::RandBool() ? RaceEndSteeringDeviation : -RaceEndSteeringDeviation);
-				VehiclePawn->SetBrake(RaceEndBrakeAmount);
-				VehiclePawn->SetThrottle(0);
-				VehiclePawn->SetHandbrake(false);
-
-				UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: Race End parameters applied"), *GetName());
+				StopAfterRace(*VehiclePawn);
 			}
 		}));
+	}
+}
+
+void AAA_AIRacerController::StopAfterRace(AAA_WheeledVehiclePawn& VehiclePawn)
+{
+	// Slow down to a stop
+	VehiclePawn.SetSteering(FMath::RandBool() ? RaceEndSteeringDeviation : -RaceEndSteeringDeviation);
+	VehiclePawn.SetBrake(RaceEndBrakeAmount);
+	VehiclePawn.SetThrottle(0);
+	VehiclePawn.SetHandbrake(false);
+
+	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: Race End parameters applied"), *GetName());
+}
+
+void AAA_AIRacerController::DeactivateAIComponents()
+{
+	for (auto Component : AIComponents)
+	{
+		if (Component)
+		{
+			Component->Deactivate();
+		}
+	}
+}
+
+void AAA_AIRacerController::ReactivateAIComponents()
+{
+	for (auto Component : AIComponents)
+	{
+		if (Component)
+		{
+			Component->Activate();
+		}
 	}
 }
 
@@ -108,7 +114,8 @@ FAA_AIRacerSnapshotData AAA_AIRacerController::CaptureSnapshot() const
 		.RaceState = RacerContext.RaceState,
 		.MovementTarget = RacerContext.MovementTarget,
 		.DesiredSpeedMph = RacerContext.DesiredSpeedMph,
-		.TargetDistanceAlongSpline = RacerContext.TargetDistanceAlongSpline
+		.TargetDistanceAlongSpline = RacerContext.TargetDistanceAlongSpline,
+		.bRaceCompleted = bRaceCompleted
 	};
 }
 
@@ -122,6 +129,22 @@ void AAA_AIRacerController::RestoreFromSnapshot(const FAA_AIRacerSnapshotData& I
 	RacerContext.DesiredSpeedMph = InSnapshotData.DesiredSpeedMph;
 	RacerContext.MovementTarget = InSnapshotData.MovementTarget;
 	RacerContext.TargetDistanceAlongSpline = InSnapshotData.TargetDistanceAlongSpline;
+
+	const auto bPreviousCompletion = bRaceCompleted;
+	bRaceCompleted = InSnapshotData.bRaceCompleted;
+
+	if (bPreviousCompletion && !bRaceCompleted)
+	{
+		ReactivateAIComponents();
+	}
+	else if (!bPreviousCompletion && bRaceCompleted)
+	{
+		// This shouldn't happen as we only restore after player resumes
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning,
+			TEXT("%s: RestoreFromSnapshot: InRewindTime=%f - Calling StopRacing as detected race completion on restore"),
+			*GetName(), InRewindTime);
+		StopRacing();
+	}
 }
 
 #if ENABLE_VISUAL_LOG
@@ -166,6 +189,12 @@ void AAA_AIRacerController::BeginPlay()
 	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: BeginPlay"), *GetName());
 
 	Super::BeginPlay();
+
+	AIComponents.Add(VehicleControlComponent);
+	AIComponents.Add(RacerSplineFollowingComponent);
+	AIComponents.Add(ObstacleDetectionComponent);
+	AIComponents.Add(RacerObstacleAvoidanceComponent);
+	AIComponents.Add(GetUnstuckComponent);
 }
 
 void AAA_AIRacerController::OnPossess(APawn* InPawn)
@@ -218,9 +247,6 @@ void AAA_AIRacerController::OnPossess(APawn* InPawn)
 
 	RacerContext.SetVehiclePawn(VehiclePawn);
 	RacerContext.DesiredSpeedMph = VehicleControlComponent->GetDesiredSpeedMph();
-
-	// TODO: Plan to use AI State Tree to manage AI behavior.  Since this is new to UE 5.1 and haven't used it, 
-	// fallback would be to use a behavior tree or even just code up the logic in the AI Controller itself
 	
 	SetupComponentEventBindings();
 

@@ -36,6 +36,7 @@ public:
 	void OnPossessedVehiclePawn(AAA_WheeledVehiclePawn* VehiclePawn);
 
 	virtual void Deactivate() override;
+	virtual void Activate(bool bReset = false) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -52,6 +53,9 @@ private:
 	bool CheckRelativePlayerPosition();
 	bool CheckSideways();
 	void StopAllAudio();
+
+	void RegisterEvents(AAA_WheeledVehiclePawn* VehiclePawn);
+	void UnregisterEvents(AAA_WheeledVehiclePawn* VehiclePawn);
 
 	bool PlayClipIfApplicable(USoundBase* Clip);
 

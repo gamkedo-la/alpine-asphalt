@@ -44,11 +44,7 @@ void UAA_RacerVerbalBarksComponent::OnPossessedVehiclePawn(AAA_WheeledVehiclePaw
 
 	check(VehiclePawn);
 
-	auto Mesh = VehiclePawn->GetMesh();
-	check(Mesh);
-
-	// Ensure that we can register hit events
-	Mesh->OnComponentHit.AddDynamic(this, &ThisClass::OnVehicleHit);
+	RegisterEvents(VehiclePawn);
 }
 
 void UAA_RacerVerbalBarksComponent::BeginPlay()
@@ -174,11 +170,21 @@ void UAA_RacerVerbalBarksComponent::Deactivate()
 
 	const auto& Context = RacerContextProvider->GetRacerContext();
 
-	if (auto Vehicle = Context.VehiclePawn; Vehicle && Vehicle->GetMesh())
+	UnregisterEvents(Context.VehiclePawn);
+}
+
+void UAA_RacerVerbalBarksComponent::Activate(bool bReset)
+{
+	Super::Activate(bReset);
+
+	if (!RacerContextProvider)
 	{
-		// Ensure that we can register hit events
-		Vehicle->GetMesh()->OnComponentHit.RemoveDynamic(this, &ThisClass::OnVehicleHit);
+		return;
 	}
+
+	const auto& Context = RacerContextProvider->GetRacerContext();
+
+	RegisterEvents(Context.VehiclePawn);
 }
 
 bool UAA_RacerVerbalBarksComponent::CheckRelativePlayerPosition()
@@ -286,6 +292,39 @@ void UAA_RacerVerbalBarksComponent::StopAllAudio()
 			AudioState.LastPlayedSound = nullptr;
 		}
 	}
+}
+
+void UAA_RacerVerbalBarksComponent::RegisterEvents(AAA_WheeledVehiclePawn* VehiclePawn)
+{
+	if (!VehiclePawn)
+	{
+		return;
+	}
+
+	auto Mesh = VehiclePawn->GetMesh();
+
+	if (!Mesh)
+	{
+		return;
+	}
+
+	Mesh->OnComponentHit.AddUniqueDynamic(this, &ThisClass::OnVehicleHit);
+}
+
+void UAA_RacerVerbalBarksComponent::UnregisterEvents(AAA_WheeledVehiclePawn* VehiclePawn)
+{
+	if (!VehiclePawn)
+	{
+		return;
+	}
+	auto Mesh = VehiclePawn->GetMesh();
+
+	if (!Mesh)
+	{
+		return;
+	}
+
+	Mesh->OnComponentHit.RemoveDynamic(this, &ThisClass::OnVehicleHit);
 }
 
 bool UAA_RacerVerbalBarksComponent::PlayClipIfApplicable(USoundBase* Clip)

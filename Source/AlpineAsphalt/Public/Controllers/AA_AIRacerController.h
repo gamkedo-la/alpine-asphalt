@@ -116,6 +116,11 @@ private:
 	// Inherited via TAA_BaseRewindable
 	virtual UObject* AsUObject() override { return this; }
 
+	void StopAfterRace(AAA_WheeledVehiclePawn& VehiclePawn);
+
+	void DeactivateAIComponents();
+	void ReactivateAIComponents();
+
 private:
 
 	static constexpr double MaxRaceDistance = 500 * 100;
@@ -152,6 +157,10 @@ private:
 	UPROPERTY(Category = "Finish", EditDefaultsOnly)
 	float RaceEndSteeringDeviation{ 0.1f };
 
+	bool bRaceCompleted{};
+
+	UPROPERTY(Transient)
+	TArray<UActorComponent*> AIComponents{};
 };
 
 #pragma region Inline Definitions

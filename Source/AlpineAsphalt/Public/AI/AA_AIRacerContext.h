@@ -49,6 +49,7 @@ struct ALPINEASPHALT_API FAA_AIRacerSnapshotData
 
 	float DesiredSpeedMph{};
 	float TargetDistanceAlongSpline{};
+	bool bRaceCompleted{};
 };
 
 /**
