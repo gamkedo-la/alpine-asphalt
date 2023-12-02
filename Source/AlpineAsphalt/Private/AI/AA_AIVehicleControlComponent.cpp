@@ -17,7 +17,7 @@
 using namespace AA;
 
 DEFINE_VLOG_EVENT(EventVehicleTargetReached, Display, "Target Reached")
-
+DEFINE_VLOG_EVENT(EventVehicleTargetUnreachable, Warning, "Target Unreachable")
 
 // Sets default values for this component's properties
 UAA_AIVehicleControlComponent::UAA_AIVehicleControlComponent()
@@ -285,11 +285,17 @@ void UAA_AIVehicleControlComponent::SetSpeedControls(float ThrottleValue) const
 
 }
 
-bool UAA_AIVehicleControlComponent::HasReachedTarget() const
+bool UAA_AIVehicleControlComponent::HasReachedTarget(float* OutDistance) const
 {
 	check(VehiclePawn);
 
-	return FVector::Distance(VehiclePawn->GetFrontWorldLocation(), CurrentMovementTarget) < TargetReachedRadius;
+	const auto Distance = FVector::Distance(VehiclePawn->GetFrontWorldLocation(), CurrentMovementTarget);
+	if (OutDistance)
+	{
+		*OutDistance = Distance;
+	}
+
+	return Distance < TargetReachedRadius;
 }
 
 void UAA_AIVehicleControlComponent::CheckIfReachedTarget()
@@ -300,9 +306,18 @@ void UAA_AIVehicleControlComponent::CheckIfReachedTarget()
 		return;
 	}
 
+	float CurrentDistance{};
+
 	// We haven't reached the target or the target is now behind us and didn't start that way
-	if (!HasReachedTarget() && (bTargetStartedBehind || !IsTargetBehind()))
+	if (!HasReachedTarget(&CurrentDistance) && (bTargetStartedBehind || !IsTargetBehind()))
 	{
+		if (IsTargetUnreachable(CurrentDistance))
+		{
+			check(VehiclePawn);
+
+			UE_VLOG_EVENT_WITH_DATA(GetOwner(), EventVehicleTargetUnreachable, *LoggingUtils::GetName(VehiclePawn));
+			OnVehicleTargetUnreachable.Broadcast(VehiclePawn, CurrentMovementTarget);
+		}
 		return;
 	}
 
@@ -311,8 +326,22 @@ void UAA_AIVehicleControlComponent::CheckIfReachedTarget()
 	check(VehiclePawn);
 
 	UE_VLOG_EVENT_WITH_DATA(GetOwner(), EventVehicleTargetReached, *LoggingUtils::GetName(VehiclePawn));
-
 	OnVehicleReachedTarget.Broadcast(VehiclePawn, CurrentMovementTarget);
+}
+
+bool UAA_AIVehicleControlComponent::IsTargetUnreachable(float CurrentDistance) const
+{
+	if (CurrentDistance >= TargetUnreachableDistance)
+	{
+		return true;
+	}
+
+	// also check Delta Z
+	check(VehiclePawn);
+
+	const auto DeltaZ = FMath::Abs(VehiclePawn->GetActorLocation().Z - CurrentMovementTarget.Z);
+
+	return DeltaZ >= TargetUnreachableDeltaZ;
 }
 
 bool UAA_AIVehicleControlComponent::IsTargetBehind() const

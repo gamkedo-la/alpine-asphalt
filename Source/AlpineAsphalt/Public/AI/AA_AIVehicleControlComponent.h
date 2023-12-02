@@ -82,11 +82,13 @@ private:
 
 	float GetTargetSteeringYawAngle(const FVector& DestinationDelta) const;
 
-	bool HasReachedTarget() const;
+	bool HasReachedTarget(float* OutDistance = nullptr) const;
 	void CheckIfReachedTarget();
 	bool IsTargetBehind() const;
+	bool IsTargetUnreachable(float CurrentDistance) const;
 
 	float CalculateNextTickInterval() const;
+
 
 	// Inherited via TAA_BaseRewindable
 	virtual UObject* AsUObject() override { return this; }
@@ -94,6 +96,9 @@ private:
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
 	mutable FOnVehicleReachedTarget OnVehicleReachedTarget;
+
+	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
+	mutable FOnVehicleTargetUnreachable OnVehicleTargetUnreachable;
 
 private:
 	UPROPERTY(Transient)
@@ -104,6 +109,19 @@ private:
 	*/
 	UPROPERTY(EditAnywhere)
 	float TargetReachedRadius{ 250.0f };
+
+
+	/*
+	* Distance where we report that the current target is unreachable.
+	*/
+	UPROPERTY(EditAnywhere)
+	float TargetUnreachableDistance{ 50 * 100.0f };
+
+	/**
+	*  DeltaZ where we report that the current target is unreachable regardless of distance.
+	*/
+	UPROPERTY(EditAnywhere)
+	float TargetUnreachableDeltaZ{ 5 * 100.0f };
 
 	// TODO: Will calculate this from wheel data in the movement component and also changes based on velocity from steering curve
 	UPROPERTY(EditAnywhere)

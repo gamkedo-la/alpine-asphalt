@@ -400,6 +400,18 @@ void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePa
 	UpdateMovementFromLastSplineState(RacerContext);
 }
 
+void UAA_RacerSplineFollowingComponent::OnTargetUnreachable(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& CurrentMovementTarget)
+{
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: OnTargetUnreachable: VehiclePawn=%s; CurrentMovementTarget=%s"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *CurrentMovementTarget.ToCompactString());
+
+	check(VehiclePawn);
+	check(RacerContextProvider);
+
+	auto& RacerContext = RacerContextProvider->GetRacerContext();
+	ResetLastSplineStateToRaceState(RacerContext);
+}
+
 void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 {
 	check(RacerContextProvider);

@@ -66,6 +66,9 @@ public:
 	UFUNCTION()
 	void SelectUnstuckTarget(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& IdealSeekPosition, bool bAtMaxRetries);
 
+	UFUNCTION()
+	void OnTargetUnreachable(AAA_WheeledVehiclePawn* VehiclePawn, const FVector& CurrentMovementTarget);
+
 	UFUNCTION(BlueprintCallable, Category = "Racer AI")
 	void SetMaxSpeedMph(float SpeedMph);
 
@@ -93,7 +96,6 @@ protected:
 	virtual void RestoreFromSnapshot(const AA_RacerSplineFollowingComponent::FSnapshotData& InSnapshotData, float InRewindTime) override;
 
 private:
-	// TODO: May respond to a race start event
 	void SetInitialMovementTarget();
 
 	std::optional<AA_RacerSplineFollowingComponent::FSplineState> GetInitialSplineState(const FAA_AIRacerContext& RacerContext) const;
