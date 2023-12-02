@@ -28,6 +28,9 @@ public:
 	void UpdateSpeed(float NewSpeed);
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
+	void UpdateEngineSpeed(float NewSpeed);
+
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void UpdateGear(int NewGear);
 
 	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
