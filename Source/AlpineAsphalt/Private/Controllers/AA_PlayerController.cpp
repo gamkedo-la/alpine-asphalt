@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Subsystems/AA_RewindSubsystem.h"
+#include "Subsystems/AA_ActivityManagerSubsystem.h"
 #include "UI/AA_VehicleUI.h"
 #include "UI/AA_BaseUI.h"
 #include "Components/AA_PlayerRaceSplineInfoComponent.h"
@@ -274,6 +275,13 @@ void AAA_PlayerController::Interact(const FInputActionValue& Value)
 void AAA_PlayerController::EnterRewindMode(const FInputActionValue& Value)
 {
 	UE_LOG(PlayerControllerLog,Log,TEXT("EnterRewindMode Pressed"));
+
+	// Do not enter rewind mode if in a completed state of an activity as this will conflict with input bindings of menu and pressing "A" on controller will end the activity
+	// but since the game is paused "AsyncTask" on game thread will never execute and the loading screen will be frozen
+	if (UAA_ActivityManagerSubsystem* ActivitySystem = GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>(); ActivitySystem && ActivitySystem->IsActivityActiveButPlayerCompleted())
+	{
+		return;
+	}
 	
 	if(UAA_RewindSubsystem* RewindSystem = GetWorld()->GetSubsystem<UAA_RewindSubsystem>())
 	{

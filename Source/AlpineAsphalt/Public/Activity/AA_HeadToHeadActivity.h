@@ -57,6 +57,8 @@ public:
 
 	UFUNCTION()
 	virtual UWorld* GetWorld() const override;
+
+	virtual bool IsPlayerCompleted() const override;
 protected:
 	UFUNCTION()
 	void CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle);

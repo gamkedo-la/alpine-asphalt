@@ -60,6 +60,11 @@ void UAA_TimeTrialActivity::LoadActivity()
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnLoadActivityCompleted.Broadcast();
 }
 
+bool UAA_TimeTrialActivity::IsPlayerCompleted() const
+{
+	return bScoreScreenActive;
+}
+
 void UAA_TimeTrialActivity::UpdatePlayerHUD() const
 {
 	// Get Player Info
@@ -232,6 +237,7 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 	//Show Score Screen
 	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0));
 	UAA_TimeTrialScoreScreenUI* ScoreScreen = Cast<UAA_TimeTrialScoreScreenUI>(PC->BaseUI->PushMenu(ScoreScreenClass));
+	bScoreScreenActive = true;
 
 	//Add results to score screen
 	TArray<FDriverName*> DriverNames;
@@ -258,11 +264,13 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 	//Hide Time
 	PC->VehicleUI->HideTimer();
 }
+
 void UAA_TimeTrialActivity::HideRaceUIElements()
 {
 	GetWorld()->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
-
+	bScoreScreenActive = false;
 }
+
 void UAA_TimeTrialActivity::DestroyActivity()
 {
 	//Unbind to Checkpoints

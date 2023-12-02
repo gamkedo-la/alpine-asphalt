@@ -149,3 +149,8 @@ void UAA_ActivityManagerSubsystem::DestroyActivityFinished()
 	//Set current activity back to nullptr
 	CurrentActivity = nullptr;
 }
+
+bool UAA_ActivityManagerSubsystem::IsActivityActiveButPlayerCompleted() const
+{
+	return CurrentActivity != nullptr && CurrentActivity->IsPlayerCompleted();
+}

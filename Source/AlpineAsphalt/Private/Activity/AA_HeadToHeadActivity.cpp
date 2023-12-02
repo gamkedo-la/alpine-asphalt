@@ -228,6 +228,11 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 	}
 }
 
+bool UAA_HeadToHeadActivity::IsPlayerCompleted() const
+{
+	return ScoreScreen != nullptr;
+}
+
 AA_HeadToHeadActivity::FSnapshotData UAA_HeadToHeadActivity::CaptureSnapshot() const
 {
 	using namespace AA_HeadToHeadActivity;

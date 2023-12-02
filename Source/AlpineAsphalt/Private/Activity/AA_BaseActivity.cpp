@@ -15,3 +15,8 @@ void UAA_BaseActivity::StartActivity()
 void UAA_BaseActivity::DestroyActivity()
 {
 }
+
+bool UAA_BaseActivity::IsPlayerCompleted() const
+{
+	return false;
+}

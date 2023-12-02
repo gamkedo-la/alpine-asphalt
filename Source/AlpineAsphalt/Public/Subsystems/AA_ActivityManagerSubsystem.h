@@ -26,6 +26,12 @@ public:
 	UFUNCTION(BlueprintPure)
 	bool IsActivityActive() const;
 
+	UFUNCTION(BlueprintPure)
+	bool IsLoadingScreenActive() const;
+
+	UFUNCTION(BlueprintPure)
+	bool IsActivityActiveButPlayerCompleted() const;
+
 	UFUNCTION(BlueprintCallable,Exec)
 	void DestroyActivity();
 
@@ -57,4 +63,9 @@ private:
 inline bool UAA_ActivityManagerSubsystem::IsActivityActive() const
 {
 	return CurrentActivity != nullptr;
+}
+
+inline bool UAA_ActivityManagerSubsystem::IsLoadingScreenActive() const
+{
+	return !IsActivityActive() && !LoadScreenFinished;
 }

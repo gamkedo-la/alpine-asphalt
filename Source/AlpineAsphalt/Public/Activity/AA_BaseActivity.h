@@ -20,4 +20,7 @@ public:
 
 	//destroys the activity
 	virtual void DestroyActivity();
+
+	// Activity still active but in a completed state for the player E.g. a score screen is showing
+	virtual bool IsPlayerCompleted() const;
 };
