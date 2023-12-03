@@ -40,6 +40,9 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	//Spawn DataLayers, Despawn DataLayers, Spawn Checkpoints
 	Track->LoadRace();
 
+	//ensure finish times are reset
+	FinishTimes.Reset();
+
 	int LastStartingPosition = Track->StartLocations.Num() - 1;
 	
 	//Move Player Vehicle to Start Position
