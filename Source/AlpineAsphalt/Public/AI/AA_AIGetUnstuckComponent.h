@@ -62,6 +62,10 @@ private:
 	void ResetBuffer();
 	FVector CalculateIdealSeekPosition(const AAA_WheeledVehiclePawn& VehiclePawn) const;
 
+	bool IsPermanentlyStuck() const;
+
+	bool IsVehicleFlippedOver() const;
+
 	// Inherited via TAA_BaseRewindable
 	virtual UObject* AsUObject() override { return this; }
 private:
@@ -80,6 +84,12 @@ private:
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	int32 MaxOffsets{ 5 };
+
+	/**
+	* Absolute value of the pitch angle where we detect the car is probably flipped over.
+	*/
+	UPROPERTY(Category = "Movement", EditDefaultsOnly)
+	float MinFlippedOverPitchDetectionAngle{ 80.0f };
 
 	int32 ConsecutiveStuckCount{};
 	float LastStuckTime{ -1.0f };

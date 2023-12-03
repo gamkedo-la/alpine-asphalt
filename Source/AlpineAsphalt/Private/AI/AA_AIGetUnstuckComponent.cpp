@@ -171,7 +171,7 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	}
 
 	const auto CurrentTimeSeconds = GetWorld()->GetTimeSeconds();
-	if (CurrentTimeSeconds - LastStuckTime > 2 * MinStuckTime || ConsecutiveStuckCount >= MaxOffsets)
+	if (CurrentTimeSeconds - LastStuckTime > 2 * MinStuckTime)
 	{
 		// new stuck event - reset counter
 		ConsecutiveStuckCount = 1;
@@ -197,8 +197,13 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Display, IdealSeekPosition, IdealSeekPosition + FVector{ 0,0, 100 }, 50.0f, FColor::Blue,
 		TEXT("%s: Unstuck Seek Target"), *VehiclePawn->GetName());
 
-	const bool bAtMaxStuckCountBeforeReset = ConsecutiveStuckCount == MaxOffsets - 1;
-	OnVehicleStuck.Broadcast(VehiclePawn, IdealSeekPosition, bAtMaxStuckCountBeforeReset);
+	const bool bPermanentlyStuck = IsPermanentlyStuck();
+	OnVehicleStuck.Broadcast(VehiclePawn, IdealSeekPosition, bPermanentlyStuck);
+
+	if (bPermanentlyStuck)
+	{
+		ConsecutiveStuckCount = 0;
+	}
 }
 
 void UAA_AIGetUnstuckComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -286,4 +291,67 @@ FVector UAA_AIGetUnstuckComponent::CalculateIdealSeekPosition(const AAA_WheeledV
 	}
 
 	return VehiclePawn.GetBackWorldLocation() - VehiclePawn.GetActorForwardVector() * AdjustedUnstuckSeekOffset;
+}
+
+bool UAA_AIGetUnstuckComponent::IsPermanentlyStuck() const
+{
+	if (ConsecutiveStuckCount == MaxOffsets - 1)
+	{
+		return true;
+	}
+
+	return IsVehicleFlippedOver();
+}
+
+bool UAA_AIGetUnstuckComponent::IsVehicleFlippedOver() const
+{
+	check(RacerContextProvider);
+	const auto& Context = RacerContextProvider->GetRacerContext();
+	auto VehiclePawn = Context.VehiclePawn;
+	check(VehiclePawn);
+
+	auto World = GetWorld();
+	check(World);
+
+	// Find elevation at TargetLocation
+	FCollisionQueryParams CollisionQueryParams;
+	CollisionQueryParams.AddIgnoredActor(VehiclePawn);
+
+	const auto& TargetLocation = VehiclePawn->GetActorLocation();
+
+	const auto TraceStart = TargetLocation + FVector(0, 0, VehiclePawn->GetVehicleHeight() * 0.5f);
+	const auto TraceEnd = TargetLocation - FVector(0, 0, 1000);
+
+	FHitResult HitResult;
+
+	if (!World->LineTraceSingleByChannel(
+		HitResult,
+		TraceStart,
+		TraceEnd,
+		ECollisionChannel::ECC_Visibility,
+		CollisionQueryParams))
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Warning,
+			TEXT("%s-%s: IsVehicleFlippedOver: Could not determine ground location"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()));
+
+		return false;
+	}
+
+	const FVector& VehicleUpVector = VehiclePawn->GetActorUpVector();
+
+	const auto& WorldUpVector = HitResult.Normal;
+	const auto DotProduct = VehicleUpVector | WorldUpVector;
+
+	const float Angle = FMath::Abs(FMath::RadiansToDegrees(FMath::Acos(DotProduct)));
+	const bool bIsFlippedOver = Angle >= MinFlippedOverPitchDetectionAngle;
+
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+		TEXT("%s-%s: IsVehicleFlippedOver: %s: Angle=%f"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), LoggingUtils::GetBoolString(bIsFlippedOver), Angle);
+
+	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, HitResult.Location, HitResult.Location + 100.0f * WorldUpVector, FColor::Red, TEXT("World Up"));
+	UE_VLOG_ARROW(GetOwner(), LogAlpineAsphalt, Log, HitResult.Location, HitResult.Location + 100.0f * VehicleUpVector, FColor::Red, TEXT("Actor Up"));
+
+	return bIsFlippedOver;
 }

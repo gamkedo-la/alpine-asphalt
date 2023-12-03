@@ -246,8 +246,8 @@ bool UAA_RacerSplineFollowingComponent::ResetLastSplineStateToRaceState(FAA_AIRa
 
 	FSplineState SplineState;
 
-	SplineState.SplineKey = Spline->GetInputKeyAtDistanceAlongSpline(RaceState.DistanceAlongSpline);
-	SplineState.DistanceAlongSpline = RaceState.DistanceAlongSpline;
+	SplineState.SplineKey = Spline->GetInputKeyAtDistanceAlongSpline(RaceState.MaxDistanceAlongSpline);
+	SplineState.DistanceAlongSpline = RaceState.MaxDistanceAlongSpline;
 	SplineState.WorldLocation =  SplineState.OriginalWorldLocation = ResetSplineWorldLocation;
 	SplineState.LookaheadDistance = MinLookaheadDistance;
 	SplineState.SplineDirection = Spline->GetDirectionAtSplineInputKey(SplineState.SplineKey, ESplineCoordinateSpace::World);
@@ -409,7 +409,11 @@ void UAA_RacerSplineFollowingComponent::OnTargetUnreachable(AAA_WheeledVehiclePa
 	check(RacerContextProvider);
 
 	auto& RacerContext = RacerContextProvider->GetRacerContext();
-	ResetLastSplineStateToRaceState(RacerContext);
+	
+	if (ResetLastSplineStateToRaceState(RacerContext))
+	{
+		UpdateMovementFromLastSplineState(RacerContext);
+	}
 }
 
 void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()

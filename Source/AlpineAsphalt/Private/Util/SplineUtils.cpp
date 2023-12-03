@@ -40,6 +40,7 @@ bool AA::SplineUtils::TryUpdateRaceState(const USplineComponent& Spline, FAA_Rac
 	}
 
 	const auto CurrentCompletionFraction = CurrentDistanceAlongSpline / RaceState.SplineLength;
+	const auto LastTotalDistance = RaceState.GetTotalDistance();
 
 	if (CurrentCompletionFraction > RaceState.CurrentLapMaxCompletionFraction)
 	{
@@ -91,14 +92,18 @@ bool AA::SplineUtils::TryUpdateRaceState(const USplineComponent& Spline, FAA_Rac
 	}
 
 	RaceState.DistanceAlongSpline = CurrentDistanceAlongSpline;
+	if (RaceState.GetTotalDistance() > LastTotalDistance)
+	{
+		RaceState.MaxDistanceAlongSpline = CurrentDistanceAlongSpline;
+	}
 
 	return true;
 }
 
 ALPINEASPHALT_API FVector AA::SplineUtils::ResetVehicleToLastSplineLocation(AAA_WheeledVehiclePawn& VehiclePawn, const USplineComponent& Spline, const FAA_RaceState& RaceState)
 {
-	const auto& ResetWorldLocation = Spline.GetWorldLocationAtDistanceAlongSpline(RaceState.DistanceAlongSpline);
-	const auto& ResetWorldRotation = Spline.GetWorldDirectionAtDistanceAlongSpline(RaceState.DistanceAlongSpline).Rotation();
+	const auto& ResetWorldLocation = Spline.GetWorldLocationAtDistanceAlongSpline(RaceState.MaxDistanceAlongSpline);
+	const auto& ResetWorldRotation = Spline.GetWorldDirectionAtDistanceAlongSpline(RaceState.MaxDistanceAlongSpline).Rotation();
 
 	UE_VLOG_UELOG(SplineUtilsGetLogOwner(VehiclePawn), LogAlpineAsphalt, Display,
 		TEXT("%s: ResetVehicleToLastSplineLocation: %s with rotation %s"),

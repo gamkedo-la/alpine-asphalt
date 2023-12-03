@@ -22,6 +22,9 @@ struct ALPINEASPHALT_API FAA_RaceState
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	float DistanceAlongSpline{};
+	
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
+	float MaxDistanceAlongSpline{};
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Transient)
 	float SplineLength{};
