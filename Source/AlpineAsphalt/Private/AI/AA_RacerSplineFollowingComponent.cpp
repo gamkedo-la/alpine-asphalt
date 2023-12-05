@@ -429,15 +429,6 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 
 	check(Context.VehiclePawn);
 
-	if (!IsSplineStateASufficientTarget(*Context.VehiclePawn, *LastSplineState))
-	{
-		LastSplineState = GetNextSplineState(Context, LastSplineState->DistanceAlongSpline + LastSplineState->LookaheadDistance);
-		if (!LastSplineState)
-		{
-			return;
-		}
-	}
-
 	// Initialize to current position for curvature calculation
 	LastMovementTarget = Context.VehiclePawn->GetFrontWorldLocation();
 	Context.RaceState.SplineLength = Context.RaceTrack->Spline->GetSplineLength();
@@ -552,9 +543,12 @@ std::optional<FSplineState> UAA_RacerSplineFollowingComponent::GetInitialSplineS
 	FSplineState State;
 
 	const auto& CurrentVehicleLocation = Vehicle->GetFrontWorldLocation();
+	const auto CurrentSplineKey = Spline->FindInputKeyClosestToWorldLocation(CurrentVehicleLocation);
+	const auto CurrentDistanceAlongSpline = Spline->GetDistanceAlongSplineAtSplineInputKey(CurrentSplineKey);
 
-	const auto Key = State.SplineKey = 0;
-	State.DistanceAlongSpline = 0;
+	State.DistanceAlongSpline = UAA_BlueprintFunctionLibrary::WrapEx(CurrentDistanceAlongSpline + MinLookaheadDistance, 0.0f, Spline->GetSplineLength());
+	const auto Key = State.SplineKey = Spline->GetInputKeyAtDistanceAlongSpline(State.DistanceAlongSpline);
+
 	State.SplineDirection = Spline->GetDirectionAtSplineInputKey(Key, ESplineCoordinateSpace::World);
 	State.WorldLocation = State.OriginalWorldLocation = Spline->GetWorldLocationAtDistanceAlongSpline(State.DistanceAlongSpline);
 	State.LookaheadDistance = MinLookaheadDistance;
