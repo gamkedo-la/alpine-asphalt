@@ -79,6 +79,8 @@ private:
 	void UnRegisterRacePositionTimer();
 	void UpdatePlayerHUD();
 
+	void LoadDriverNames();
+
 	UPROPERTY()
 	TArray<FDriverName> DriverNames;
 

@@ -40,8 +40,9 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	//Spawn DataLayers, Despawn DataLayers, Spawn Checkpoints
 	Track->LoadRace();
 
-	//ensure finish times are reset
+	//ensure start and finish times are reset
 	FinishTimes.Reset();
+	StartTime = FinishTime = 0;
 
 	int LastStartingPosition = Track->StartLocations.Num() - 1;
 	
@@ -100,14 +101,7 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	//Park
 	PlayerVehicle->GetVehicleMovementComponent()->SetParked(true);
 
-	//Load Driver Names
-	//Get Driver Names
-	TArray<FDriverName*> DriverNamesOut;
-	DriverTable->GetAllRows("", DriverNamesOut);
-	for (const auto NamesOut : DriverNamesOut)
-	{
-		DriverNames.Add(*NamesOut);
-	}
+	LoadDriverNames();
 	
 	//Listen to Checkpoints
 	for (const auto Checkpoint : Track->CheckpointComponent->SpawnedCheckpoints)
@@ -119,6 +113,21 @@ void UAA_HeadToHeadActivity::LoadActivity()
 	GetWorld()->Exec(GetWorld(),TEXT("demo.RecordHz 120"));
 
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->OnLoadActivityCompleted.Broadcast();
+}
+
+void UAA_HeadToHeadActivity::LoadDriverNames()
+{
+	//Get Driver Names
+	TArray<FDriverName*> DriverNamesOut;
+	DriverTable->GetAllRows("", DriverNamesOut);
+
+	DriverNames.Reserve(DriverNamesOut.Num());
+	DriverNames.Reset();
+
+	for (const auto NamesOut : DriverNamesOut)
+	{
+		DriverNames.Add(*NamesOut);
+	}
 }
 
 void UAA_HeadToHeadActivity::StartActivity()
