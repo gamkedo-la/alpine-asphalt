@@ -112,24 +112,6 @@ void UAA_RacerObstacleAvoidanceComponent::BeginPlay()
 			*GetName(), *LoggingUtils::GetName(GetOwner()));
 		return;
 	}
-
-	RegisterRewindable(ERestoreTiming::Resume);
-}
-
-void UAA_RacerObstacleAvoidanceComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	UnregisterRewindable();
-}
-
-FAA_RacerObstacleAvoidanceComponentSnapshotData UAA_RacerObstacleAvoidanceComponent::CaptureSnapshot() const
-{
-	return FSnapshotData{};
-}
-
-void UAA_RacerObstacleAvoidanceComponent::RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime)
-{
 }
 
 bool UAA_RacerObstacleAvoidanceComponent::PopulateThreatContext(FThreatContext& ThreatContext) const

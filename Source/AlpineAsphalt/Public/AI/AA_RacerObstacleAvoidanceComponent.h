@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "AI/AA_AIRacerEvents.h"
-#include "Interface/AA_BaseRewindable.h"
 
 #include <optional>
 
@@ -20,7 +19,7 @@ struct FAA_RacerObstacleAvoidanceComponentSnapshotData
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ALPINEASPHALT_API UAA_RacerObstacleAvoidanceComponent : public UActorComponent, public TAA_BaseRewindable<FAA_RacerObstacleAvoidanceComponentSnapshotData>
+class ALPINEASPHALT_API UAA_RacerObstacleAvoidanceComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -40,15 +39,6 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	// Inherited via TAA_BaseRewindable
-	virtual FSnapshotData CaptureSnapshot() const override;
-	virtual void RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime) override;
-
-private:
-	// Inherited via TAA_BaseRewindable
-	virtual UObject* AsUObject() override { return this; }
 
 public:
 	UPROPERTY(Category = "Notification", Transient, BlueprintAssignable)
@@ -104,7 +94,5 @@ private:
 	*/
 	UPROPERTY(Category = "Avoidance", EditAnywhere, meta = (ClampMin = "0.0"))
 	float AverageDeceleration { 1200 };
-
-	float LastUpdateGameTime{};
 };
 
