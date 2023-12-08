@@ -17,7 +17,6 @@ struct FAA_AIRacerContext;
 
 struct FAA_RacerObstacleAvoidanceComponentSnapshotData
 {
-	float LastUpdateGameTime{};
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -62,6 +61,7 @@ private:
 	{
 		FVector ThreatVector;
 		double Score;
+		bool bIsNearThreat;
 	};
 
 	std::optional<FThreatResult> ComputeThreatResult(const FThreatContext& ThreatContext, const AAA_WheeledVehiclePawn& CandidateVehicle) const;
@@ -82,6 +82,12 @@ private:
 	*/
 	UPROPERTY(Category = "Avoidance", EditAnywhere)
 	float MinThreatSpeedCarLengthsDistance{ 2.0f };
+
+	/*
+	* If potential threat will be intercepted greater than this amount of time then it will be discarded since too far away.
+	*/
+	UPROPERTY(Category = "Avoidance", EditAnywhere)
+	float MaxInterceptTime{ 6.0f };
 
 	/*
 	* Rough estimate for acceleration values in cm/s^2.  Assume an average racing car with 0-60mph in 3s.

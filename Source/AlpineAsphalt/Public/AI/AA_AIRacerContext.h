@@ -76,6 +76,7 @@ struct ALPINEASPHALT_API FAA_AIRacerAvoidanceContext
 	float NormalizedThreatSpeedMph{ };
 
 	int32 ThreatCount{};
+	bool bNearThreat{};
 
 	FString ToString() const;
 };

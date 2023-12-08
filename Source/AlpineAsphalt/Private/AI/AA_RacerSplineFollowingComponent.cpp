@@ -314,11 +314,11 @@ void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_Wh
 	{
 		if (FMath::IsNearlyZero(LastSplineState->RoadOffset))
 		{
-			CurrentAvoidanceOffset = MaxDelta * (reinterpret_cast<std::size_t>(VehiclePawn) % 2 == 0 ? 1 : -1) * AvoidanceContext.NormalizedThreatScore;
+			CurrentAvoidanceOffset = MaxDelta * (reinterpret_cast<std::size_t>(VehiclePawn) % 2 == 0 ? 1 : -1) * (AvoidanceContext.bNearThreat ? 1.0f : AvoidanceContext.NormalizedThreatScore);
 		}
 		else
 		{
-			CurrentAvoidanceOffset = -MaxDelta * FMath::Sign(LastSplineState->RoadOffset) * AvoidanceContext.NormalizedThreatScore;
+			CurrentAvoidanceOffset = -MaxDelta * FMath::Sign(LastSplineState->RoadOffset) * (AvoidanceContext.bNearThreat ? 1.0f : AvoidanceContext.NormalizedThreatScore);
 		}
 
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose, TEXT("%s-%s: OnVehicleAvoidancePositionUpdated: Parallel to movement vector - set CurrentAvoidanceOffset=%f"),
@@ -859,7 +859,7 @@ float UAA_RacerSplineFollowingComponent::CalculateMaxOffsetAtLastSplineState() c
 		return 0.0f;
 	}
 
-	const auto VehicleHalfWidth = VehiclePawn->GetVehicleWidth() * 0.5f;
+	const auto VehicleHalfWidth = VehiclePawn->GetVehicleWidth() * 0.25f;
 	const auto RoadHalfWidth = RaceTrack->GetWidthAtDistance(LastSplineState->DistanceAlongSpline) * 0.5f;
 	const auto MaxDelta = RoadHalfWidth - VehicleHalfWidth;
 
