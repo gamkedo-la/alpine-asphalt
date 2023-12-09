@@ -75,6 +75,9 @@ protected:
 	virtual UObject* AsUObject() override { return this; }
 
 private:
+	void UpdatePlayerLapsUI();
+
+private:
 	UPROPERTY()
 	AAA_TrackInfoActor* Track;
 

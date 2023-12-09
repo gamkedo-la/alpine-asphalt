@@ -135,6 +135,7 @@ void UAA_TimeTrialActivity::CountdownEnded()
 	//Start Timer
 	StartTime = UGameplayStatics::GetTimeSeconds(this);
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartTimer();
+	UpdatePlayerLapsUI();
 
 	GetWorld()->GetTimerManager().SetTimer(RaceHUDUpdateTimer, this, &UAA_TimeTrialActivity::UpdatePlayerHUD, RaceHUDUpdateFrequency, true);
 }
@@ -161,10 +162,10 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 					GetWorld()->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
 				}else
 				{
-					//TODO: Increase Lap Counter Display
 					Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 					IndexActiveCheckpoint = 0;
 
+					UpdatePlayerLapsUI();
 				}
 			}else
 			{
@@ -209,6 +210,7 @@ void UAA_TimeTrialActivity::RestoreFromSnapshot(const AA_TimeTrialActivity::FSna
 		if (auto VehicleUI = PC->VehicleUI; VehicleUI)
 		{
 			VehicleUI->UpdateTimerDuringRewind(InRewindTime);
+			UpdatePlayerLapsUI();
 		}
 	}
 }
@@ -260,15 +262,47 @@ void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 	{
 		ScoreScreen->AddDriverScore("Player!",PlayerTime,true);
 	}
+}
 
-	//Hide Time
-	PC->VehicleUI->HideTimer();
+void UAA_TimeTrialActivity::UpdatePlayerLapsUI()
+{
+	if (!Track)
+	{
+		return;
+	}
+
+	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (!PC)
+	{
+		return;
+	}
+
+	auto VehicleUI = PC->VehicleUI;
+
+	if (!VehicleUI)
+	{
+		return;
+	}
+
+	const auto LapNum = FMath::Min(PlayerLapCounter + 1, Track->LapsToComplete);
+	VehicleUI->UpdateLaps(LapNum, Track->LapsToComplete);
 }
 
 void UAA_TimeTrialActivity::HideRaceUIElements()
 {
 	GetWorld()->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
 	bScoreScreenActive = false;
+
+	if (auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)); PC)
+	{
+		if (auto VehicleUI = PC->VehicleUI; VehicleUI)
+		{
+			VehicleUI->HideLaps();
+
+			//Hide Time
+			VehicleUI->HideTimer();
+		}
+	}
 }
 
 void UAA_TimeTrialActivity::DestroyActivity()

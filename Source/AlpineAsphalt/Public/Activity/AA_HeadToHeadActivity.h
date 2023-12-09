@@ -80,6 +80,7 @@ private:
 	void UpdatePlayerHUD();
 
 	void LoadDriverNames();
+	void UpdatePlayerLapsUI();
 
 	UPROPERTY()
 	TArray<FDriverName> DriverNames;

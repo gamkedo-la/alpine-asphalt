@@ -168,7 +168,7 @@ void UAA_HeadToHeadActivity::CountdownEnded()
 	//Start Timer
 	StartTime = UGameplayStatics::GetTimeSeconds(this);
 	Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(),0))->VehicleUI->StartTimer();
-
+	UpdatePlayerLapsUI();
 	RegisterRacePositionTimer();
 }
 
@@ -208,9 +208,10 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 					UnRegisterRacePositionTimer();
 				}else
 				{
-					//TODO: increment Laps display
 					Track->CheckpointComponent->SpawnedCheckpoints[0]->SetActive(true);
 					IndexActiveCheckpoint = 0;
+
+					UpdatePlayerLapsUI();
 				}
 			}else
 			{
@@ -308,13 +309,13 @@ void UAA_HeadToHeadActivity::RestoreFromSnapshot(const AA_HeadToHeadActivity::FS
 	{
 		LapsCompletedMap.Add(VehiclePawn, LapsCompleted);
 	}
-
 	
 	if (auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0)); PC)
 	{
 		if (auto VehicleUI = PC->VehicleUI; VehicleUI)
 		{
 			VehicleUI->UpdateTimerDuringRewind(InRewindTime);
+			UpdatePlayerLapsUI();
 		}
 	}
 }
@@ -325,6 +326,37 @@ void UAA_HeadToHeadActivity::AddAIDriverScore(float TimeScore)
 	int NameIndex = FMath::RandRange(0,DriverNames.Num()-1);
 	ScoreScreen->AddDriverScore(DriverNames[NameIndex].DriverName,TimeScore);
 	DriverNames.RemoveAt(NameIndex); // dont reuse name
+}
+
+void UAA_HeadToHeadActivity::UpdatePlayerLapsUI()
+{
+	if (!Track)
+	{
+		return;
+	}
+
+	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
+	if (!PC)
+	{
+		return;
+	}
+
+	auto VehicleUI = PC->VehicleUI;
+
+	if (!VehicleUI)
+	{
+		return;
+	}
+
+	auto PlayerVehicle = Cast<AAA_WheeledVehiclePawn>(PC->GetPawn());
+	const auto* PlayerLapsLookupResult = LapsCompletedMap.Find(PlayerVehicle);
+	if (!PlayerLapsLookupResult)
+	{
+		return;
+	}
+
+	const auto LapNum = FMath::Min(*PlayerLapsLookupResult + 1, Track->LapsToComplete);
+	VehicleUI->UpdateLaps(LapNum, Track->LapsToComplete);
 }
 
 void UAA_HeadToHeadActivity::HideRaceUIElements(AAA_PlayerController* PlayerController)
@@ -346,8 +378,7 @@ void UAA_HeadToHeadActivity::HideRaceUIElements(AAA_PlayerController* PlayerCont
 	UnRegisterRacePositionTimer();
 	VehicleUI->HideRacePosition();
 	VehicleUI->SetPlayerMissedCheckpoint(false);
-
-	//TODO: Hide Laps
+	VehicleUI->HideLaps();
 }
 
 void UAA_HeadToHeadActivity::RegisterRacePositionTimer()

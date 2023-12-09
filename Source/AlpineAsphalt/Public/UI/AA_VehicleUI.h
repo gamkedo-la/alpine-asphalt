@@ -50,4 +50,10 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void SetPlayerMissedCheckpoint(bool bPlayerMissedCheckpoint);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void UpdateLaps(int32 CurrentLap, int32 TotalLaps);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void HideLaps();
 };
