@@ -14,17 +14,11 @@ class IAA_RacerContextProvider;
 class AAA_WheeledVehiclePawn;
 struct FAA_AIRacerContext;
 
-struct FAA_RacerObstacleAvoidanceComponentSnapshotData
-{
-};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ALPINEASPHALT_API UAA_RacerObstacleAvoidanceComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
-protected:
-	using FSnapshotData = FAA_RacerObstacleAvoidanceComponentSnapshotData;
 
 public:	
 	UAA_RacerObstacleAvoidanceComponent();
