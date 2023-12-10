@@ -160,7 +160,7 @@ namespace
 		check(RaceState.RaceTrack);
 		check(RaceState.RaceTrack->CheckpointComponent);
 
-		float DistanceEnd = RaceState.SplineLength - VehiclePawn.GetVehicleLength() * 2;
+		float DistanceEnd = RaceState.SplineLength - VehiclePawn.GetVehicleLength() * 5;
 
 		const auto& CheckpointData = RaceState.RaceTrack->CheckpointComponent->CheckpointPositionData;
 		if (!CheckpointData.IsEmpty())
