@@ -72,6 +72,8 @@ void UAA_AIGetUnstuckComponent::BeginPlay()
 		return;
 	}
 
+	LastPermanentlyStuckTime = -MinStuckTimeAfterPermanentlyStuck;
+
 	// Size the buffer to hold enough entries for the min stuck time
 	// Note that for TCircularBuffer the actual capacity is next power of 2 so must note the MinNumSamples
 	MinNumSamples = MinStuckTime / PrimaryComponentTick.TickInterval;
@@ -128,11 +130,20 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	Positions[CurrentBufferIndex] = CurrentState;
 	NextBufferIndex = Positions.GetNextIndex(CurrentBufferIndex);
 
+	const auto CurrentTimeSeconds = GetWorld()->GetTimeSeconds();
+
 	if (NumSamples < MinNumSamples)
 	{
 		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
 			TEXT("%s-%s: TickComponent - Insufficient Samples %d < %d"),
 			*GetName(), *LoggingUtils::GetName(GetOwner()), NumSamples, MinNumSamples);
+		return;
+	}
+	else if (CurrentTimeSeconds - LastPermanentlyStuckTime < MinStuckTimeAfterPermanentlyStuck)
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
+			TEXT("%s-%s: TickComponent - In cooldown after previously being permanently stuck: TimeRemaining=%fs"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()), MinStuckTimeAfterPermanentlyStuck - CurrentTimeSeconds - LastPermanentlyStuckTime);
 		return;
 	}
 
@@ -174,7 +185,6 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 		return;
 	}
 
-	const auto CurrentTimeSeconds = GetWorld()->GetTimeSeconds();
 	if (CurrentTimeSeconds - LastStuckTime > 2 * MinStuckTime)
 	{
 		// new stuck event - reset counter
@@ -206,6 +216,7 @@ void UAA_AIGetUnstuckComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 	if (bPermanentlyStuck)
 	{
+		LastPermanentlyStuckTime = CurrentTimeSeconds;
 		ConsecutiveStuckCount = 0;
 	}
 }

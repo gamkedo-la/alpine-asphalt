@@ -79,6 +79,9 @@ private:
 	float MinStuckTime{ 3.0f };
 
 	UPROPERTY(Category = "Detection", EditAnywhere)
+	float MinStuckTimeAfterPermanentlyStuck{ 8.0f };
+
+	UPROPERTY(Category = "Detection", EditAnywhere)
 	float MinAverageSpeed{ 100.0f };
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
@@ -95,6 +98,7 @@ private:
 
 	int32 ConsecutiveStuckCount{};
 	float LastStuckTime{ -1.0f };
+	float LastPermanentlyStuckTime{};
 
 	uint32 NextBufferIndex{};
 	uint32 MinNumSamples{};
