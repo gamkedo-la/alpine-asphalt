@@ -71,6 +71,9 @@ protected:
 	void RestoreFromSnapshot(const FSnapshotData& InSnapshotData, float InRewindTime) override;
 
 private:
+
+	void DoTick();
+
 	void CalculateThrottle() const;
 	float SmoothThrottle(float CurrentSpeed) const;
 	void SetSpeedControls(float ThrottleValue) const;

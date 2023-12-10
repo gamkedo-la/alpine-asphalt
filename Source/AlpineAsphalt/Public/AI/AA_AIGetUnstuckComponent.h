@@ -22,7 +22,9 @@ namespace AA_AIGetUnstuckComponent
 
 	struct FSnapshotData
 	{
-		TArray<FStuckState,TInlineAllocator<32>> Positions{};
+		constexpr static uint32 MaxSnapshotBufferSize = 32;
+
+		TArray<FStuckState,TInlineAllocator<MaxSnapshotBufferSize>> Positions{};
 
 		int32 ConsecutiveStuckCount{};
 		uint32 NextBufferIndex{};

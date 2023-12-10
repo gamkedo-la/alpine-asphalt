@@ -46,56 +46,30 @@ void UAA_ObstacleDetectionComponent::BeginPlay()
 		SetComponentTickEnabled(false);
 		return;
 	}
+
+	RegisterRewindCallback();
+}
+
+void UAA_ObstacleDetectionComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	UnregisterRewindCallback();
 }
 
 void UAA_ObstacleDetectionComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (!RacerContextProvider)
-	{
-		return;
-	}
+	DoTick();
+}
 
-	DetectedVehicles.Reset();
+void UAA_ObstacleDetectionComponent::RecalculateOnRewind()
+{
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: RecalculateOnRewind"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()));
 
-	if (AllVehicles.IsEmpty())
-	{
-		PopulateAllVehicles();
-	}
-
-	if (!AllVehicles.IsEmpty())
-	{
-		FThreatContext ThreatContext;
-		if (!PopulateThreatContext(ThreatContext))
-		{
-			return;
-		}
-
-		const auto& AIContext = RacerContextProvider->GetRacerContext();
-
-		for (auto CandidateVehicle : AllVehicles)
-		{
-			if (!CandidateVehicle)
-			{
-				continue;
-			}
-
-			if (IsPotentialThreat(AIContext, ThreatContext, *CandidateVehicle))
-			{
-				UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Verbose, CandidateVehicle->GetActorLocation(), CandidateVehicle->GetActorLocation() + FVector(0, 0, 100.f), 50.0f, FColor::Orange,
-					TEXT("%s - Candidate threat: %s"), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(CandidateVehicle));
-
-				DetectedVehicles.Add(CandidateVehicle);
-			}
-		}
-	}
-
-	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
-		TEXT("%s-%s: TickComponent - Found %d candidate threats"),
-		*GetName(), *LoggingUtils::GetName(GetOwner()), DetectedVehicles.Num());
-
-	OnVehicleObstaclesUpdated.Broadcast(RacerContextProvider->GetRacerContext().VehiclePawn, DetectedVehicles);
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::DoTick);
 }
 
 bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& ThreatContext) const
@@ -149,6 +123,54 @@ bool UAA_ObstacleDetectionComponent::PopulateThreatContext(FThreatContext& Threa
 	ThreatContext.DistanceAlongSpline = GetDistanceAlongSplineAtLocation(*Spline, ThreatContext.ReferencePosition);
 
 	return true;
+}
+
+void UAA_ObstacleDetectionComponent::DoTick()
+{
+	if (!RacerContextProvider)
+	{
+		return;
+	}
+
+	DetectedVehicles.Reset();
+
+	if (AllVehicles.IsEmpty())
+	{
+		PopulateAllVehicles();
+	}
+
+	if (!AllVehicles.IsEmpty())
+	{
+		FThreatContext ThreatContext;
+		if (!PopulateThreatContext(ThreatContext))
+		{
+			return;
+		}
+
+		const auto& AIContext = RacerContextProvider->GetRacerContext();
+
+		for (auto CandidateVehicle : AllVehicles)
+		{
+			if (!CandidateVehicle)
+			{
+				continue;
+			}
+
+			if (IsPotentialThreat(AIContext, ThreatContext, *CandidateVehicle))
+			{
+				UE_VLOG_CYLINDER(GetOwner(), LogAlpineAsphalt, Verbose, CandidateVehicle->GetActorLocation(), CandidateVehicle->GetActorLocation() + FVector(0, 0, 100.f), 50.0f, FColor::Orange,
+					TEXT("%s - Candidate threat: %s"), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(CandidateVehicle));
+
+				DetectedVehicles.Add(CandidateVehicle);
+			}
+		}
+	}
+
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
+		TEXT("%s-%s: TickComponent - Found %d candidate threats"),
+		*GetName(), *LoggingUtils::GetName(GetOwner()), DetectedVehicles.Num());
+
+	OnVehicleObstaclesUpdated.Broadcast(RacerContextProvider->GetRacerContext().VehiclePawn, DetectedVehicles);
 }
 
 void UAA_ObstacleDetectionComponent::PopulateAllVehicles()

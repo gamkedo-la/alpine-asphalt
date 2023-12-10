@@ -75,11 +75,15 @@ void UAA_AIGetUnstuckComponent::BeginPlay()
 	// Size the buffer to hold enough entries for the min stuck time
 	// Note that for TCircularBuffer the actual capacity is next power of 2 so must note the MinNumSamples
 	MinNumSamples = MinStuckTime / PrimaryComponentTick.TickInterval;
+
 	PositionsPtr = MakeUnique<TCircularBuffer<FStuckState>>(MinNumSamples);
+
+	ensureMsgf(PositionsPtr->Capacity() <= AA_AIGetUnstuckComponent::FSnapshotData::MaxSnapshotBufferSize, TEXT("MinStuckTime=%fs / TickInterval=%fs = %d > MaxSnapshotBufferSize=%d"),
+		MinStuckTime, PrimaryComponentTick.TickInterval, AA_AIGetUnstuckComponent::FSnapshotData::MaxSnapshotBufferSize);
 
 	RegisterRewindable(ERestoreTiming::Resume);
 
-	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("BeginPlay: Buffer Capacity=%d"),
+	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: BeginPlay: Buffer Capacity=%d"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), PositionsPtr ? PositionsPtr->Capacity() : 0);
 }
 

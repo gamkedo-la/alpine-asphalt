@@ -60,6 +60,12 @@ void UAA_AIVehicleControlComponent::TickComponent(float DeltaTime, ELevelTick Ti
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	DoTick();
+}
+
+
+void UAA_AIVehicleControlComponent::DoTick()
+{
 	if (!bTargetSet || !VehiclePawn || !IsActive())
 	{
 		return;
@@ -401,6 +407,14 @@ void UAA_AIVehicleControlComponent::RestoreFromSnapshot(const FSnapshotData& InS
 	bTargetReached = InSnapshotData.bTargetReached;
 	bTargetSet = InSnapshotData.bTargetSet;
 	bTargetStartedBehind = InSnapshotData.bTargetStartedBehind;
+
+
+	// make sure we tick on the next frame and recalculate the interval
+	GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
+	{
+		DoTick();
+		PrimaryComponentTick.TickInterval = CalculateNextTickInterval();
+	}));
 }
 
 void UAA_AIVehicleControlComponent::SetDesiredSpeedMph(float SpeedMph)
