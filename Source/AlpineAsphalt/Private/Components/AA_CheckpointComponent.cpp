@@ -116,4 +116,23 @@ void UAA_CheckpointComponent::ShowRaceFinish(bool bShow)
 	SpawnedCheckpoints.Last()->SetIndicatorVisibleInMap(true);
 }
 
+float UAA_CheckpointComponent::GetDistanceAlongSplineAtRaceFinish() const
+{
+	if (!SplineComponent)
+	{
+		return 0.0f;
+	}
+
+	if (SpawnedCheckpoints.IsEmpty())
+	{
+		return SplineComponent->GetSplineLength();
+	}
+
+	auto FinalCheckpoint = SpawnedCheckpoints.Last();
+	const FVector RaceFinishWorldLocation = FinalCheckpoint->GetActorLocation();
+
+	const auto SplineKey = SplineComponent->FindInputKeyClosestToWorldLocation(RaceFinishWorldLocation);
+	return SplineComponent->GetDistanceAlongSplineAtSplineInputKey(SplineKey);
+}
+
 

@@ -82,6 +82,8 @@ public:
 
 	void SetTrackInfo(AAA_TrackInfoActor* TrackInfoActor);
 
+	void StopRacing();
+
 #if ENABLE_VISUAL_LOG
 	virtual void GrabDebugSnapshot(FVisualLogEntry* Snapshot) const override;
 #endif
@@ -107,11 +109,6 @@ private:
 
 	UFUNCTION()
 	void OnRacerSettingsUpdated();
-
-	UFUNCTION()
-	void OnRaceCompleted(AAA_WheeledVehiclePawn* VehiclePawn);
-
-	void StopRacing();
 
 	// Inherited via TAA_BaseRewindable
 	virtual UObject* AsUObject() override { return this; }

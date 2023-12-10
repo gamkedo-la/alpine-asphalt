@@ -289,7 +289,6 @@ void AAA_AIRacerController::SetupComponentEventBindings()
 	GetUnstuckComponent->OnVehicleStuck.AddDynamic(RacerVerbalBarksComponent, &UAA_RacerVerbalBarksComponent::OnStuck);
 	RacerVerbalBarksComponent->OnPossessedVehiclePawn(RacerContext.VehiclePawn);
 
-	RacerSplineFollowingComponent->OnRaceCompleted.AddDynamic(this, &ThisClass::OnRaceCompleted);
 	VehicleControlComponent->OnVehicleTargetUnreachable.AddDynamic(RacerSplineFollowingComponent, &UAA_RacerSplineFollowingComponent::OnTargetUnreachable);
 }
 
@@ -422,13 +421,6 @@ void AAA_AIRacerController::OnRacerSettingsUpdated()
 	{
 		SetVehicleParameters(RacerAISettings);
 	}
-}
-
-void AAA_AIRacerController::OnRaceCompleted(AAA_WheeledVehiclePawn* VehiclePawn)
-{
-	UE_VLOG_UELOG(this, LogAlpineAsphalt, Log, TEXT("%s: OnRaceCompleted: %s"), *GetName(), *LoggingUtils::GetName(VehiclePawn));
-
-	StopRacing();
 }
 
 FString FAA_RacerAISettings::ToString() const

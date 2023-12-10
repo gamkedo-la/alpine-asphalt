@@ -115,7 +115,7 @@ void UAA_PlayerRaceSplineInfoComponent::UpdateSplineInfo()
 				.RaceTrack = TrackInfoActor,
 				.VehiclePawn = Vehicle,
 				.DistanceAlongSpline = 0,
-				.SplineLength = Spline->GetSplineLength()
+				.SplineLength = SplineUtils::GetSplineLength(*TrackInfoActor)
 			}
 		};
 		return;

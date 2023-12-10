@@ -91,6 +91,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ShowRaceFinish(bool bShow);
+
+	float GetDistanceAlongSplineAtRaceFinish() const;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	TSubclassOf<AAA_Checkpoint> DefaultCheckpoint;

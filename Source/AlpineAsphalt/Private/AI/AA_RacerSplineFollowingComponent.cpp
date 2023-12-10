@@ -153,10 +153,11 @@ void UAA_RacerSplineFollowingComponent::SelectNewMovementTarget(AAA_WheeledVehic
 
 	if (!LastSplineState)
 	{
-		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Display,
-			TEXT("%s-%s: SelectNewMovementTarget - RaceTrack=%s Completed!"),
-			*GetName(), *LoggingUtils::GetName(GetOwner()), *Context.RaceTrack->GetName());
-		OnRaceCompleted.Broadcast(Context.VehiclePawn);
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("%s-%s: SelectNewMovementTarget - Could not find next movement target - Skipping"),
+			*GetName(), *LoggingUtils::GetName(GetOwner()));
+		LastSplineState = OriginalSplineState;
+
 		return;
 	}
 	
@@ -431,7 +432,7 @@ void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()
 
 	// Initialize to current position for curvature calculation
 	LastMovementTarget = Context.VehiclePawn->GetFrontWorldLocation();
-	Context.RaceState.SplineLength = Context.RaceTrack->Spline->GetSplineLength();
+	Context.RaceState.SplineLength = SplineUtils::GetSplineLength(*Context.RaceTrack);
 
 	UpdateMovementFromLastSplineState(Context);
 }

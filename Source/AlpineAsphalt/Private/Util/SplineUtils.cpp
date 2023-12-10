@@ -3,6 +3,9 @@
 #include "Components/SplineComponent.h"
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Race/AA_RaceState.h"
+#include "Actors/AA_TrackInfoActor.h"
+#include "Components/AA_CheckpointComponent.h"
+
 #include "Logging/LoggingUtils.h"
 #include "Logging/AlpineAsphaltLogger.h"
 #include "VisualLogger/VisualLogger.h"
@@ -13,6 +16,7 @@ namespace
 	constexpr float NonCircuitMinCompletionFraction = 0.99f;
 
 	const UObject* SplineUtilsGetLogOwner(const AAA_WheeledVehiclePawn& Vehicle);
+	float GetMaxResetSplineDistance(const AAA_WheeledVehiclePawn& VehiclePawn, const FAA_RaceState& RaceState);
 }
 
 bool AA::SplineUtils::TryUpdateRaceState(const USplineComponent& Spline, FAA_RaceState& RaceState)
@@ -102,8 +106,14 @@ bool AA::SplineUtils::TryUpdateRaceState(const USplineComponent& Spline, FAA_Rac
 
 ALPINEASPHALT_API FVector AA::SplineUtils::ResetVehicleToLastSplineLocation(AAA_WheeledVehiclePawn& VehiclePawn, const USplineComponent& Spline, const FAA_RaceState& RaceState)
 {
-	const auto& ResetWorldLocation = Spline.GetWorldLocationAtDistanceAlongSpline(RaceState.MaxDistanceAlongSpline);
-	const auto& ResetWorldRotation = Spline.GetWorldDirectionAtDistanceAlongSpline(RaceState.MaxDistanceAlongSpline).Rotation();
+	// Don't reset too close to the race finish or the final checkpoint won't register. It is also a little unfair
+	check(RaceState.RaceTrack);
+	check(RaceState.RaceTrack->CheckpointComponent);
+
+	const float ResetDistance = FMath::Min(RaceState.MaxDistanceAlongSpline, GetMaxResetSplineDistance(VehiclePawn, RaceState));
+
+	const auto& ResetWorldLocation = Spline.GetWorldLocationAtDistanceAlongSpline(ResetDistance);
+	const auto& ResetWorldRotation = Spline.GetWorldDirectionAtDistanceAlongSpline(ResetDistance).Rotation();
 
 	UE_VLOG_UELOG(SplineUtilsGetLogOwner(VehiclePawn), LogAlpineAsphalt, Display,
 		TEXT("%s: ResetVehicleToLastSplineLocation: %s with rotation %s"),
@@ -118,6 +128,20 @@ ALPINEASPHALT_API FVector AA::SplineUtils::ResetVehicleToLastSplineLocation(AAA_
 	return ResetWorldLocation;
 }
 
+float AA::SplineUtils::GetSplineLength(const AAA_TrackInfoActor& TrackInfo)
+{
+	// If it is a circuit race with more than 1 lap then just use the original spline length
+	check(TrackInfo.Spline);
+	check(TrackInfo.CheckpointComponent);
+
+	if (TrackInfo.LapsToComplete != 1)
+	{
+		return TrackInfo.Spline->GetSplineLength();
+	}
+
+	return TrackInfo.CheckpointComponent->GetDistanceAlongSplineAtRaceFinish();
+}
+
 namespace
 {
 	const UObject* SplineUtilsGetLogOwner(const AAA_WheeledVehiclePawn& Vehicle)
@@ -128,5 +152,22 @@ namespace
 		}
 
 		return &Vehicle;
+	}
+
+	float GetMaxResetSplineDistance(const AAA_WheeledVehiclePawn& VehiclePawn, const FAA_RaceState& RaceState)
+	{
+		// Don't reset too close to the race finish or the final checkpoint won't register. It is also a little unfair
+		check(RaceState.RaceTrack);
+		check(RaceState.RaceTrack->CheckpointComponent);
+
+		float DistanceEnd = RaceState.SplineLength - VehiclePawn.GetVehicleLength() * 2;
+
+		const auto& CheckpointData = RaceState.RaceTrack->CheckpointComponent->CheckpointPositionData;
+		if (!CheckpointData.IsEmpty())
+		{
+			DistanceEnd -= CheckpointData.Last().Depth;
+		}
+
+		return FMath::Max(0, DistanceEnd);
 	}
 }

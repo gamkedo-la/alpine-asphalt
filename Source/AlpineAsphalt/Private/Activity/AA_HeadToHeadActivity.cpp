@@ -244,6 +244,11 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 					{
 						FinishTimes.Add(TimeToFinish);
 					}
+
+					if (auto RacerController = Cast<AAA_AIRacerController>(HitVehicle->GetController()))
+					{
+						RacerController->StopRacing();
+					}
 				}
 				else
 				{
