@@ -82,6 +82,8 @@ private:
 	void LoadDriverNames();
 	void UpdatePlayerLapsUI();
 
+	bool IsPlayerOnLastLap() const;
+
 	UPROPERTY()
 	TArray<FDriverName> DriverNames;
 

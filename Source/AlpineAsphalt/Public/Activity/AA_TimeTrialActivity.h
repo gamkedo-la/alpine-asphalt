@@ -76,6 +76,7 @@ protected:
 
 private:
 	void UpdatePlayerLapsUI();
+	bool IsPlayerOnLastLap() const;
 
 private:
 	UPROPERTY()

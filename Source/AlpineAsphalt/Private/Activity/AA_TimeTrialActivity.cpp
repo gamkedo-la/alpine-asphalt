@@ -144,6 +144,12 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 {
 	if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 	{
+		// Show race finish on map and mini-map after hitting second checkpoint
+		if (IndexCheckpointHit >= 1 && IsPlayerOnLastLap())
+		{
+			Track->CheckpointComponent->ShowRaceFinish(true);
+		}
+
 		if(IndexCheckpointHit == LastCheckpointHitIndex + 1)
 		{
 			Track->CheckpointComponent->SpawnedCheckpoints[IndexCheckpointHit]->SetActive(false);
@@ -177,6 +183,16 @@ void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVeh
 			UE_LOG(LogTemp,Log,TEXT("Hit Next Checkpoint Out of order"))
 		}
 	}
+}
+
+bool UAA_TimeTrialActivity::IsPlayerOnLastLap() const
+{
+	if (!Track)
+	{
+		return false;
+	}
+
+	return PlayerLapCounter >= Track->LapsToComplete - 1;
 }
 
 AA_TimeTrialActivity::FSnapshotData UAA_TimeTrialActivity::CaptureSnapshot() const
@@ -224,6 +240,7 @@ void UAA_TimeTrialActivity::RaceEnded()
 	FTimerHandle TimerHandle;
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle,this,&UAA_TimeTrialActivity::ReplayStartDelayEnded,ReplayStartDelay,false);
 }
+
 void UAA_TimeTrialActivity::ReplayStartDelayEnded()
 {
 	HideRaceUIElements();

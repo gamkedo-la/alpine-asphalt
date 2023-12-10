@@ -174,18 +174,18 @@ void UAA_HeadToHeadActivity::CountdownEnded()
 
 void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
 {
-	
-	// Show race finish on map and mini-map after hitting second checkpoint
-	if (IndexCheckpointHit >= 1)
-	{
-		Track->CheckpointComponent->ShowRaceFinish(true);
-	}
-
 	if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))
 	{
 		//sometimes we hit an extra checkpoint after finishing if the start and finish are close together
 		//return here to avoid lighting the next flare since we've finished the race
 		if(RaceFinished)return;
+
+		// Show race finish on map and mini-map after hitting second checkpoint
+		if (IndexCheckpointHit >= 1 && IsPlayerOnLastLap())
+		{
+			Track->CheckpointComponent->ShowRaceFinish(true);
+		}
+
 		//if we hit the next checkpoint, or we hit the first checkpoint after the last
 		if(IndexCheckpointHit == LastCheckpointHitIndex + 1 || (IndexCheckpointHit == 0 && LastCheckpointHitIndex == NumCheckpoints-1))
 		{
@@ -254,6 +254,22 @@ void UAA_HeadToHeadActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVe
 			}
 		}
 	}
+}
+
+bool UAA_HeadToHeadActivity::IsPlayerOnLastLap() const
+{
+	if (!Track)
+	{
+		return false;
+	}
+
+	const auto* PlayerLapsLookupResult = LapsCompletedMap.Find(Cast<AAA_WheeledVehiclePawn>(UGameplayStatics::GetPlayerPawn(GetWorld(), 0)));
+	if (!PlayerLapsLookupResult)
+	{
+		return false;
+	}
+
+	return *PlayerLapsLookupResult >= Track->LapsToComplete - 1;
 }
 
 bool UAA_HeadToHeadActivity::IsPlayerCompleted() const
