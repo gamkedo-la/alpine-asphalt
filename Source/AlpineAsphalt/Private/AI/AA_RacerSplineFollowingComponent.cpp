@@ -284,7 +284,7 @@ bool UAA_RacerSplineFollowingComponent::ResetLastSplineStateToRaceState(FAA_AIRa
 }
 
 void UAA_RacerSplineFollowingComponent::CalculateSafeResetPointAtMaxSplineDistance(const FAA_AIRacerContext& RacerContext,
-	const AAA_WheeledVehiclePawn& VehiclePawn, AA::SplineUtils::FVehicleResetDetails& InOutVehicleResetDetails)
+	const AAA_WheeledVehiclePawn& MyVehiclePawn, AA::SplineUtils::FVehicleResetDetails& InOutVehicleResetDetails)
 {
 	// Make sure input position is safe based on inbound racers and walk backwards to a max distance based on other racer position
 	check(RacerContext.RaceTrack);
@@ -293,9 +293,9 @@ void UAA_RacerSplineFollowingComponent::CalculateSafeResetPointAtMaxSplineDistan
 	auto Activity = RacerContext.RaceTrack->ActiveActivity;
 	check(Activity);
 
-	auto RelevantRaceStates = Activity->GetAllRaceStates().FilterByPredicate([&VehiclePawn, TargetDistance = InOutVehicleResetDetails.SplineDistance](const auto& RaceState)
+	auto RelevantRaceStates = Activity->GetAllRaceStates().FilterByPredicate([&MyVehiclePawn, TargetDistance = InOutVehicleResetDetails.SplineDistance](const auto& RaceState)
 	{ 
-		return RaceState && RaceState.VehiclePawn != &VehiclePawn && RaceState.DistanceAlongSpline <= TargetDistance;
+		return RaceState && RaceState.VehiclePawn != &MyVehiclePawn && RaceState.DistanceAlongSpline <= TargetDistance;
 	});
 
 	// order by descending order of distance along spline
