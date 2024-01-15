@@ -22,6 +22,13 @@
 using namespace AA;
 using namespace AA_RacerSplineFollowingComponent;
 
+namespace
+{
+	float CalculateCurvatureSign(const FVector& FirstDirection, const FVector& SecondDirection);
+	float GetSplineDistanceBetween(float FirstDistance, float SecondDistance, float SplineLength);
+	std::pair<float, float> CalculateCurvatureAndSignBetween(const FVector& FirstLocation, const FVector& SecondLocation, const FVector& ThirdLocation);
+}
+
 // Sets default values for this component's properties
 UAA_RacerSplineFollowingComponent::UAA_RacerSplineFollowingComponent()
 {
@@ -761,7 +768,6 @@ float UAA_RacerSplineFollowingComponent::CalculateNewSpeed(const FAA_AIRacerCont
 	return NewSpeed;
 }
 
-
 float UAA_RacerSplineFollowingComponent::GetDefaultSpeedFromStraightnessFactor(float StraightnessFactor) const
 {
 	// Make curvature influence max speed with square of straightness factor [0,1]
@@ -806,23 +812,16 @@ FRoadCurvature UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature
 		return {};
 	}
 
-	FRoadCurvature Curvature;
+	const auto [CurvatureValue, CurvatureSign] = CalculateCurvatureValueAndSign(RacerContext, *LookaheadState, SplineLength);
 
-	const auto ToCurrentTargetNormalized = (LastSplineState->WorldLocation - LastMovementTarget).GetSafeNormal();
-	const auto CurrentTargetToNextNormalized = (LookaheadState->WorldLocation - LastSplineState->WorldLocation).GetSafeNormal();
-	const auto DotProduct = ToCurrentTargetNormalized | CurrentTargetToNextNormalized;
-
-	// consider anything <= 0 a curvature of one
-	// CurvatureSign is based on sign of cross product - left is positive and right is negative - this helps with offset calculations
-	const auto CurvatureSign = -FMath::Sign((ToCurrentTargetNormalized ^ CurrentTargetToNextNormalized).Z);
-	Curvature.Curvature = CurvatureSign * FMath::Min(1 - DotProduct, 1);
-
-	// TODO: Calculate Bank Angle
 	const auto Spline = RaceTrack->Spline;
 
 	// Determine if bank angle is positive or negative by the z component of the right vector and then multiple by the direction of the curve (CurvatureSign)
 	// A left turn should be banked with right vector z positive and right turn with right vector z negative
 	const auto LookaheadSplineRightVector = Spline->GetRightVectorAtSplineInputKey(LookaheadState->SplineKey, ESplineCoordinateSpace::Type::Local);
+
+	FRoadCurvature Curvature;
+	Curvature.Curvature = CurvatureValue;
 
 	if (!FMath::IsNearlyZero(LookaheadSplineRightVector.Z))
 	{
@@ -839,8 +838,81 @@ FRoadCurvature UAA_RacerSplineFollowingComponent::CalculateUpcomingRoadCurvature
 		Curvature.BankAngle = 0;
 	}
 
-
 	return Curvature;
+}
+
+std::pair<float, float> UAA_RacerSplineFollowingComponent::CalculateCurvatureValueAndSign(const FAA_AIRacerContext& Context, 
+	const AA_RacerSplineFollowingComponent::FSplineState& LookaheadState, float SplineLength) const
+{
+	check(Context.RaceTrack);
+	check(Context.RaceTrack->Spline);
+	check(LastSplineState);
+
+	// Calculate curvature by splitting up distance interval by N and then computing world location at distance along spline
+	// Calculate dot product between adjacent direction vectors from last 3 points
+	// If the curvature changes sign significantly between positive and negative, then consider it max curvature
+	// If a local maximum curvature has a larger value than overall curvature, then use this value
+	// Note that Spline::GetWorldLocationAtDistanceAlongSpline is performance intensive but there aren't many AI racers - profile to determine if it's an issue
+
+	const auto Spline = Context.RaceTrack->Spline;
+
+	const auto StartSplineDistance = LastSplineState->DistanceAlongSpline;
+	const auto EndSplineDistance = LookaheadState.DistanceAlongSpline;
+
+	const auto TotalSplineDistance = GetSplineDistanceBetween(StartSplineDistance, EndSplineDistance, SplineLength);
+	const auto SamplingDeltaDistance = RoadCurvatureSubsamplingSplineDistance > 0 ? RoadCurvatureSubsamplingSplineDistance : TotalSplineDistance;
+
+	std::pair<float, float> MaxLocalCurvatureAndSign{};
+
+	FVector FirstPosition = LastMovementTarget;
+	FVector SecondPosition = LastSplineState->WorldLocation;
+
+	for (float SplineDeltaDistance = SamplingDeltaDistance; SplineDeltaDistance < TotalSplineDistance; SplineDeltaDistance += SamplingDeltaDistance)
+	{
+		const float ActualSplineDistance = UAA_BlueprintFunctionLibrary::WrapEx(StartSplineDistance + SplineDeltaDistance, 0.0f, SplineLength);
+		const FVector NewLocation = Spline->GetWorldLocationAtDistanceAlongSpline(ActualSplineDistance);
+
+		const auto NewCurvatureValueAndSign = CalculateCurvatureAndSignBetween(FirstPosition, SecondPosition, NewLocation);
+
+		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, VeryVerbose, NewLocation, 50.0f, FColor::Silver, TEXT("C=%f"), NewCurvatureValueAndSign.first);
+
+		// First Iteration
+		if (FMath::IsNearlyZero(MaxLocalCurvatureAndSign.second))
+		{
+			MaxLocalCurvatureAndSign = NewCurvatureValueAndSign;
+		}
+		// S-Curve check
+		// check change of sign and significant change of magnitude (e.g. to avoid 0.01 -> -0.01 being triggered as a winding curve)
+		else if (!FMath::IsNearlyEqual(NewCurvatureValueAndSign.second, MaxLocalCurvatureAndSign.second) &&
+			FMath::Abs(NewCurvatureValueAndSign.first - MaxLocalCurvatureAndSign.first) > RoadCurvatureSignSwitchMagnitudeThreshold)
+		{
+			// 1 or -1 depending on sign
+			MaxLocalCurvatureAndSign.first = MaxLocalCurvatureAndSign.second;
+			return MaxLocalCurvatureAndSign;
+		}
+		// Take first sign and max overall magnitude
+		else if (FMath::Abs(NewCurvatureValueAndSign.first) > FMath::Abs(MaxLocalCurvatureAndSign.first))
+		{
+			// multiply the signs so that only the magnitude is affected as the signs will cancel out
+			MaxLocalCurvatureAndSign.first = MaxLocalCurvatureAndSign.second * NewCurvatureValueAndSign.second * NewCurvatureValueAndSign.first;
+		}
+
+		// rotate positions
+		FirstPosition = SecondPosition;
+		SecondPosition = NewLocation;
+	}
+
+	// calculate overall curvature and sign looking for biggest difference between local curvature and overall curvature
+	const auto OverallCurvatureAndSign = CalculateCurvatureAndSignBetween(LastMovementTarget, LastSplineState->WorldLocation, LookaheadState.WorldLocation);
+
+	UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, VeryVerbose, LookaheadState.WorldLocation, 50.0f, FColor::White, TEXT("C=%f"), OverallCurvatureAndSign.first);
+
+	if (FMath::Abs(OverallCurvatureAndSign.first) > FMath::Abs(MaxLocalCurvatureAndSign.first))
+	{
+		return OverallCurvatureAndSign;
+	}
+
+	return MaxLocalCurvatureAndSign;
 }
 
 float UAA_RacerSplineFollowingComponent::CalculateMaxOffsetAtLastSplineState() const
@@ -921,4 +993,41 @@ FString FSplineState::ToString() const
 		TEXT("OriginalWorldLocation=%s; WorldLocation=%s; SplineDirection=%s; SplineKey=%f; DistanceAlongSpline=%f; RoadOffset=%f; LookaheadDistance=%f"),
 		*OriginalWorldLocation.ToCompactString(), *WorldLocation.ToCompactString(), *SplineDirection.ToCompactString(),
 		SplineKey, DistanceAlongSpline, RoadOffset, LookaheadDistance);
+}
+
+namespace
+{
+	inline float CalculateCurvatureSign(const FVector& FirstDirection, const FVector& SecondDirection)
+	{
+		// CurvatureSign is based on sign of cross product - left is positive and right is negative - this helps with offset calculations
+		return -FMath::Sign((FirstDirection ^ SecondDirection).Z);
+	}
+
+	float GetSplineDistanceBetween(float FirstDistance, float SecondDistance, float SplineLength)
+	{
+		if (SecondDistance >= FirstDistance)
+		{
+			return SecondDistance - FirstDistance;
+		}
+
+		// wrapping around
+		return SplineLength - FirstDistance + SecondDistance;
+	}
+
+	std::pair<float, float> CalculateCurvatureAndSignBetween(const FVector& FirstLocation, const FVector& SecondLocation, const FVector& ThirdLocation)
+	{
+		const auto ToCurrentTargetNormalized = (SecondLocation - FirstLocation).GetSafeNormal();
+		const auto CurrentTargetToNextNormalized = (ThirdLocation - SecondLocation).GetSafeNormal();
+		const auto DotProduct = ToCurrentTargetNormalized | CurrentTargetToNextNormalized;
+
+		const auto CurvatureSign = CalculateCurvatureSign(ToCurrentTargetNormalized, CurrentTargetToNextNormalized);
+		// consider anything <= 0 a curvature of one
+		const auto CurvatureValue = CurvatureSign * FMath::Min(1 - DotProduct, 1);
+
+		return
+		{
+			CurvatureValue,
+			CurvatureSign
+		};
+	}
 }

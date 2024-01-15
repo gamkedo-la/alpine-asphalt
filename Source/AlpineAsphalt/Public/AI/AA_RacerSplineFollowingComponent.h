@@ -113,6 +113,8 @@ private:
 	*/
 	AA_RacerSplineFollowingComponent::FRoadCurvature CalculateUpcomingRoadCurvatureAndBankAngle() const;
 
+	std::pair<float, float> CalculateCurvatureValueAndSign(const FAA_AIRacerContext& Context, const AA_RacerSplineFollowingComponent::FSplineState& LookaheadState, float SplineLength) const;
+
 	float CalculateMaxOffsetAtLastSplineState() const;
 
 	void ResetAvoidanceContext();
@@ -158,6 +160,12 @@ private:
 
 	UPROPERTY(Category = "Movement", EditAnywhere)
 	float RoadCurvatureLookaheadFactor{ 3.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float RoadCurvatureSubsamplingSplineDistance{ 5000.0f };
+
+	UPROPERTY(Category = "Movement", EditAnywhere)
+	float RoadCurvatureSignSwitchMagnitudeThreshold{ 0.2f };
 
 	/*
 	* Balance between curvature and speed for setting the lookahead target.
