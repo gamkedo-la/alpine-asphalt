@@ -27,6 +27,7 @@ void UAA_HeadToHeadActivity::Initialize(AAA_TrackInfoActor* TrackToUse)
 		UE_LOG(LogTemp,Error,TEXT("Couldn't Initialize HeadToHeadActivity: Track was nullptr"))
 		return;
 	}
+
 	this->Track = TrackToUse;
 	NumCheckpoints = Track->CheckpointComponent->CheckpointPositionData.Num();
 	LastCheckpointHitIndex = NumCheckpoints-1;
@@ -282,6 +283,32 @@ bool UAA_HeadToHeadActivity::IsPlayerCompleted() const
 	return ScoreScreen != nullptr;
 }
 
+TArray<FAA_RaceState> UAA_HeadToHeadActivity::GetAllRaceStates() const
+{
+	TArray<FAA_RaceState> RaceStates;
+	RaceStates.Reserve(AIRacers.Num() + 1);
+
+	if (auto RaceState = GetPlayerRaceState(); RaceState)
+	{
+		RaceStates.Add(std::move(RaceState));
+	}
+
+	for (auto Racer : AIRacers)
+	{
+		if (!Racer)
+		{
+			continue;
+		}
+
+		if (auto RaceState = GetAIRacerState(*Racer); RaceState)
+		{
+			RaceStates.Add(std::move(RaceState));
+		}
+	}
+
+	return RaceStates;
+}
+
 AA_HeadToHeadActivity::FSnapshotData UAA_HeadToHeadActivity::CaptureSnapshot() const
 {
 	using namespace AA_HeadToHeadActivity;
@@ -421,22 +448,27 @@ void UAA_HeadToHeadActivity::UnRegisterRacePositionTimer()
 	World->GetTimerManager().ClearTimer(RaceHUDUpdateTimer);
 }
 
+FAA_RaceState UAA_HeadToHeadActivity::GetAIRacerState(const AAA_WheeledVehiclePawn& AIRacer) const
+{
+	auto RacerController = Cast<AAA_AIRacerController>(AIRacer.GetController());
+	if (!RacerController)
+	{
+		return {};
+	}
+
+	return RacerController->GetRacerContext().RaceState;
+}
+
 void UAA_HeadToHeadActivity::UpdatePlayerHUD()
 {
 	// Get Player Info
-	auto PC = Cast<AAA_PlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-	if (!PC)
+	const FAA_RaceState& PlayerRaceState = GetPlayerRaceState();
+	if (!PlayerRaceState)
 	{
 		return;
 	}
-	const auto& PlayerSplineInfo = PC->GetPlayerSplineInfo();
-	if (!PlayerSplineInfo)
-	{
-		return;
-	}
-	const auto& PlayerRaceState = PlayerSplineInfo->RaceState;
-	const auto PlayerCompletionFraction = PlayerRaceState.GetOverallCompletionFraction();
 
+	const auto PlayerCompletionFraction = PlayerRaceState.GetOverallCompletionFraction();
 
 	//Update Race Position
 	int32 RacerCount { 1 };
@@ -449,22 +481,20 @@ void UAA_HeadToHeadActivity::UpdatePlayerHUD()
 			continue;
 		}
 
-		auto RacerController = Cast<AAA_AIRacerController>(Racer->GetController());
-		if (!RacerController)
+		const FAA_RaceState& AIRacerState = GetAIRacerState(*Racer);
+		if (!AIRacerState)
 		{
 			continue;
 		}
 
-		const auto& AIRacerState = RacerController->GetRacerContext().RaceState;
 		++RacerCount;
 
-		// FIXME: This may be getting reset after completing race
 		if (AIRacerState.GetOverallCompletionFraction() > PlayerCompletionFraction)
 		{
 			++RacePosition;
 		}
 	}
-	auto VehicleUI = PC->VehicleUI;
+	auto VehicleUI = GetVehicleUI();
 	check(VehicleUI);
 	VehicleUI->UpdateRacePosition(RacePosition, RacerCount);
 

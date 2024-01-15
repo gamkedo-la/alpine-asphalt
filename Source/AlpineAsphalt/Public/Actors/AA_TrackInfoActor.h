@@ -53,6 +53,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditInstanceOnly, Category=Race)
 	TArray<UDataLayerAsset*> DataLayersToUnload;
+
+	UPROPERTY(BlueprintReadOnly, Transient, Category = Race)
+	TObjectPtr<UAA_BaseActivity> ActiveActivity{};
 	
 	UFUNCTION()
 	float GetWidthAtDistance(float Distance);

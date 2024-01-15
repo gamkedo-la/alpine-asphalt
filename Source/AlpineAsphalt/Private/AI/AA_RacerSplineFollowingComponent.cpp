@@ -7,6 +7,7 @@
 #include "AI/AA_RacerContextProvider.h"
 #include "Components/SplineComponent.h"
 #include "Actors/AA_TrackInfoActor.h"
+#include "Activity/AA_BaseActivity.h"
 
 #include "VisualLogger/VisualLogger.h"
 #include "Logging/AlpineAsphaltLogger.h"
@@ -18,6 +19,7 @@
 
 #include "Pawn/AA_WheeledVehiclePawn.h"
 #include "Util/SplineUtils.h"
+#include "Util/UnitConversions.h"
 
 using namespace AA;
 using namespace AA_RacerSplineFollowingComponent;
@@ -250,13 +252,16 @@ bool UAA_RacerSplineFollowingComponent::ResetLastSplineStateToRaceState(FAA_AIRa
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: ResetLastSplineStateToRaceState: VehiclePawn=%s"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(Vehicle));
 
-	const auto& ResetSplineWorldLocation = SplineUtils::ResetVehicleToLastSplineLocation(*Vehicle, *Spline, RaceState);
+	auto VehicleResetDetails = SplineUtils::GetLastSplineLocationDetails(*Vehicle, *Spline, RaceState);
+
+	CalculateSafeResetPointAtMaxSplineDistance(RacerContext, *Vehicle, VehicleResetDetails);
+	SplineUtils::ResetVehicleToLastSplineLocationDetails(*Vehicle, VehicleResetDetails);
 
 	FSplineState SplineState;
 
 	SplineState.SplineKey = Spline->GetInputKeyAtDistanceAlongSpline(RaceState.MaxDistanceAlongSpline);
 	SplineState.DistanceAlongSpline = RaceState.MaxDistanceAlongSpline;
-	SplineState.WorldLocation =  SplineState.OriginalWorldLocation = ResetSplineWorldLocation;
+	SplineState.WorldLocation =  SplineState.OriginalWorldLocation = VehicleResetDetails.WorldLocation;
 	SplineState.LookaheadDistance = MinLookaheadDistance;
 	SplineState.SplineDirection = Spline->GetDirectionAtSplineInputKey(SplineState.SplineKey, ESplineCoordinateSpace::World);
 
@@ -277,6 +282,94 @@ bool UAA_RacerSplineFollowingComponent::ResetLastSplineStateToRaceState(FAA_AIRa
 
 	return true;
 }
+
+void UAA_RacerSplineFollowingComponent::CalculateSafeResetPointAtMaxSplineDistance(const FAA_AIRacerContext& RacerContext,
+	const AAA_WheeledVehiclePawn& VehiclePawn, AA::SplineUtils::FVehicleResetDetails& InOutVehicleResetDetails)
+{
+	// Make sure input position is safe based on inbound racers and walk backwards to a max distance based on other racer position
+	check(RacerContext.RaceTrack);
+	check(RacerContext.RaceTrack->Spline);
+
+	auto Activity = RacerContext.RaceTrack->ActiveActivity;
+	check(Activity);
+
+	auto RelevantRaceStates = Activity->GetAllRaceStates().FilterByPredicate([&VehiclePawn, TargetDistance = InOutVehicleResetDetails.SplineDistance](const auto& RaceState)
+	{ 
+		return RaceState && RaceState.VehiclePawn != &VehiclePawn && RaceState.DistanceAlongSpline <= TargetDistance;
+	});
+
+	// order by descending order of distance along spline
+	Algo::SortBy(RelevantRaceStates, &FAA_RaceState::DistanceAlongSpline, [](auto FirstDistance, auto SecondDistance)
+	{
+		return FirstDistance > SecondDistance;
+	});
+
+	float TargetDistance = InOutVehicleResetDetails.SplineDistance;
+
+	for (const auto& RacerState : RelevantRaceStates)
+	{
+		// estimate distance traveled during safety time
+		auto VehiclePawn = RacerState.VehiclePawn;
+		check(VehiclePawn);
+
+		const auto CurrentTarget = RacerState.DistanceAlongSpline;
+		const auto Speed = VehiclePawn->GetVehicleSpeed();
+		const auto InterpolatedDistance = CurrentTarget + Speed * RespawnSafetyTime;
+
+		// Found nearest viable respawn point that shouldn't disrupt other racers
+		// check rest to make sure they aren't close behind and moving faster
+		if (InterpolatedDistance < TargetDistance)
+		{
+			continue;
+		}
+
+		UE_VLOG_LOCATION(GetOwner(), LogAlpineAsphalt, Verbose,
+			VehiclePawn->GetActorLocation() + FVector(0, 0, 75.0f), 50.0f, FColor::Turquoise,
+			TEXT("UnsafeResetLocation: %s"), *VehiclePawn.GetName());
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Verbose,
+			TEXT("CalculateSafeResetPointAtMaxSplineDistance: Walking back from TargetDistance=%fm due to incoming vehicle=%s: CurrentTarget=%fm; Speed=%fmph; InterpolatedDistance=%fm"),
+			TargetDistance / 100, *VehiclePawn->GetName(), CurrentTarget / 100, Speed * UnitConversions::CmsToMph, InterpolatedDistance / 100);
+
+		TargetDistance = CurrentTarget - VehiclePawn->GetVehicleLength() * VehicleLengthSafetyFactor;
+		if (TargetDistance <= 0)
+		{
+			TargetDistance = 0;
+			break;
+		}
+	}
+
+	if (TargetDistance < InOutVehicleResetDetails.SplineDistance)
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("CalculateSafeResetPointAtMaxSplineDistance: Adjusted reset spline distance from %fm -> %fm based on %d potential obstacle vehicles"),
+			InOutVehicleResetDetails.SplineDistance / 100, TargetDistance / 100, RelevantRaceStates.Num());
+
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("CalculateSafeResetPointAtMaxSplineDistance: Adjusted reset spline distance from %fm -> %fm based on %d potential obstacle vehicles"),
+			InOutVehicleResetDetails.SplineDistance / 100, TargetDistance / 100, RelevantRaceStates.Num());
+
+		InOutVehicleResetDetails = SplineUtils::GetVehicleResetDetailsFromSplineDistance(*RacerContext.RaceTrack->Spline, TargetDistance);
+	}
+	else
+	{
+		UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log,
+			TEXT("CalculateSafeResetPointAtMaxSplineDistance: Retained original reset spline distance of %fm based on %d potential obstacle vehicles"),
+			InOutVehicleResetDetails.SplineDistance / 100, RelevantRaceStates.Num());
+	}
+}
+
+void UAA_RacerSplineFollowingComponent::DoResetLastSplineStateToRaceState()
+{
+	check(RacerContextProvider);
+
+	auto& RacerContext = RacerContextProvider->GetRacerContext();
+
+	if (ResetLastSplineStateToRaceState(RacerContext))
+	{
+		UpdateMovementFromLastSplineState(RacerContext);
+	}
+}
+
 
 void UAA_RacerSplineFollowingComponent::OnVehicleAvoidancePositionUpdated(AAA_WheeledVehiclePawn* VehiclePawn, const FAA_AIRacerAvoidanceContext& AvoidanceContext)
 {
@@ -374,7 +467,12 @@ void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePa
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: SelectUnstuckTarget: VehiclePawn=%s; IdealSeekPosition=%s, bAtMaxRetries=%s"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *IdealSeekPosition.ToCompactString(), LoggingUtils::GetBoolString(bAtMaxRetries));
 
-	check(VehiclePawn);
+	if (bAtMaxRetries)
+	{
+		DoResetLastSplineStateToRaceState();
+		return;
+	}
+
 	check(RacerContextProvider);
 	auto& RacerContext = RacerContextProvider->GetRacerContext();
 
@@ -383,27 +481,17 @@ void UAA_RacerSplineFollowingComponent::SelectUnstuckTarget(AAA_WheeledVehiclePa
 
 	auto RaceSpline = RacerContext.RaceTrack->Spline;
 
-	if (bAtMaxRetries)
+	const auto Key = RaceSpline->FindInputKeyClosestToWorldLocation(IdealSeekPosition);
+	const auto DistanceAlongSpline = RaceSpline->GetDistanceAlongSplineAtSplineInputKey(Key);
+
+	auto NextSplineState = GetNextSplineState(RacerContext, DistanceAlongSpline);
+
+	if (!NextSplineState)
 	{
-		if (!ResetLastSplineStateToRaceState(RacerContext))
-		{
-			return;
-		}
+		return;
 	}
-	else
-	{
-		const auto Key = RaceSpline->FindInputKeyClosestToWorldLocation(IdealSeekPosition);
-		const auto DistanceAlongSpline = RaceSpline->GetDistanceAlongSplineAtSplineInputKey(Key);
 
-		auto NextSplineState = GetNextSplineState(RacerContext, DistanceAlongSpline);
-
-		if (!NextSplineState)
-		{
-			return;
-		}
-
-		LastSplineState = NextSplineState;
-	}
+	LastSplineState = NextSplineState;
 
 	UpdateMovementFromLastSplineState(RacerContext);
 }
@@ -413,15 +501,7 @@ void UAA_RacerSplineFollowingComponent::OnTargetUnreachable(AAA_WheeledVehiclePa
 	UE_VLOG_UELOG(GetOwner(), LogAlpineAsphalt, Log, TEXT("%s-%s: OnTargetUnreachable: VehiclePawn=%s; CurrentMovementTarget=%s"),
 		*GetName(), *LoggingUtils::GetName(GetOwner()), *LoggingUtils::GetName(VehiclePawn), *CurrentMovementTarget.ToCompactString());
 
-	check(VehiclePawn);
-	check(RacerContextProvider);
-
-	auto& RacerContext = RacerContextProvider->GetRacerContext();
-	
-	if (ResetLastSplineStateToRaceState(RacerContext))
-	{
-		UpdateMovementFromLastSplineState(RacerContext);
-	}
+	DoResetLastSplineStateToRaceState();
 }
 
 void UAA_RacerSplineFollowingComponent::SetInitialMovementTarget()

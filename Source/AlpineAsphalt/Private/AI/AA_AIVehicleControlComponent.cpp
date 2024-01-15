@@ -319,6 +319,9 @@ void UAA_AIVehicleControlComponent::CheckIfReachedTarget()
 	{
 		if (IsTargetUnreachable(CurrentDistance))
 		{
+			// Make sure event doesn't get re-broadcast on next-tick
+			bTargetReached = true;
+
 			check(VehiclePawn);
 
 			UE_VLOG_EVENT_WITH_DATA(GetOwner(), EventVehicleTargetUnreachable, *LoggingUtils::GetName(VehiclePawn));

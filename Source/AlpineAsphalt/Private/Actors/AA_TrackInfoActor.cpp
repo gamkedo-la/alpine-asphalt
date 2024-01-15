@@ -135,6 +135,8 @@ void AAA_TrackInfoActor::Interact(AAA_PlayerController* Interactor)
 	}
 	//Launch Activity
 	auto NewActivity = NewObject<UAA_BaseActivity>(this,ActivityType);
+	ActiveActivity = NewActivity;
+
 	NewActivity->Initialize(this);
 	GetWorld()->GetSubsystem<UAA_ActivityManagerSubsystem>()->LaunchActivity(NewActivity);
 }

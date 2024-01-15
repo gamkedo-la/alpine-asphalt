@@ -43,6 +43,9 @@ struct ALPINEASPHALT_API FAA_RaceState
 	int32 GetNumLaps() const;
 	bool IsOnLastLap() const;
 	bool IsLooping() const;
+
+	bool IsValid() const;
+	operator bool() const;
 };
 
 struct ALPINEASPHALT_API FAA_RaceStateSnapshotData
@@ -77,6 +80,16 @@ inline float FAA_RaceState::GetOverallCompletionFraction() const
 inline bool FAA_RaceState::IsOnLastLap() const
 {
 	return !IsLooping() || LapCount == GetNumLaps() - 1;
+}
+
+inline bool FAA_RaceState::IsValid() const
+{
+	return RaceTrack && VehiclePawn;
+}
+
+inline FAA_RaceState::operator bool() const
+{
+	return IsValid();
 }
 
 #pragma endregion Inline Definitions

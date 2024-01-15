@@ -140,6 +140,19 @@ void UAA_TimeTrialActivity::CountdownEnded()
 	GetWorld()->GetTimerManager().SetTimer(RaceHUDUpdateTimer, this, &UAA_TimeTrialActivity::UpdatePlayerHUD, RaceHUDUpdateFrequency, true);
 }
 
+TArray<FAA_RaceState> UAA_TimeTrialActivity::GetAllRaceStates() const
+{
+	TArray<FAA_RaceState> RaceStates;
+
+	if (auto RaceState = GetPlayerRaceState(); RaceState)
+	{
+		RaceStates.Reserve(1);
+		RaceStates.Add(std::move(RaceState));
+	}
+
+	return RaceStates;
+}
+
 void UAA_TimeTrialActivity::CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle)
 {
 	if(auto PC = Cast<AAA_PlayerController>(HitVehicle->GetController()))

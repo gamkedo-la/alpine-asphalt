@@ -104,7 +104,7 @@ bool AA::SplineUtils::TryUpdateRaceState(const USplineComponent& Spline, FAA_Rac
 	return true;
 }
 
-ALPINEASPHALT_API FVector AA::SplineUtils::ResetVehicleToLastSplineLocation(AAA_WheeledVehiclePawn& VehiclePawn, const USplineComponent& Spline, const FAA_RaceState& RaceState)
+AA::SplineUtils::FVehicleResetDetails AA::SplineUtils::GetLastSplineLocationDetails(const AAA_WheeledVehiclePawn& VehiclePawn, const USplineComponent& Spline, const FAA_RaceState& RaceState)
 {
 	// Don't reset too close to the race finish or the final checkpoint won't register. It is also a little unfair
 	check(RaceState.RaceTrack);
@@ -112,20 +112,42 @@ ALPINEASPHALT_API FVector AA::SplineUtils::ResetVehicleToLastSplineLocation(AAA_
 
 	const float ResetDistance = FMath::Min(RaceState.MaxDistanceAlongSpline, GetMaxResetSplineDistance(VehiclePawn, RaceState));
 
-	const auto& ResetWorldLocation = Spline.GetWorldLocationAtDistanceAlongSpline(ResetDistance);
-	const auto& ResetWorldRotation = Spline.GetWorldDirectionAtDistanceAlongSpline(ResetDistance).Rotation();
+	return GetVehicleResetDetailsFromSplineDistance(Spline, ResetDistance);
+}
 
+AA::SplineUtils::FVehicleResetDetails AA::SplineUtils::GetVehicleResetDetailsFromSplineDistance(const USplineComponent& Spline, float DistanceAlongSpline)
+{
+	const auto& ResetWorldLocation = Spline.GetWorldLocationAtDistanceAlongSpline(DistanceAlongSpline);
+	const auto& ResetWorldRotation = Spline.GetWorldDirectionAtDistanceAlongSpline(DistanceAlongSpline).Rotation();
+
+	return
+	{
+		.WorldLocation = ResetWorldLocation,
+		.WorldRotation = ResetWorldRotation,
+		.SplineDistance = DistanceAlongSpline
+	};
+}
+
+void AA::SplineUtils::ResetVehicleToLastSplineLocationDetails(AAA_WheeledVehiclePawn& VehiclePawn, const FVehicleResetDetails& VehicleResetDetails)
+{
 	UE_VLOG_UELOG(SplineUtilsGetLogOwner(VehiclePawn), LogAlpineAsphalt, Display,
 		TEXT("%s: ResetVehicleToLastSplineLocation: %s with rotation %s"),
-		*VehiclePawn.GetName(), *ResetWorldLocation.ToCompactString(), *ResetWorldRotation.ToCompactString());
+		*VehiclePawn.GetName(), *VehicleResetDetails.WorldLocation.ToCompactString(), *VehicleResetDetails.WorldRotation.ToCompactString());
 
 	UE_VLOG_LOCATION(SplineUtilsGetLogOwner(VehiclePawn), LogAlpineAsphalt, Display,
-		ResetWorldLocation + FVector(0, 0, 75.0f), 150.0f, FColor::Blue,
+		VehicleResetDetails.WorldLocation + FVector(0, 0, 75.0f), 150.0f, FColor::Blue,
 		TEXT("%s: ResetVehicleLocation"), *VehiclePawn.GetName());
 
-	VehiclePawn.ResetVehicleAtLocation(ResetWorldLocation, ResetWorldRotation);
+	VehiclePawn.ResetVehicleAtLocation(VehicleResetDetails.WorldLocation, VehicleResetDetails.WorldRotation);
+}
 
-	return ResetWorldLocation;
+FVector AA::SplineUtils::ResetVehicleToLastSplineLocation(AAA_WheeledVehiclePawn& VehiclePawn, const USplineComponent& Spline, const FAA_RaceState& RaceState)
+{
+	const auto& ResetDetails = GetLastSplineLocationDetails(VehiclePawn, Spline, RaceState);
+
+	ResetVehicleToLastSplineLocationDetails(VehiclePawn, ResetDetails);
+
+	return ResetDetails.WorldLocation;
 }
 
 float AA::SplineUtils::GetSplineLength(const AAA_TrackInfoActor& TrackInfo)
@@ -160,7 +182,8 @@ namespace
 		check(RaceState.RaceTrack);
 		check(RaceState.RaceTrack->CheckpointComponent);
 
-		float DistanceEnd = RaceState.SplineLength - VehiclePawn.GetVehicleLength() * 5;
+		const float VehicleBuffer = VehiclePawn.GetVehicleLength() * 5;
+		float DistanceEnd = RaceState.SplineLength - VehicleBuffer;
 
 		const auto& CheckpointData = RaceState.RaceTrack->CheckpointComponent->CheckpointPositionData;
 		if (!CheckpointData.IsEmpty())

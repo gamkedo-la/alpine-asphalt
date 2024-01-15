@@ -6,12 +6,12 @@
 
 #include "AA_HeadToHeadActivity.generated.h"
 
-
 class UAA_VehicleDataAsset;
 class AAA_WheeledVehiclePawn;
 class UAA_TimeTrialScoreScreenUI;
 class AAA_TrackInfoActor;
 class AAA_PlayerController;
+class UA_VehicleUI;
 
 namespace AA_HeadToHeadActivity
 {
@@ -59,6 +59,8 @@ public:
 	virtual UWorld* GetWorld() const override;
 
 	virtual bool IsPlayerCompleted() const override;
+
+	virtual TArray<FAA_RaceState> GetAllRaceStates() const override;
 protected:
 	UFUNCTION()
 	void CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle);
@@ -83,6 +85,8 @@ private:
 	void UpdatePlayerLapsUI();
 
 	bool IsPlayerOnLastLap() const;
+
+	FAA_RaceState GetAIRacerState(const AAA_WheeledVehiclePawn& AIRacer) const;
 
 	UPROPERTY()
 	TArray<FDriverName> DriverNames;

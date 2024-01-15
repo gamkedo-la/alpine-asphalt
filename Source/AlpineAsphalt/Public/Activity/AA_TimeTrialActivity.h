@@ -65,6 +65,9 @@ public:
 	virtual UWorld* GetWorld() const override;
 
 	virtual bool IsPlayerCompleted() const override;
+
+	virtual TArray<FAA_RaceState> GetAllRaceStates() const override;
+
 protected:
 	UFUNCTION()
 	void CheckpointHit(int IndexCheckpointHit, AAA_WheeledVehiclePawn* HitVehicle);

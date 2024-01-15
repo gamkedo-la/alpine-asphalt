@@ -18,6 +18,11 @@ class IAA_RacerContextProvider;
 class ALandscape;
 class UCurveFloat;
 
+namespace AA::SplineUtils
+{
+	struct FVehicleResetDetails;
+}
+
 namespace AA_RacerSplineFollowingComponent
 {
 	struct FSplineState
@@ -106,6 +111,10 @@ private:
 	void UpdateSplineStateWithRoadOffset(const FAA_AIRacerContext& RacerContext, AA_RacerSplineFollowingComponent::FSplineState& SplineState, float RoadOffset) const;
 	void UpdateLastSplineStateIfApproachTooSteep(const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, const AA_RacerSplineFollowingComponent::FSplineState& OriginalSplineState);
 	bool ResetLastSplineStateToRaceState(FAA_AIRacerContext& RacerContext);
+
+	void DoResetLastSplineStateToRaceState();
+
+	void CalculateSafeResetPointAtMaxSplineDistance(const FAA_AIRacerContext& RacerContext, const AAA_WheeledVehiclePawn& VehiclePawn, AA::SplineUtils::FVehicleResetDetails& InOutVehicleResetDetails);
 
 	/*
 	* Curvature between [0,1] indicating how steep the upcoming road is for speed adjustment purposes.
@@ -199,6 +208,13 @@ private:
 	float MaxApproachAngle{ 22.5f };
 
 	float MaxApproachAngleCosine{};
+
+	/* Amount of time to account for racers approaching during respawn. */
+	UPROPERTY(Category = "Respawn", EditDefaultsOnly)
+	float RespawnSafetyTime{ 3.0f };
+
+	UPROPERTY(Category = "Respawn", EditDefaultsOnly)
+	float VehicleLengthSafetyFactor{ 2.0f };
 
 	UPROPERTY(Transient)
 	ALandscape* Landscape{};
